@@ -2,8 +2,8 @@
 
 Benchmark scripts for infrastructure using synthetic tests via the
 [Phoronix Test Suite (PTS)](https://www.phoronix-test-suite.com/).
-Each script targets a single workload dimension — CPU-bound or I/O-bound —
-and produces results that can optionally be uploaded to
+Each script targets a single workload dimension — CPU-bound, memory-bound,
+or I/O-bound — and produces results that can optionally be uploaded to
 [OpenBenchmarking.org](https://openbenchmarking.org/) for comparison across
 runs and systems.
 
@@ -18,6 +18,7 @@ Scripts work on both physical machines and virtual machines (vSphere, OpenStack)
 | Script | Workload | PTS tests used |
 |---|---|---|
 | `benchmark-cpu-pts.sh` | CPU-bound | `pts/build-linux-kernel` |
+| `benchmark-memory-pts.sh` | Memory-bound | `pts/stream`, `pts/ramspeed`, `pts/tinymembench`, `pts/cachebench` |
 | `benchmark-storage-pts.sh` | I/O-bound | `iozone`, `fio`, `postmark`, `compilebench` |
 
 ---
@@ -54,6 +55,48 @@ OPTIONS:
 ./benchmark-cpu-pts.sh --upload \
   --result-id "dc1-node3-baseline" \
   --result-name "DC1 Node3 - AMD EPYC 9354"
+```
+
+---
+
+## benchmark-memory-pts.sh
+
+Benchmarks the memory subsystem using four complementary tests that together
+cover the full picture: sustained DRAM bandwidth, integer vs. floating-point
+memory paths, cache hierarchy bandwidth, and combined bandwidth + latency
+profiling. All sub-option permutations (operation type, benchmark mode, access
+pattern) are exercised automatically in a single run per test.
+PTS is installed automatically if not present.
+
+| Test | Measures |
+|---|---|
+| `pts/stream` | Sustained DRAM bandwidth — Copy, Scale, Add, Triad |
+| `pts/ramspeed` | Integer and FP bandwidth — Copy, Scale, Add, Triad, Average |
+| `pts/tinymembench` | Bandwidth and access latency across L1/L2/L3/DRAM |
+| `pts/cachebench` | Cache-level bandwidth — Read, Write, Read/Modify/Write |
+
+### Usage
+
+```
+./benchmark-memory-pts.sh [OPTIONS]
+
+OPTIONS:
+  -u, --upload                 Upload results to OpenBenchmarking.org
+  -i, --result-id <id>         Test identifier for the result (e.g. 'dc1-node3-ddr5')
+  -n, --result-name <name>     Display name for the result (e.g. 'DC1 Node3 - DDR5 6400')
+  -h, --help                   Show help
+```
+
+### Examples
+
+```bash
+# Run all memory benchmarks
+./benchmark-memory-pts.sh
+
+# Run and upload results
+./benchmark-memory-pts.sh --upload \
+  --result-id "dc1-node3-ddr5" \
+  --result-name "DC1 Node3 - DDR5 6400 MT/s"
 ```
 
 ---

@@ -3,7 +3,7 @@
 Benchmark scripts for infrastructure using synthetic tests via the
 [Phoronix Test Suite (PTS)](https://www.phoronix-test-suite.com/).
 Each script targets a single workload dimension — CPU-bound, memory-bound,
-or I/O-bound — and produces results that can optionally be uploaded to
+network-bound, or I/O-bound — and produces results that can optionally be uploaded to
 [OpenBenchmarking.org](https://openbenchmarking.org/) for comparison across
 runs and systems.
 
@@ -19,6 +19,7 @@ Scripts work on both physical machines and virtual machines (vSphere, OpenStack)
 |---|---|---|
 | `benchmark-cpu-pts.sh` | CPU-bound | `pts/build-linux-kernel` |
 | `benchmark-memory-pts.sh` | Memory-bound | `pts/stream`, `pts/ramspeed`, `pts/tinymembench`, `pts/cachebench` |
+| `benchmark-network-pts.sh` | Network-bound | `pts/network-loopback`, `pts/sockperf`, `pts/iperf`, `pts/netperf` |
 | `benchmark-storage-pts.sh` | I/O-bound | `iozone`, `fio`, `postmark`, `compilebench` |
 
 ---
@@ -97,6 +98,64 @@ OPTIONS:
 ./benchmark-memory-pts.sh --upload \
   --result-id "dc1-node3-ddr5" \
   --result-name "DC1 Node3 - DDR5 6400 MT/s"
+```
+
+---
+
+## benchmark-network-pts.sh
+
+Benchmarks network performance in two modes depending on whether a remote peer
+is available. Standalone tests always run on a single host; peer tests require
+server daemons started on a second machine.
+
+| Test | Mode | Measures |
+|---|---|---|
+| `pts/network-loopback` | Standalone | TCP stack throughput through loopback (kernel buffer performance) |
+| `pts/sockperf` | Standalone | Socket API latency (ping-pong, under-load) and throughput |
+| `pts/iperf` | Peer | TCP bulk throughput (1 and 10 streams), UDP at 1 Gbps target |
+| `pts/netperf` | Peer | TCP/UDP throughput (both directions) and request-response latency |
+
+### Peer server setup
+
+Before running with `--server`, start the server daemons on the remote host:
+
+```bash
+# iperf3 server (runs in background)
+iperf3 -s -D
+
+# netperf server
+netserver
+```
+
+### Usage
+
+```
+./benchmark-network-pts.sh [OPTIONS]
+
+OPTIONS:
+  -s, --server <address>       IP or hostname of the peer for iperf3/netperf tests.
+                               If omitted, only standalone tests are run.
+  -u, --upload                 Upload results to OpenBenchmarking.org
+  -i, --result-id <id>         Test identifier (e.g. 'dc1-vm1-to-vm2')
+  -n, --result-name <name>     Display name (e.g. 'VM1 to VM2 - 10GbE vSwitch')
+  -h, --help                   Show help
+```
+
+### Examples
+
+```bash
+# Run standalone tests only (no second machine needed)
+./benchmark-network-pts.sh
+
+# Run full suite including peer tests
+./benchmark-network-pts.sh --server 192.168.100.10 \
+  --result-id "dc1-vm1-to-vm2" \
+  --result-name "VM1 to VM2 - Ceph cluster network"
+
+# Run and upload results
+./benchmark-network-pts.sh --server 192.168.100.10 --upload \
+  --result-id "dc1-vm1-to-vm2" \
+  --result-name "VM1 to VM2 - 10GbE vSwitch"
 ```
 
 ---

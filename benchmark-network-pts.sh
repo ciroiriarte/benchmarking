@@ -82,7 +82,6 @@ PEER_TESTS=("pts/iperf" "pts/netperf")
 usage() {
     # Skip the shebang line by matching only lines starting with '# ' or bare '#'
     grep '^#[^!]' "$0" | cut -c3-
-    exit 0
 }
 
 # Function to install Phoronix Test Suite and build dependencies
@@ -132,22 +131,27 @@ install_packages() {
 # === openSUSE Repository Setup ===
 setup_opensuse_repo() {
     local repo_url
-    case "$VERSION_ID" in
-        *Tumbleweed*)
+    # Match on $ID (e.g. opensuse-tumbleweed, opensuse-slowroll, opensuse-leap)
+    # because $VERSION_ID is a snapshot date on Tumbleweed/Slowroll, not the OS name.
+    case "$ID" in
+        opensuse-tumbleweed)
             echo "Adding benchmark repo for Tumbleweed..."
             repo_url="https://download.opensuse.org/repositories/benchmark/openSUSE_Tumbleweed"
             ;;
-        *Slowroll*)
+        opensuse-slowroll)
             echo "Adding benchmark repo for Slowroll..."
             repo_url="https://download.opensuse.org/repositories/benchmark/openSUSE_Slowroll"
             ;;
-        "15.6")
-            echo "Adding benchmark repo for Leap 15.6..."
-            repo_url="https://download.opensuse.org/repositories/benchmark/15.6/"
-            gcc_extra="gcc12 gcc12-c++"
+        opensuse-leap)
+            echo "Adding benchmark repo for Leap $VERSION_ID..."
+            repo_url="https://download.opensuse.org/repositories/benchmark/${VERSION_ID}/"
+            # Leap 15.6 ships an old GCC; install gcc12 and set it as the default.
+            if [[ "$VERSION_ID" == "15.6" ]]; then
+                gcc_extra="gcc12 gcc12-c++"
+            fi
             ;;
         *)
-            echo "Unsupported openSUSE version: $VERSION_ID"
+            echo "Unsupported openSUSE variant: $ID"
             exit 1
             ;;
     esac
@@ -155,8 +159,7 @@ setup_opensuse_repo() {
     sudo zypper --gpg-auto-import-keys refresh
     sudo zypper install -y phoronix-test-suite gcc gcc-c++ ${gcc_extra} make \
         autoconf automake libtool netcat-openbsd
-    if [ "$VERSION_ID" == "15.6" ]
-    then
+    if [[ "$ID" == "opensuse-leap" ]]; then
         sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
     fi
@@ -230,8 +233,10 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-# === Install packages ===
-install_packages
+# === Install packages if not already present ===
+if ! command -v phoronix-test-suite &> /dev/null; then
+    install_packages
+fi
 
 # === Configure Phoronix Test Suite for Batch Mode ===
 # RunAllTestCombinations=N: iperf has too many option permutations (protocol ×

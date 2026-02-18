@@ -114,40 +114,91 @@ install_packages() {
 # === openSUSE Repository Setup ===
 setup_opensuse_repo() {
     local repo_url
-    case "$VERSION_ID" in
-        *Tumbleweed*)
+    # Match on $ID (e.g. opensuse-tumbleweed, opensuse-slowroll, opensuse-leap)
+    # because $VERSION_ID is a snapshot date on Tumbleweed/Slowroll, not the OS name.
+    case "$ID" in
+        opensuse-tumbleweed)
             echo "Adding benchmark repo for Tumbleweed..."
             repo_url="https://download.opensuse.org/repositories/benchmark/openSUSE_Tumbleweed"
             ;;
-        *Slowroll*)
+        opensuse-slowroll)
             echo "Adding benchmark repo for Slowroll..."
             repo_url="https://download.opensuse.org/repositories/benchmark/openSUSE_Slowroll"
             ;;
-        "15.6")
-            echo "Adding benchmark repo for Leap 15.6..."
-            repo_url="https://download.opensuse.org/repositories/benchmark/15.6/"
-            gcc_extra="gcc12 gcc12-c++"
+        opensuse-leap)
+            echo "Adding benchmark repo for Leap $VERSION_ID..."
+            repo_url="https://download.opensuse.org/repositories/benchmark/${VERSION_ID}/"
+            # Leap 15.6 ships an old GCC; install gcc12 and set it as the default.
+            if [[ "$VERSION_ID" == "15.6" ]]; then
+                gcc_extra="gcc12 gcc12-c++"
+            fi
             ;;
         *)
-            echo "Unsupported openSUSE version: $VERSION_ID"
+            echo "Unsupported openSUSE variant: $ID"
             exit 1
             ;;
     esac
     sudo zypper ar -f -p 90 "$repo_url" benchmark
     sudo zypper --gpg-auto-import-keys refresh
     sudo zypper install -y phoronix-test-suite xfsprogs util-linux gcc gcc-c++ ${gcc_extra} make autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel libaio-devel python
-    if [ "$VERSION_ID" == "15.6" ]
-    then
-    	sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
-	    sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
+    if [[ "$ID" == "opensuse-leap" ]]; then
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
     fi
 }
+
+# === Release and Clean Up Disks ===
+# Defined here, before main execution, so the EXIT trap can always call it
+# regardless of where the script exits (including early failures via set -e).
+release_disk() {
+    local disk_entry=$1
+    local device
+    local label
+    device=$(echo "$disk_entry" | cut -d';' -f1)
+    label=$(echo "$disk_entry" | cut -d';' -f2)
+    local mount_point="/mnt/${label}"
+
+    echo "--- Releasing disk $device ($label) ---"
+
+    # Unmount the filesystem if it's mounted
+    if mountpoint -q "$mount_point"; then
+        echo "Unmounting $mount_point..."
+        sudo umount "$mount_point"
+    fi
+
+    # Remove the mount point directory
+    if [ -d "$mount_point" ]; then
+        echo "Removing mount point directory $mount_point..."
+        sudo rmdir "$mount_point"
+    fi
+
+    # Wipe filesystem signatures from the device to clean it
+    echo "Wiping filesystem signatures from $device..."
+    sudo wipefs --all --force "$device"
+
+    echo "Disk $device has been cleaned and released."
+}
+
+# Runs on any exit (normal or error via set -e) so disks are always unmounted
+# and wiped even if a benchmark fails mid-run.
+cleanup() {
+    set +e  # Do not let cleanup failures mask the original error
+    echo "--- Cleaning up test disks ---"
+    for disk in "${DISKS[@]}"; do
+        release_disk "$disk"
+    done
+    echo "--- Benchmark script finished ---"
+}
+trap cleanup EXIT
 
 # --- SCRIPT EXECUTION STARTS HERE ---
 
 echo "Starting storage benchmark script..."
 
-install_packages
+# === Install packages if not already present ===
+if ! command -v phoronix-test-suite &> /dev/null; then
+    install_packages
+fi
 
 # === Configure Phoronix Test Suite for Batch Mode ===
 echo "Setting up Phoronix Test Suite in batch mode..."
@@ -275,40 +326,3 @@ for test_name in "${REQUIRED_TESTS[@]}"; do
         echo "No results found to compare for $test_name."
     fi
 done
-
-# === Release and Clean Up Disks ===
-release_disk() {
-    local disk_entry=$1
-    local device
-    local label
-    device=$(echo "$disk_entry" | cut -d';' -f1)
-    label=$(echo "$disk_entry" | cut -d';' -f2)
-    local mount_point="/mnt/${label}"
-
-    echo "--- Releasing disk $device ($label) ---"
-
-    # Unmount the filesystem if it's mounted
-    if mountpoint -q "$mount_point"; then
-        echo "Unmounting $mount_point..."
-        sudo umount "$mount_point"
-    fi
-
-    # Remove the mount point directory
-    if [ -d "$mount_point" ]; then
-        echo "Removing mount point directory $mount_point..."
-        sudo rmdir "$mount_point"
-    fi
-
-    # Wipe filesystem signatures from the device to clean it
-    echo "Wiping filesystem signatures from $device..."
-    sudo wipefs --all --force "$device"
-
-    echo "Disk $device has been cleaned and released."
-}
-
-echo "--- Cleaning up test disks ---"
-for disk in "${DISKS[@]}"; do
-    release_disk "$disk"
-done
-
-echo "--- Benchmark script finished ---"

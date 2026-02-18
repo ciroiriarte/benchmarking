@@ -67,7 +67,6 @@ REQUIRED_TESTS=("pts/build-linux-kernel")
 usage() {
   # Skip the shebang line by matching only lines starting with '# ' or bare '#'
   grep '^#[^!]' "$0" | cut -c3-
-  exit 0
 }
 
 # Function to install Phoronix Test Suite on supported distributions
@@ -116,22 +115,27 @@ install_packages() {
 # === openSUSE Repository Setup ===
 setup_opensuse_repo() {
     local repo_url
-    case "$VERSION_ID" in
-        *Tumbleweed*)
+    # Match on $ID (e.g. opensuse-tumbleweed, opensuse-slowroll, opensuse-leap)
+    # because $VERSION_ID is a snapshot date on Tumbleweed/Slowroll, not the OS name.
+    case "$ID" in
+        opensuse-tumbleweed)
             echo "Adding benchmark repo for Tumbleweed..."
             repo_url="https://download.opensuse.org/repositories/benchmark/openSUSE_Tumbleweed"
             ;;
-        *Slowroll*)
+        opensuse-slowroll)
             echo "Adding benchmark repo for Slowroll..."
             repo_url="https://download.opensuse.org/repositories/benchmark/openSUSE_Slowroll"
             ;;
-        "15.6")
-            echo "Adding benchmark repo for Leap 15.6..."
-            repo_url="https://download.opensuse.org/repositories/benchmark/15.6/"
-            gcc_extra="gcc12 gcc12-c++"
+        opensuse-leap)
+            echo "Adding benchmark repo for Leap $VERSION_ID..."
+            repo_url="https://download.opensuse.org/repositories/benchmark/${VERSION_ID}/"
+            # Leap 15.6 ships an old GCC; install gcc12 and set it as the default.
+            if [[ "$VERSION_ID" == "15.6" ]]; then
+                gcc_extra="gcc12 gcc12-c++"
+            fi
             ;;
         *)
-            echo "Unsupported openSUSE version: $VERSION_ID"
+            echo "Unsupported openSUSE variant: $ID"
             exit 1
             ;;
     esac
@@ -139,10 +143,9 @@ setup_opensuse_repo() {
     sudo zypper --gpg-auto-import-keys refresh
     sudo zypper install -y phoronix-test-suite
     sudo zypper install -y xfsprogs util-linux gcc gcc-c++ ${gcc_extra} make autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel
-    if [ "$VERSION_ID" == "15.6" ]
-    then
-    	sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
-	sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
+    if [[ "$ID" == "opensuse-leap" ]]; then
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
     fi
 }
 
@@ -213,6 +216,13 @@ SOCKETS=$(echo "$CPU_INFO" | grep -i "^socket(s):" | awk '{print $2}')
 CORES_PER_SOCKET=$(echo "$CPU_INFO" | grep -i "^core(s) per socket:" | awk '{print $4}')
 THREADS_PER_CORE=$(echo "$CPU_INFO" | grep -i "^thread(s) per core:" | awk '{print $4}')
 TOTAL_THREADS=$((SOCKETS * CORES_PER_SOCKET * THREADS_PER_CORE))
+
+if [[ "$TOTAL_THREADS" -le 0 ]]; then
+    echo "Error: Could not detect CPU topology from lscpu."
+    echo "       Detected: SOCKETS='$SOCKETS', CORES_PER_SOCKET='$CORES_PER_SOCKET', THREADS_PER_CORE='$THREADS_PER_CORE'"
+    echo "       Use -t <N> to specify the thread count manually."
+    exit 1
+fi
 
 echo "Sockets:          $SOCKETS"
 echo "Cores per socket: $CORES_PER_SOCKET"

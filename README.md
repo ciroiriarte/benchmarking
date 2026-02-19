@@ -3,7 +3,7 @@
 Benchmark scripts for infrastructure using synthetic tests via the
 [Phoronix Test Suite (PTS)](https://www.phoronix-test-suite.com/).
 Each script targets a single workload dimension — CPU-bound, memory-bound,
-network-bound, or I/O-bound — and produces results that can optionally be uploaded to
+network-bound, or disk I/O-bound — and produces results that can optionally be uploaded to
 [OpenBenchmarking.org](https://openbenchmarking.org/) for comparison across
 runs and systems.
 
@@ -20,7 +20,7 @@ Scripts work on both physical machines and virtual machines (vSphere, OpenStack)
 | `benchmark-cpu-pts.sh` | CPU-bound | `pts/build-linux-kernel` |
 | `benchmark-memory-pts.sh` | Memory-bound | `pts/stream`, `pts/ramspeed`, `pts/tinymembench`, `pts/cachebench` |
 | `benchmark-network-pts.sh` | Network-bound | `pts/network-loopback`, `pts/sockperf`, `pts/iperf`, `pts/netperf` |
-| `benchmark-storage-pts.sh` | I/O-bound | `iozone`, `fio`, `postmark`, `compilebench` |
+| `benchmark-storage-pts.sh` | Disk I/O-bound | `iozone`, `fio`, `postmark`, `compilebench` |
 
 ---
 

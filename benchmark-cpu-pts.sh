@@ -13,9 +13,11 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.1
+# Version: 1.2
 #
 # Changelog:
+#   - 2026-02-19: v1.2 - Replace hardcoded FORCE_TIMES_TO_RUN=1 with DEFAULT_RUNS=3
+#                        and expose -r/--runs option for statistical validity.
 #   - 2026-02-17: v1.1 - Fix --threads/--upload argument parsing (bad shift counts).
 #                      - Replace PTS_CONCURRENT_TEST_RUNS (wrong variable) with
 #                        PRESET_OPTIONS to pass thread count to the test profile.
@@ -32,6 +34,7 @@
 #
 # OPTIONS:
 #   -t, --threads <N>      Manually specify the number of threads to use (default: all available).
+#   -r, --runs <N>         Number of timed runs per test (default: 3). More runs improve statistical confidence.
 #   -u, --upload           Upload the benchmark results to OpenBenchmarking.org.
 #   -i, --result-id <identifier> Set the 'Test Identifier' for the upload (e.g., 'XCloud-cpuN-20250917')."
 #   -n, --result-name <name>     Set the 'Saved Test Name' for the upload (e.g., 'CPU type N on X Cloud provider')."
@@ -59,6 +62,9 @@ set -o pipefail
 # The Phoronix Test Suite test to run.
 # 'build-linux-kernel' is a good real-world, multi-threaded benchmark.
 REQUIRED_TESTS=("pts/build-linux-kernel")
+# Minimum number of timed runs required for statistical confidence.
+# A single run cannot reveal variance; 3 runs provide a baseline mean ± range.
+DEFAULT_RUNS=3
 # === End Configuration ===
 
 # === Helper Functions ===
@@ -154,6 +160,7 @@ setup_opensuse_repo() {
 # Default values
 UPLOAD_RESULTS=0
 MANUAL_THREADS=0
+TIMES_TO_RUN="$DEFAULT_RUNS"
 UPLOAD_ID="quick-benchmark-cpu-$(date +%Y-%m-%d-%H%M%S)"
 UPLOAD_NAME="Automated CPU benchmark run with quick-benchmark-cpu.sh"
 
@@ -162,6 +169,10 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         -t|--threads)
           MANUAL_THREADS="$2"
+          shift
+          ;;
+        -r|--runs)
+          TIMES_TO_RUN="$2"
           shift
           ;;
         -u|--upload)
@@ -245,7 +256,8 @@ else
 fi
 
 # Set up PTS environment variables for automated runs.
-export FORCE_TIMES_TO_RUN=1
+export FORCE_TIMES_TO_RUN="$TIMES_TO_RUN"
+echo "Runs per test: $FORCE_TIMES_TO_RUN"
 # PRESET_OPTIONS pre-answers the test profile's thread-count option, which
 # controls the -j N passed to make inside build-linux-kernel.
 # PTS_CONCURRENT_TEST_RUNS would only run N parallel test *instances*, which

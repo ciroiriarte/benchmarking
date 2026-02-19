@@ -8,9 +8,14 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.8
+# Version: 1.9
 #
 # Changelog:
+#   - 2026-02-19: v1.9 - Add per-test failure handling so a single test failure does not
+#                        orphan results from completed disks/tests; failed runs are reported
+#                        in a summary and the script exits non-zero if any failed.
+#                        Add capture_system_snapshot() to record kernel, OS, and per-disk
+#                        driver/scheduler/queue attributes before each run.
 #   - 2026-02-19: v1.8 - Replace device-name and rotational-flag detection with driver-based
 #                        detection via sysfs. Adds get_device_driver() which resolves the
 #                        host controller driver for SCSI-layer devices by walking the sysfs
@@ -83,6 +88,9 @@ if [[ "$UPLOAD_RESULTS" -eq 1 ]] && ([[ -z "$UPLOAD_NAME" ]] || [[ -z "$UPLOAD_I
     usage
     exit 1
 fi
+
+# Snapshot file is named after the result identifier when provided, or a timestamp otherwise.
+SNAPSHOT_FILE="${UPLOAD_ID:-storage-benchmark-$(date +%Y-%m-%d-%H%M%S)}-system-snapshot.txt"
 
 # === OS Detection and Package Installation ===
 install_packages() {
@@ -323,6 +331,71 @@ configure_io_scheduler() {
     echo "  Status:    OK — scheduler set to '${recommended}'."
 }
 
+# === System Snapshot ===
+
+# Capture system and per-disk storage metadata to a file for reproducibility.
+# Records kernel, OS, block device attributes (driver, type, scheduler, queue
+# depth, read-ahead, rotational flag) and memory state before testing begins.
+capture_system_snapshot() {
+    {
+        echo "=== Benchmark Configuration ==="
+        echo "Date:        $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        echo "Result ID:   ${UPLOAD_ID:-(not set)}"
+        echo "Result Name: ${UPLOAD_NAME:-(not set)}"
+        echo "Tests:       ${REQUIRED_TESTS[*]}"
+        echo "Disks:"
+        for disk in "${DISKS[@]}"; do
+            echo "  $disk"
+        done
+        echo ""
+
+        echo "=== Kernel ==="
+        uname -a
+        echo ""
+
+        echo "=== OS Release ==="
+        cat /etc/os-release
+        echo ""
+
+        echo "=== Block Devices ==="
+        lsblk -o NAME,SIZE,TYPE,ROTA,SCHED,RQ-SIZE,RA 2>/dev/null || lsblk
+        echo ""
+
+        echo "=== Per-disk Detail ==="
+        local device label dev_name qdir
+        for disk in "${DISKS[@]}"; do
+            device=$(echo "$disk" | cut -d';' -f1)
+            label=$(echo "$disk" | cut -d';' -f2)
+            dev_name=$(basename "$device")
+            qdir="/sys/block/${dev_name}/queue"
+            echo "--- $label ($device) ---"
+            echo "  driver:      $(get_device_driver "$dev_name")"
+            echo "  type:        $(detect_device_type "$device")"
+            if [[ -d "$qdir" ]]; then
+                echo "  scheduler:   $(sed 's/.*\[\([^]]*\)\].*/\1/' "${qdir}/scheduler" 2>/dev/null || echo n/a)"
+                echo "  nr_requests: $( [[ -r "${qdir}/nr_requests"  ]] && cat "${qdir}/nr_requests"  || echo n/a )"
+                echo "  read_ahead:  $( [[ -r "${qdir}/read_ahead_kb" ]] && cat "${qdir}/read_ahead_kb" || echo n/a ) kB"
+                echo "  rotational:  $( [[ -r "${qdir}/rotational"   ]] && cat "${qdir}/rotational"   || echo n/a )"
+            fi
+            echo ""
+        done
+
+        echo "=== Memory ==="
+        free -h
+        echo ""
+
+        echo "=== Load Average ==="
+        cat /proc/loadavg
+        echo ""
+
+        if command -v dmidecode &>/dev/null && [[ "$HAS_PRIVILEGE" -eq 1 ]]; then
+            echo "=== Storage Controllers (dmidecode) ==="
+            ${SUDO_CMD} dmidecode -t 8
+        fi
+    } > "$SNAPSHOT_FILE"
+    echo "System snapshot saved to: $(realpath "$SNAPSHOT_FILE")"
+}
+
 # === Release and Clean Up Disks ===
 # Defined here, before main execution, so the EXIT trap can always call it
 # regardless of where the script exits (including early failures via set -e).
@@ -397,6 +470,9 @@ for disk in "${DISKS[@]}"; do
 done
 echo "---------------------------------------------"
 
+# === System Snapshot ===
+capture_system_snapshot
+
 # === Prepare Disks ===
 prepare_disk() {
     local disk_entry=$1
@@ -423,6 +499,7 @@ done
 
 # === Run Tests on Each Disk ===
 RESULT_NAMES=()
+FAILED_RUNS=()
 
 run_tests_on_disk() {
     local disk_entry=$1
@@ -437,11 +514,17 @@ run_tests_on_disk() {
     export PTS_TEST_INSTALL_ROOT_PATH="$mount_point"
 
     echo "--- Installing tests on $label ($mount_point) ---"
+    local installed_tests=()
     for test_name in "${REQUIRED_TESTS[@]}"; do
-        phoronix-test-suite install "$test_name"
+        if phoronix-test-suite install "$test_name"; then
+            installed_tests+=("$test_name")
+        else
+            echo "WARNING: Failed to install $test_name on $label; skipping."
+            FAILED_RUNS+=("${label}/${test_name} (install)")
+        fi
     done
 
-    for test_name in "${REQUIRED_TESTS[@]}"; do
+    for test_name in "${installed_tests[@]}"; do
         echo "--- Running $test_name on $label ($mount_point) ---"
 
         # fio exposes an explicit disk-target option in its test profile.
@@ -451,15 +534,20 @@ run_tests_on_disk() {
             export PRESET_OPTIONS="pts/fio.auto-disk-mount-points=${mount_point}"
         fi
 
-        phoronix-test-suite batch-run "$test_name"
+        if ! phoronix-test-suite batch-run "$test_name"; then
+            echo "WARNING: $test_name failed on $label."
+            FAILED_RUNS+=("${label}/${test_name}")
+            unset PRESET_OPTIONS
+            continue
+        fi
 
         unset PRESET_OPTIONS
 
         # Find and rename the result directory for clarity
         local result_dir
-        result_dir=$(ls -td ~/.phoronix-test-suite/test-results/* | head -n 1)
-        
-        if [ -d "$result_dir" ]; then
+        result_dir=$(ls -td ~/.phoronix-test-suite/test-results/* 2>/dev/null | head -n 1)
+
+        if [[ -d "$result_dir" ]]; then
             local result_name="${label}_${test_name}_result"
             mv "$result_dir" "$HOME/.phoronix-test-suite/test-results/$result_name"
             RESULT_NAMES+=("$result_name")
@@ -513,3 +601,27 @@ for test_name in "${REQUIRED_TESTS[@]}"; do
         echo "No results found to compare for $test_name."
     fi
 done
+
+# === Results Summary ===
+echo ""
+echo "========================================"
+echo "    Benchmark Summary"
+echo "========================================"
+echo "Completed results: ${#RESULT_NAMES[@]}"
+for r in "${RESULT_NAMES[@]}"; do
+    echo "  [OK] $r"
+done
+
+if [[ ${#FAILED_RUNS[@]} -gt 0 ]]; then
+    echo ""
+    echo "Failed runs: ${#FAILED_RUNS[@]}"
+    for f in "${FAILED_RUNS[@]}"; do
+        echo "  [FAIL] $f"
+    done
+    echo ""
+    echo "ERROR: ${#FAILED_RUNS[@]} test run(s) failed. See output above for details."
+    exit 1
+fi
+
+echo ""
+echo "All tests completed successfully."

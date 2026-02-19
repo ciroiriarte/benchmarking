@@ -13,9 +13,12 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.3
+# Version: 1.4
 #
 # Changelog:
+#   - 2026-02-19: v1.4 - Add capture_system_snapshot() to save kernel, OS, CPU topology,
+#                        frequency scaling state, memory, and hardware info to a file
+#                        named after the result identifier before each run.
 #   - 2026-02-19: v1.3 - Add pre-run system checks: CPU governor (with optional
 #                        remediation), thermal state, system load, and VM steal time.
 #   - 2026-02-19: v1.2 - Replace hardcoded FORCE_TIMES_TO_RUN=1 with DEFAULT_RUNS=3
@@ -307,6 +310,54 @@ check_steal_time() {
     fi
 }
 
+# Capture system metadata to a file tied to the result identifier.
+# Provides an auditable environment record independent of PTS's own metadata,
+# covering kernel, OS, CPU topology, frequency scaling state, memory, and hardware info.
+capture_system_snapshot() {
+    local snapshot_file="${UPLOAD_ID}-system-snapshot.txt"
+    {
+        echo "=== Benchmark Configuration ==="
+        echo "Date:          $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        echo "Result ID:     $UPLOAD_ID"
+        echo "Result Name:   $UPLOAD_NAME"
+        echo "Tests:         ${REQUIRED_TESTS[*]}"
+        echo "Threads:       $THREADS_TO_USE"
+        echo "Runs per test: $TIMES_TO_RUN"
+        echo ""
+        echo "=== Kernel ==="
+        uname -a
+        echo ""
+        echo "=== OS Release ==="
+        cat /etc/os-release
+        echo ""
+        echo "=== CPU Topology ==="
+        lscpu
+        echo ""
+        echo "=== CPU Frequency Scaling ==="
+        if [[ -d "/sys/devices/system/cpu/cpu0/cpufreq" ]]; then
+            echo "governor:  $(sort -u /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor 2>/dev/null | tr '\n' ' ')"
+            echo "driver:    $(sort -u /sys/devices/system/cpu/cpu*/cpufreq/scaling_driver 2>/dev/null | tr '\n' ' ')"
+            echo "min_freq:  $(< /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq) kHz"
+            echo "max_freq:  $(< /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq) kHz"
+            echo "hw_max:    $(< /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq) kHz"
+        else
+            echo "cpufreq interface not available"
+        fi
+        echo ""
+        echo "=== Memory ==="
+        free -h
+        echo ""
+        echo "=== Load Average ==="
+        cat /proc/loadavg
+        echo ""
+        if command -v dmidecode &>/dev/null && [[ "$HAS_PRIVILEGE" -eq 1 ]]; then
+            echo "=== Processor (dmidecode) ==="
+            ${SUDO_CMD} dmidecode -t processor
+        fi
+    } > "$snapshot_file"
+    echo "System snapshot saved to: $(realpath "$snapshot_file")"
+}
+
 # === Main Script ===
 
 # Default values
@@ -434,6 +485,9 @@ if [[ "$UPLOAD_RESULTS" -eq 1 ]]; then
   echo "  Name: $TEST_RESULTS_NAME"
   echo "  Description: $TEST_RESULTS_DESCRIPTION"
 fi
+
+# === System Snapshot ===
+capture_system_snapshot
 
 # === Run Tests ===
 for TEST_NAME in "${REQUIRED_TESTS[@]}"; do

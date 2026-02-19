@@ -8,9 +8,14 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 2.0
+# Version: 2.1
 #
 # Changelog:
+#   - 2026-02-19: v2.1 - Remove hardcoded DISKS array. Target disks are now supplied
+#                        via --disk <device;label> (repeatable) or --disk-file <path>.
+#                        The disk file format is one device;label per line with #
+#                        comments and blank lines ignored. The script exits with a
+#                        usage error when no disks are provided.
 #   - 2026-02-19: v2.0 - Add SSD steady-state preconditioning via two full sequential
 #                        write passes (fio, 128 KiB, qdepth=32) before each disk is
 #                        formatted and tested. Enabled by default; skip with
@@ -52,13 +57,16 @@ set -e
 set -o pipefail
 
 # === Configuration ===
-# WARNING: ALL DATA ON THESE DISKS WILL BE PERMANENTLY ERASED.
-DISKS=(
-    "/dev/vdb;NVMe_Replica3"
-    "/dev/vdc;NVMe_EC32"
-    "/dev/vdd;HDD_Replica3"
-    "/dev/vde;HDD_EC32"
-)
+# WARNING: ALL DATA ON THE TARGET DISKS WILL BE PERMANENTLY ERASED.
+# Target disks are supplied at runtime via --disk or --disk-file (see usage).
+# Each entry uses the format:  <block_device>;<label>
+# The label names the mount point (/mnt/<label>) and result files.
+# Example (equivalent inline flags or disk-file lines):
+#   /dev/vdb;NVMe_Replica3
+#   /dev/vdc;NVMe_EC32
+#   /dev/vdd;HDD_Replica3
+#   /dev/vde;HDD_EC32
+DISKS=()
 REQUIRED_TESTS=("iozone" "fio" "postmark" "compilebench")
 TESTUSER=$(whoami)
 
@@ -70,10 +78,21 @@ PRECONDITIONING_ENABLED=1
 
 # === Function to Display Usage ===
 usage() {
-    echo "Usage: $0 [options]"
+    echo "Usage: $0 --disk <dev;label> [--disk <dev;label> ...] [options]"
+    echo "       $0 --disk-file <path> [options]"
+    echo
+    echo "Disk target options (at least one disk is required):"
+    echo "  --disk <device;label>      Add a target disk. May be repeated for multiple disks."
+    echo "                             <device> is the block device path (e.g. /dev/vdb)."
+    echo "                             <label>  is a short name used for the mount point and"
+    echo "                             result files (e.g. NVMe_Replica3)."
+    echo "                             Example: --disk /dev/vdb;NVMe_Replica3"
+    echo "  --disk-file <path>         Read disk entries from a file (one device;label per"
+    echo "                             line). Lines starting with # and blank lines are"
+    echo "                             ignored. May be combined with --disk."
     echo
     echo "Options:"
-    echo "  --upload                   Flag to enable uploading results to openbenchmarking.org."
+    echo "  --upload                   Upload results to OpenBenchmarking.org."
     echo "  --result-name <name>       Set the 'Saved Test Name' for the upload (e.g., 'My Server NVMe vs HDD')."
     echo "  --result-id <identifier>   Set the 'Test Identifier' for the upload (e.g., 'Q3-2025-Storage-Test')."
     echo "  --skip-preconditioning     Skip the SSD steady-state preconditioning passes."
@@ -84,14 +103,38 @@ usage() {
     echo "                             a previous run, or when the drive is already conditioned."
     echo "  --help                     Display this help message."
     echo
-    echo "Example: $0 --upload --result-name \"Production Server Test\" --result-id \"Prod-Config-V1\""
-    echo "Example: $0 --skip-preconditioning --result-id \"Rerun-Config-V1\""
+    echo "Examples:"
+    echo "  $0 --disk /dev/vdb;NVMe_Replica3 --disk /dev/vdc;NVMe_EC32 \\"
+    echo "     --disk /dev/vdd;HDD_Replica3  --disk /dev/vde;HDD_EC32"
+    echo
+    echo "  $0 --disk-file disks.conf --upload \\"
+    echo "     --result-name \"Ceph NVMe vs HDD\" --result-id \"ceph-dc1-q1-2026\""
+    echo
+    echo "  $0 --disk /dev/vdb;NVMe_Replica3 --skip-preconditioning"
+}
+
+# Read disk entries from a file into the DISKS array.
+# Format: one <device>;<label> per line; lines starting with # and blank lines
+# are ignored.
+load_disk_file() {
+    local file="$1"
+    if [[ ! -f "$file" ]]; then
+        echo "Error: disk file not found: $file"
+        exit 1
+    fi
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue   # skip comments
+        [[ -z "${line//[[:space:]]/}" ]] && continue  # skip blank lines
+        DISKS+=("$line")
+    done < "$file"
 }
 
 # === Argument Parsing ===
 UPLOAD_RESULTS=0
 while [[ "$#" -gt 0 ]]; do
     case $1 in
+        --disk) DISKS+=("$2"); shift ;;
+        --disk-file) load_disk_file "$2"; shift ;;
         --upload) UPLOAD_RESULTS=1 ;;
         --result-name) UPLOAD_NAME="$2"; shift ;;
         --result-id) UPLOAD_ID="$2"; shift ;;
@@ -101,6 +144,14 @@ while [[ "$#" -gt 0 ]]; do
     esac
     shift
 done
+
+# Require at least one target disk
+if [[ ${#DISKS[@]} -eq 0 ]]; then
+    echo "Error: no target disks specified. Use --disk or --disk-file."
+    echo
+    usage
+    exit 1
+fi
 
 # Check if upload is requested but details are missing
 if [[ "$UPLOAD_RESULTS" -eq 1 ]] && ([[ -z "$UPLOAD_NAME" ]] || [[ -z "$UPLOAD_ID" ]]); then

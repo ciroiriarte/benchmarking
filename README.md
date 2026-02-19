@@ -163,7 +163,7 @@ OPTIONS:
 ## benchmark-storage-pts.sh
 
 > **WARNING: This script is destructive. It formats and completely wipes all
-> data on every disk listed in the `DISKS` array.**
+> data on every target disk.**
 
 Benchmarks storage I/O across multiple disks sequentially. For each disk it
 runs the full suite of PTS storage tests covering latency, IOPS, throughput,
@@ -173,20 +173,40 @@ optionally be uploaded.
 
 ### Disk configuration
 
-Before running, edit the `DISKS` array at the top of the script to match the
-target system. Each entry is a `device;label` pair:
+Target disks are supplied at runtime via `--disk` or `--disk-file` — no
+editing of the script is required. Each entry uses the format
+`<block_device>;<label>`. The label names the mount point (`/mnt/<label>`)
+and result files. Disks are tested sequentially — one at a time — to avoid
+I/O contention.
+
+**Inline flags** (`--disk` may be repeated):
 
 ```bash
-DISKS=(
-    "/dev/vdb;NVMe_Replica3"
-    "/dev/vdc;NVMe_EC32"
-    "/dev/vdd;HDD_Replica3"
-    "/dev/vde;HDD_EC32"
-)
+./benchmark-storage-pts.sh \
+  --disk /dev/vdb;NVMe_Replica3 \
+  --disk /dev/vdc;NVMe_EC32 \
+  --disk /dev/vdd;HDD_Replica3 \
+  --disk /dev/vde;HDD_EC32
 ```
 
-Labels are used to name mount points (`/mnt/<label>`) and result files.
-Disks are tested sequentially — one disk at a time — to avoid I/O contention.
+**Disk file** (one `device;label` per line; `#` comments and blank lines are
+ignored):
+
+```
+# Storage benchmark disk list
+/dev/vdb;NVMe_Replica3
+/dev/vdc;NVMe_EC32
+
+/dev/vdd;HDD_Replica3
+/dev/vde;HDD_EC32
+```
+
+```bash
+./benchmark-storage-pts.sh --disk-file disks.conf
+```
+
+Both sources may be combined in the same invocation. The script exits with a
+usage error when no disks are provided.
 
 ### SSD steady-state preconditioning
 
@@ -212,7 +232,12 @@ two full sequential write passes per disk before testing begins.
 ### Usage
 
 ```
-./benchmark-storage-pts.sh [OPTIONS]
+./benchmark-storage-pts.sh --disk <dev;label> [--disk <dev;label> ...] [OPTIONS]
+./benchmark-storage-pts.sh --disk-file <path> [OPTIONS]
+
+Disk target options (at least one required):
+  --disk <device;label>        Add a target disk (repeatable).
+  --disk-file <path>           Read disk entries from a file.
 
 OPTIONS:
   --upload                     Upload results to OpenBenchmarking.org
@@ -225,16 +250,19 @@ OPTIONS:
 ### Examples
 
 ```bash
-# Run storage tests (no upload) — preconditioning enabled by default
-./benchmark-storage-pts.sh
+# Run with inline disk flags
+./benchmark-storage-pts.sh \
+  --disk /dev/vdb;NVMe_Replica3 \
+  --disk /dev/vdd;HDD_Replica3
 
-# Run and upload results
-./benchmark-storage-pts.sh --upload \
+# Run from a disk file and upload results
+./benchmark-storage-pts.sh --disk-file disks.conf --upload \
   --result-name "Ceph NVMe vs HDD - Q1 2026" \
   --result-id "ceph-dc1-q1-2026"
 
 # Skip preconditioning for a quick re-run immediately after a previous run
-./benchmark-storage-pts.sh --skip-preconditioning \
+./benchmark-storage-pts.sh --disk-file disks.conf \
+  --skip-preconditioning \
   --result-id "ceph-dc1-q1-2026-rerun"
 ```
 
@@ -284,7 +312,7 @@ installed and registered as the default compiler via `update-alternatives`.
    included in snapshots.
 3. Note the guest device names assigned to the extra disks (typically
    `/dev/sdb`, `/dev/sdc`, … or `/dev/vdb`, `/dev/vdc`, … depending on the
-   controller type). Update the `DISKS` array in `benchmark-storage-pts.sh`.
+   controller type). Pass them to the script via `--disk` or `--disk-file`.
 4. Install a supported guest OS, configure SSH access, and clone this
    repository.
 
@@ -300,8 +328,8 @@ installed and registered as the default compiler via `update-alternatives`.
    openstack server add volume <instance-id> <volume-id>
    ```
 
-3. Identify the device names inside the guest (e.g. via `lsblk`) and update
-   the `DISKS` array in `benchmark-storage-pts.sh`.
+3. Identify the device names inside the guest (e.g. via `lsblk`) and pass
+   them to the script via `--disk` or `--disk-file`.
 4. Clone this repository on the instance and run the desired script.
 
 ---

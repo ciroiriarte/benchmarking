@@ -11,6 +11,8 @@
 # Version: 1.6
 #
 # Changelog:
+#   - 2026-02-19: v1.7 - Change recommended scheduler for SSD from mq-deadline to none;
+#                        SSD has no seek penalty and scheduler overhead distorts measurements.
 #   - 2026-02-19: v1.6 - Add device type detection (NVMe/SSD/HDD via sysfs) and
 #                        automatic I/O scheduler configuration per device before testing.
 #   - 2026-02-17: v1.5 - Fix tests running on OS disk instead of target disks.
@@ -203,14 +205,14 @@ detect_device_type() {
 }
 
 # Return the recommended I/O scheduler for a given device type.
-# NVMe has its own internal command queue; bypassing the kernel scheduler (none)
-# eliminates unnecessary latency. Rotational and SATA SSD devices benefit from
-# mq-deadline, which provides deadline guarantees and merged request dispatch.
+# NVMe and SSD devices have no rotational seek penalty; bypassing the kernel
+# scheduler (none) eliminates overhead and measures raw device capability.
+# HDDs still benefit from mq-deadline's seek reordering and deadline guarantees.
 recommended_scheduler() {
     case "$1" in
-        nvme)    echo "none" ;;
-        ssd|hdd) echo "mq-deadline" ;;
-        *)       echo "mq-deadline" ;;
+        nvme|ssd) echo "none" ;;
+        hdd)      echo "mq-deadline" ;;
+        *)        echo "mq-deadline" ;;
     esac
 }
 

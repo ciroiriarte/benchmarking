@@ -8,9 +8,11 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.5
+# Version: 1.6
 #
 # Changelog:
+#   - 2026-02-19: v1.6 - Add device type detection (NVMe/SSD/HDD via sysfs) and
+#                        automatic I/O scheduler configuration per device before testing.
 #   - 2026-02-17: v1.5 - Fix tests running on OS disk instead of target disks.
 #                      - Replace non-existent PTS_TEST_DIR_OVERRIDE with
 #                        PTS_TEST_INSTALL_ROOT_PATH (real PTS variable).
@@ -147,6 +149,117 @@ setup_opensuse_repo() {
     fi
 }
 
+# === Device Detection and I/O Scheduler Configuration ===
+
+# Detect whether the script can make privileged system changes.
+# Sets HAS_PRIVILEGE=1 and SUDO_CMD if running as root or passwordless sudo is available.
+SUDO_CMD=""
+HAS_PRIVILEGE=0
+detect_privileges() {
+    if [[ "$EUID" -eq 0 ]]; then
+        HAS_PRIVILEGE=1
+    elif sudo -n true 2>/dev/null; then
+        HAS_PRIVILEGE=1
+        SUDO_CMD="sudo"
+    else
+        HAS_PRIVILEGE=0
+        echo "INFO: Not running as root and no passwordless sudo available."
+        echo "      I/O schedulers will not be configured automatically."
+    fi
+}
+
+# Detect the storage device type from kernel sysfs attributes.
+# Outputs: nvme | ssd | hdd | unknown
+detect_device_type() {
+    local device="$1"
+    local dev_name
+    dev_name=$(basename "$device")
+
+    # NVMe: device name prefix is the most reliable indicator (nvme0n1, nvme1n1, etc.)
+    if [[ "$dev_name" == nvme* ]]; then
+        echo "nvme"
+        return
+    fi
+
+    # Check sysfs transport attribute, present on some virtio-nvme configurations.
+    local transport_file="/sys/block/${dev_name}/device/transport"
+    if [[ -f "$transport_file" ]] && grep -qi "nvme" "$transport_file" 2>/dev/null; then
+        echo "nvme"
+        return
+    fi
+
+    # Fall back to the rotational flag: 0 = SSD/NVMe-like, 1 = spinning HDD.
+    local rotational_file="/sys/block/${dev_name}/queue/rotational"
+    if [[ ! -f "$rotational_file" ]]; then
+        echo "unknown"
+        return
+    fi
+
+    if [[ "$(< "$rotational_file")" -eq 0 ]]; then
+        echo "ssd"
+    else
+        echo "hdd"
+    fi
+}
+
+# Return the recommended I/O scheduler for a given device type.
+# NVMe has its own internal command queue; bypassing the kernel scheduler (none)
+# eliminates unnecessary latency. Rotational and SATA SSD devices benefit from
+# mq-deadline, which provides deadline guarantees and merged request dispatch.
+recommended_scheduler() {
+    case "$1" in
+        nvme)    echo "none" ;;
+        ssd|hdd) echo "mq-deadline" ;;
+        *)       echo "mq-deadline" ;;
+    esac
+}
+
+# Detect the device type, log it, and automatically set the recommended I/O
+# scheduler. Warns without changing if the scheduler interface is unavailable
+# or the script lacks the required privileges.
+configure_io_scheduler() {
+    local device="$1"
+    local dev_name
+    dev_name=$(basename "$device")
+    local scheduler_file="/sys/block/${dev_name}/queue/scheduler"
+
+    if [[ ! -f "$scheduler_file" ]]; then
+        echo "  INFO: I/O scheduler interface not available for $device; skipping."
+        return
+    fi
+
+    local device_type
+    device_type=$(detect_device_type "$device")
+    local recommended
+    recommended=$(recommended_scheduler "$device_type")
+    # The active scheduler is shown in brackets, e.g. "[mq-deadline] none kyber bfq"
+    local current
+    current=$(sed 's/.*\[\([^]]*\)\].*/\1/' "$scheduler_file")
+
+    echo "  Device:    $device"
+    echo "  Type:      $device_type"
+    echo "  Scheduler: current=${current}  recommended=${recommended}"
+
+    if [[ "$current" == "$recommended" ]]; then
+        echo "  Status:    OK (no change needed)"
+        return
+    fi
+
+    if [[ "$HAS_PRIVILEGE" -eq 0 ]]; then
+        echo "  Status:    WARNING — insufficient privileges; proceeding with '${current}'."
+        return
+    fi
+
+    if ! grep -qw "$recommended" "$scheduler_file"; then
+        echo "  Status:    WARNING — '${recommended}' unavailable for $device."
+        echo "             Available: $(< "$scheduler_file")"
+        return
+    fi
+
+    echo "$recommended" | ${SUDO_CMD} tee "$scheduler_file" > /dev/null
+    echo "  Status:    OK — scheduler set to '${recommended}'."
+}
+
 # === Release and Clean Up Disks ===
 # Defined here, before main execution, so the EXIT trap can always call it
 # regardless of where the script exits (including early failures via set -e).
@@ -209,6 +322,17 @@ N
 N
 N
 EOF
+
+# === Pre-run Device Configuration ===
+echo "--- Detecting device types and configuring I/O schedulers ---"
+detect_privileges
+for disk in "${DISKS[@]}"; do
+    device=$(echo "$disk" | cut -d';' -f1)
+    label=$(echo "$disk" | cut -d';' -f2)
+    echo "--- $label ($device) ---"
+    configure_io_scheduler "$device"
+done
+echo "---------------------------------------------"
 
 # === Prepare Disks ===
 prepare_disk() {

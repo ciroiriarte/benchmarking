@@ -188,6 +188,27 @@ DISKS=(
 Labels are used to name mount points (`/mnt/<label>`) and result files.
 Disks are tested sequentially — one disk at a time — to avoid I/O contention.
 
+### SSD steady-state preconditioning
+
+SSDs and NVMe drives perform significantly faster when in a rested or
+fresh-out-of-box state than under sustained load. Measuring from a rested
+state produces results that are not reproducible across repeated runs and
+that overstate real-world performance.
+
+To produce stable, comparable results the script writes across the full device
+twice before formatting it (two sequential passes, 128 KiB blocks, queue
+depth 32). This drives the device through its garbage-collection and
+wear-levelling cycle so that subsequent measurements reflect steady-state
+performance.
+
+Preconditioning is **enabled by default** and skipped automatically for HDD
+and unknown device types. It can be disabled with `--skip-preconditioning`
+when re-running tests immediately after a previous run (the drive is already
+conditioned) or when turnaround time matters more than strict reproducibility.
+
+Note that preconditioning time scales with drive capacity — plan for roughly
+two full sequential write passes per disk before testing begins.
+
 ### Usage
 
 ```
@@ -197,19 +218,24 @@ OPTIONS:
   --upload                     Upload results to OpenBenchmarking.org
   --result-name <name>         Display name for the upload (required with --upload)
   --result-id <id>             Test identifier for the upload (required with --upload)
+  --skip-preconditioning       Skip steady-state preconditioning passes (see above)
   --help                       Show help
 ```
 
 ### Examples
 
 ```bash
-# Run storage tests (no upload)
+# Run storage tests (no upload) — preconditioning enabled by default
 ./benchmark-storage-pts.sh
 
 # Run and upload results
 ./benchmark-storage-pts.sh --upload \
   --result-name "Ceph NVMe vs HDD - Q1 2026" \
   --result-id "ceph-dc1-q1-2026"
+
+# Skip preconditioning for a quick re-run immediately after a previous run
+./benchmark-storage-pts.sh --skip-preconditioning \
+  --result-id "ceph-dc1-q1-2026-rerun"
 ```
 
 ---

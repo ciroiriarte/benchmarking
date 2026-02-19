@@ -8,9 +8,15 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.9
+# Version: 2.0
 #
 # Changelog:
+#   - 2026-02-19: v2.0 - Add SSD steady-state preconditioning via two full sequential
+#                        write passes (fio, 128 KiB, qdepth=32) before each disk is
+#                        formatted and tested. Enabled by default; skip with
+#                        --skip-preconditioning. HDD and unknown device types are
+#                        always skipped. fio added as a system-level dependency so it
+#                        is available before PTS installs its own copy.
 #   - 2026-02-19: v1.9 - Add per-test failure handling so a single test failure does not
 #                        orphan results from completed disks/tests; failed runs are reported
 #                        in a summary and the script exits non-zero if any failed.
@@ -56,17 +62,30 @@ DISKS=(
 REQUIRED_TESTS=("iozone" "fio" "postmark" "compilebench")
 TESTUSER=$(whoami)
 
+# Perform two sequential full-drive write passes on SSD/NVMe/virtual devices
+# before formatting and testing. This moves the drive from a rested/fresh state
+# to steady state so that results are reproducible across repeated runs.
+# Set to 0 or pass --skip-preconditioning to disable.
+PRECONDITIONING_ENABLED=1
+
 # === Function to Display Usage ===
 usage() {
     echo "Usage: $0 [options]"
     echo
     echo "Options:"
-    echo "  --upload                 Flag to enable uploading results to openbenchmarking.org."
-    echo "  --result-name <name>     Set the 'Saved Test Name' for the upload (e.g., 'My Server NVMe vs HDD')."
-    echo "  --result-id <identifier> Set the 'Test Identifier' for the upload (e.g., 'Q3-2025-Storage-Test')."
-    echo "  --help                   Display this help message."
+    echo "  --upload                   Flag to enable uploading results to openbenchmarking.org."
+    echo "  --result-name <name>       Set the 'Saved Test Name' for the upload (e.g., 'My Server NVMe vs HDD')."
+    echo "  --result-id <identifier>   Set the 'Test Identifier' for the upload (e.g., 'Q3-2025-Storage-Test')."
+    echo "  --skip-preconditioning     Skip the SSD steady-state preconditioning passes."
+    echo "                             Preconditioning is on by default: it writes across"
+    echo "                             the full device twice to move SSDs/NVMe from a rested"
+    echo "                             state to steady state before measurement begins."
+    echo "                             Use this flag when re-running tests immediately after"
+    echo "                             a previous run, or when the drive is already conditioned."
+    echo "  --help                     Display this help message."
     echo
     echo "Example: $0 --upload --result-name \"Production Server Test\" --result-id \"Prod-Config-V1\""
+    echo "Example: $0 --skip-preconditioning --result-id \"Rerun-Config-V1\""
 }
 
 # === Argument Parsing ===
@@ -76,6 +95,7 @@ while [[ "$#" -gt 0 ]]; do
         --upload) UPLOAD_RESULTS=1 ;;
         --result-name) UPLOAD_NAME="$2"; shift ;;
         --result-id) UPLOAD_ID="$2"; shift ;;
+        --skip-preconditioning) PRECONDITIONING_ENABLED=0 ;;
         --help) usage; exit 0 ;;
         *) echo "Unknown parameter passed: $1"; usage; exit 1 ;;
     esac
@@ -100,13 +120,13 @@ install_packages() {
             rocky|rhel|centos)
                 echo "Detected Rocky Linux or RHEL-based system"
                 sudo dnf install -y epel-release
-                sudo dnf install -y phoronix-test-suite xfsprogs util-linux
+                sudo dnf install -y phoronix-test-suite xfsprogs util-linux fio
                 ;;
             ubuntu|debian)
                 echo "Detected Ubuntu or Debian-based system"
                 sudo apt-get update
                 # util-linux provides wipefs
-                sudo apt-get install -y phoronix-test-suite xfsprogs util-linux || {
+                sudo apt-get install -y phoronix-test-suite xfsprogs util-linux fio || {
                     echo "Phoronix Test Suite not found in repo, attempting fallback install..."
                     wget -O /tmp/phoronix.deb https://phoronix-test-suite.com/releases/repo/pts.debian/files/phoronix-test-suite_10.8.4_all.deb
                     sudo dpkg -i /tmp/phoronix.deb
@@ -157,7 +177,7 @@ setup_opensuse_repo() {
     esac
     sudo zypper ar -f -p 90 "$repo_url" benchmark
     sudo zypper --gpg-auto-import-keys refresh
-    sudo zypper install -y phoronix-test-suite xfsprogs util-linux gcc gcc-c++ ${gcc_extra} make autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel libaio-devel python
+    sudo zypper install -y phoronix-test-suite xfsprogs util-linux fio gcc gcc-c++ ${gcc_extra} make autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel libaio-devel python
     if [[ "$ID" == "opensuse-leap" ]]; then
         sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
@@ -396,6 +416,62 @@ capture_system_snapshot() {
     echo "System snapshot saved to: $(realpath "$SNAPSHOT_FILE")"
 }
 
+# === SSD Steady-State Pre-conditioning ===
+
+# Write across the full device twice to move it from a rested or fresh-out-of-box
+# state to steady state before measurement begins. This follows the preconditioning
+# methodology described in the SNIA Solid State Storage Performance Test
+# Specification (SSS PTS) and Brendan Gregg's Active Benchmarking guidelines.
+#
+# Two full sequential write passes (128 KiB blocks, queue depth 32) are used:
+#   - Pass 1 clears any idle caches and triggers the drive's garbage-collection cycle.
+#   - Pass 2 confirms the drive has stabilised under sustained write pressure.
+#
+# HDDs are skipped: rotational media does not enter a rested state in the same
+# way and a full sequential fill on a large HDD can add many hours to the run.
+# Devices with unknown type are also skipped to avoid unintended long writes.
+#
+# Preconditioning writes directly to the raw block device before mkfs so the
+# entire LBA space is covered regardless of filesystem overhead. Requires root
+# or passwordless sudo and the system fio binary (installed as a package).
+precondition_device() {
+    local disk_entry="$1"
+    local device label device_type
+    device=$(echo "$disk_entry" | cut -d';' -f1)
+    label=$(echo "$disk_entry" | cut -d';' -f2)
+    device_type=$(detect_device_type "$device")
+
+    echo "--- Pre-conditioning $label ($device, type=$device_type) ---"
+
+    case "$device_type" in
+        hdd)
+            echo "  Skipped: HDD — sequential fills do not meaningfully move HDDs to steady state"
+            return
+            ;;
+        unknown)
+            echo "  Skipped: device type unknown — cannot determine if preconditioning is safe"
+            return
+            ;;
+    esac
+
+    if [[ "$HAS_PRIVILEGE" -eq 0 ]]; then
+        echo "  Skipped: insufficient privileges to write to raw block device"
+        return
+    fi
+
+    echo "  Pass 1/2: sequential write (128 KiB blocks, qdepth=32)..."
+    ${SUDO_CMD} fio --name=precond-seq1 --filename="$device" \
+        --rw=write --bs=128k --ioengine=libaio --iodepth=32 \
+        --direct=1 --output=/dev/null
+
+    echo "  Pass 2/2: sequential write (128 KiB blocks, qdepth=32)..."
+    ${SUDO_CMD} fio --name=precond-seq2 --filename="$device" \
+        --rw=write --bs=128k --ioengine=libaio --iodepth=32 \
+        --direct=1 --output=/dev/null
+
+    echo "  Pre-conditioning complete for $label."
+}
+
 # === Release and Clean Up Disks ===
 # Defined here, before main execution, so the EXIT trap can always call it
 # regardless of where the script exits (including early failures via set -e).
@@ -472,6 +548,22 @@ echo "---------------------------------------------"
 
 # === System Snapshot ===
 capture_system_snapshot
+
+# === SSD Steady-State Pre-conditioning ===
+if [[ "$PRECONDITIONING_ENABLED" -eq 1 ]]; then
+    if ! command -v fio &>/dev/null; then
+        echo "WARNING: fio not found — skipping pre-conditioning."
+        echo "         Install fio as a system package, or re-run after package installation."
+    else
+        echo "--- Pre-conditioning disks for steady state ---"
+        for disk in "${DISKS[@]}"; do
+            precondition_device "$disk"
+        done
+        echo "---------------------------------------------"
+    fi
+else
+    echo "--- Pre-conditioning skipped (--skip-preconditioning) ---"
+fi
 
 # === Prepare Disks ===
 prepare_disk() {

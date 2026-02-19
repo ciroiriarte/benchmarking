@@ -13,9 +13,13 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.6
+# Version: 1.7
 #
 # Changelog:
+#   - 2026-02-19: v1.7 - Replace set -e abort-on-failure in the run loop with per-test
+#                        error handling so that a single test failure does not orphan
+#                        results from completed tests. Failed tests are reported in a
+#                        summary and the script exits non-zero when any test fails.
 #   - 2026-02-19: v1.6 - Add one unmeasured warmup run per test before timed runs to
 #                        bring CPU caches and branch predictor to steady state.
 #   - 2026-02-19: v1.5 - Expand default test suite to cover integer, floating point,
@@ -519,6 +523,10 @@ capture_system_snapshot
 # results and can be safely removed after each per-test warmup run.
 WARMUP_RESULT_ID="warmup-${UPLOAD_ID}"
 
+# Accumulates names of tests that failed so the run loop can continue and
+# completed results are not orphaned.
+FAILED_TESTS=()
+
 # === Run Tests ===
 for TEST_NAME in "${REQUIRED_TESTS[@]}"; do
     echo -e "\n=== Starting CPU Benchmark ==="
@@ -526,19 +534,38 @@ for TEST_NAME in "${REQUIRED_TESTS[@]}"; do
 
     # Warmup run: execute the test once without recording results to bring CPU
     # caches and branch predictor to steady state before the timed runs begin.
+    # On failure, skip the timed run for this test and move on to the next one.
     echo "--- Warmup run (result discarded) ---"
-    FORCE_TIMES_TO_RUN=1 TEST_RESULTS_NAME="$WARMUP_RESULT_ID" \
-        phoronix-test-suite batch-run "$TEST_NAME"
+    if ! FORCE_TIMES_TO_RUN=1 TEST_RESULTS_NAME="$WARMUP_RESULT_ID" \
+            phoronix-test-suite batch-run "$TEST_NAME"; then
+        echo "WARNING: Warmup run failed for $TEST_NAME; skipping timed run."
+        FAILED_TESTS+=("$TEST_NAME")
+        rm -rf "${HOME}/.phoronix-test-suite/test-results/${WARMUP_RESULT_ID}"
+        continue
+    fi
     rm -rf "${HOME}/.phoronix-test-suite/test-results/${WARMUP_RESULT_ID}"
 
     echo "--- Timed runs ($TIMES_TO_RUN) ---"
-    phoronix-test-suite batch-run "$TEST_NAME"
+    if ! phoronix-test-suite batch-run "$TEST_NAME"; then
+        echo "WARNING: Timed run failed for $TEST_NAME."
+        FAILED_TESTS+=("$TEST_NAME")
+    fi
 done
 
 # === Upload Results if Requested ===
+# Runs regardless of individual test failures to preserve results from
+# tests that completed successfully.
 if [[ "$UPLOAD_RESULTS" -eq 1 ]]; then
   echo "--- Uploading results to OpenBenchmarking.org ---"
   phoronix-test-suite upload-result "$UPLOAD_ID"
 fi
 
+# === Results Summary ===
 echo -e "\n=== Benchmark Complete ==="
+if [[ "${#FAILED_TESTS[@]}" -gt 0 ]]; then
+    echo "WARNING: ${#FAILED_TESTS[@]} test(s) failed:"
+    for t in "${FAILED_TESTS[@]}"; do
+        echo "  - $t"
+    done
+    exit 1
+fi

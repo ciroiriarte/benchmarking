@@ -13,9 +13,12 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.4
+# Version: 1.5
 #
 # Changelog:
+#   - 2026-02-19: v1.5 - Expand default test suite to cover integer, floating point,
+#                        cryptographic, compression, and branchy integer workloads.
+#                        Add -T/--tests option to override the test list at runtime.
 #   - 2026-02-19: v1.4 - Add capture_system_snapshot() to save kernel, OS, CPU topology,
 #                        frequency scaling state, memory, and hardware info to a file
 #                        named after the result identifier before each run.
@@ -38,22 +41,28 @@
 #   ./quick-benchmark-cpu.sh [OPTIONS]
 #
 # OPTIONS:
-#   -t, --threads <N>      Manually specify the number of threads to use (default: all available).
-#   -r, --runs <N>         Number of timed runs per test (default: 3). More runs improve statistical confidence.
-#   -u, --upload           Upload the benchmark results to OpenBenchmarking.org.
+#   -t, --threads <N>            Manually specify the number of threads to use (default: all available).
+#   -r, --runs <N>               Number of timed runs per test (default: 3). More runs improve statistical confidence.
+#   -T, --tests <t1,t2,...>      Comma-separated list of PTS test profiles to run.
+#                                Overrides the built-in default test suite.
+#                                (default: build-linux-kernel,compress-7zip,c-ray,openssl,stockfish)
+#   -u, --upload                 Upload the benchmark results to OpenBenchmarking.org.
 #   -i, --result-id <identifier> Set the 'Test Identifier' for the upload (e.g., 'XCloud-cpuN-20250917')."
 #   -n, --result-name <name>     Set the 'Saved Test Name' for the upload (e.g., 'CPU type N on X Cloud provider')."
-#   -h, --help             Display this help message and exit.
+#   -h, --help                   Display this help message and exit.
 #
 # EXAMPLES:
-#   # Run a benchmark using all available CPU threads.
-#   ./quick-benchmark-cpu.sh
+#   # Run the full default test suite using all available CPU threads.
+#   ./benchmark-cpu-pts.sh
+#
+#   # Run only two specific tests.
+#   ./benchmark-cpu-pts.sh --tests pts/compress-7zip,pts/openssl
 #
 #   # Run a benchmark using only 4 threads.
-#   ./quick-benchmark-cpu.sh -t 4
+#   ./benchmark-cpu-pts.sh -t 4
 #
 #   # Run a benchmark and upload the results with a custom name and description.
-#   ./quick-benchmark-cpu.sh --upload --result-id "XCloud-cpuN-20250917" --result-name "CPU type N on X Cloud provider"
+#   ./benchmark-cpu-pts.sh --upload --result-id "XCloud-cpuN-20250917" --result-name "CPU type N on X Cloud provider"
 #
 # DEPENDENCIES:
 #   - lscpu (from util-linux)
@@ -64,9 +73,20 @@ set -e
 set -o pipefail
 
 # === Configuration ===
-# The Phoronix Test Suite test to run.
-# 'build-linux-kernel' is a good real-world, multi-threaded benchmark.
-REQUIRED_TESTS=("pts/build-linux-kernel")
+# Default set of PTS CPU test profiles.  Each profile targets a distinct workload
+# class so that results characterise the CPU across multiple stress patterns.
+#   pts/build-linux-kernel  integer, multi-threaded compilation
+#   pts/compress-7zip       integer, multi-threaded LZMA compression
+#   pts/c-ray               floating point, ray tracing
+#   pts/openssl             cryptographic operations (AES, RSA, SHA)
+#   pts/stockfish           branchy integer, chess-engine search
+REQUIRED_TESTS=(
+    "pts/build-linux-kernel"
+    "pts/compress-7zip"
+    "pts/c-ray"
+    "pts/openssl"
+    "pts/stockfish"
+)
 # Minimum number of timed runs required for statistical confidence.
 # A single run cannot reveal variance; 3 runs provide a baseline mean ± range.
 DEFAULT_RUNS=3
@@ -372,6 +392,10 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         -t|--threads)
           MANUAL_THREADS="$2"
+          shift
+          ;;
+        -T|--tests)
+          IFS=',' read -ra REQUIRED_TESTS <<< "$2"
           shift
           ;;
         -r|--runs)

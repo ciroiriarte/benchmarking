@@ -18,9 +18,17 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.1
+# Version: 1.2
 #
 # Changelog:
+#   - 2026-02-19: v1.2 - Add interface auto-detection (ip route get) and
+#                        --interface/--nic-speed/--streams options. Detect NIC
+#                        speed from sysfs and scale the parallel stream count for
+#                        both the multi-stream TCP test and the UDP-1G test.
+#                        pts/iperf UDP-1G target is 1 Gbps per stream, so
+#                        stream count = link speed in Gbps matches line rate exactly
+#                        (e.g. 25G→25 streams, 100G→100 streams); 10-stream minimum
+#                        for links up to 10 GbE. Overridable with --streams.
 #   - 2026-02-19: v1.1 - Add pre-run system checks (CPU governor, thermals, system
 #                        load, VM steal time) mirroring the other benchmark scripts.
 #                        Add capture_system_snapshot() recording kernel, OS, CPU
@@ -39,9 +47,18 @@
 # OPTIONS:
 #   -s, --server <address>       IP or hostname of the peer for iperf3/netperf tests.
 #                                If omitted, only standalone tests are run.
+#   -I, --interface <iface>      Network interface used for peer tests (e.g. eth0, bond0).
+#                                Auto-detected from the routing table when --server is
+#                                provided. Needed for NIC speed detection.
+#   --nic-speed <Mbps>           Override the detected NIC speed in Mbps (e.g. 100000 for
+#                                100 GbE). Use when the interface does not report speed
+#                                via sysfs, which is common with virtual NICs such as
+#                                virtio-net and vmxnet3.
+#   --streams <N>                Override the parallel stream count for the multi-stream
+#                                TCP test. Auto-scaled from NIC speed when not specified.
 #   -u, --upload                 Upload results to OpenBenchmarking.org.
 #   -i, --result-id <id>         Test identifier (e.g. 'dc1-vm1-to-vm2').
-#   -n, --result-name <name>     Display name (e.g. 'VM1 to VM2 - 10GbE vSwitch').
+#   -n, --result-name <name>     Display name (e.g. 'VM1 to VM2 - 100GbE vSwitch').
 #   -h, --help                   Display this help message and exit.
 #
 # NOTES:
@@ -59,15 +76,21 @@
 #   # Run standalone loopback and socket tests only.
 #   ./benchmark-network-pts.sh
 #
-#   # Run the full suite including peer-to-peer tests.
+#   # Run peer tests; interface and speed auto-detected from routing table.
 #   ./benchmark-network-pts.sh --server 192.168.100.10 \
 #     --result-id "dc1-vm1-to-vm2" \
 #     --result-name "VM1 to VM2 - Ceph cluster network"
 #
-#   # Run the full suite and upload results.
-#   ./benchmark-network-pts.sh --server 192.168.100.10 --upload \
+#   # Run on a 100 GbE link where the virtual NIC does not report speed via sysfs.
+#   ./benchmark-network-pts.sh --server 192.168.100.10 \
+#     --interface eth0 --nic-speed 100000 \
 #     --result-id "dc1-vm1-to-vm2" \
-#     --result-name "VM1 to VM2 - 10GbE vSwitch"
+#     --result-name "VM1 to VM2 - 100GbE vSwitch"
+#
+#   # Run with a manually specified stream count and upload results.
+#   ./benchmark-network-pts.sh --server 192.168.100.10 --streams 64 --upload \
+#     --result-id "dc1-vm1-to-vm2" \
+#     --result-name "VM1 to VM2 - 400GbE"
 #
 # DEPENDENCIES:
 #   - gcc, make, autoconf, automake, libtool (to build sockperf, iperf3, netperf)
@@ -430,6 +453,41 @@ capture_system_snapshot() {
     echo "System snapshot saved to: $(realpath "$snapshot_file")"
 }
 
+# === High-speed NIC Support Functions ===
+
+# Return the speed of a network interface in Mbps, read from sysfs.
+# Outputs the integer speed, or an empty string when unavailable (no carrier,
+# virtual NIC that does not expose speed, or sysfs entry missing).
+# Use --nic-speed to override when the interface returns an empty result.
+detect_nic_speed() {
+    local iface="$1"
+    local speed_file="/sys/class/net/${iface}/speed"
+    [[ ! -r "$speed_file" ]] && return
+    local speed
+    speed=$(< "$speed_file")
+    # sysfs reports -1 when speed is unknown or there is no carrier.
+    [[ "$speed" =~ ^[0-9]+$ ]] && [[ "$speed" -gt 0 ]] && echo "$speed"
+}
+
+# Calculate the number of parallel streams for multi-stream tests (TCP and UDP).
+# pts/iperf UDP-1G sends 1 Gbps per stream, so stream count = link speed in Gbps
+# exactly matches the line rate for UDP. For TCP, more streams overcome the per-core
+# throughput ceiling (~10–20 Gbps per flow on modern kernels).
+# Formula: max(10, floor(speed_mbps / 1000)).
+# The floor keeps stream count proportional to actual link speed; the 10-stream
+# minimum ensures meaningful multi-queue coverage on links up to 10 GbE.
+# Examples: 1G→10, 10G→10, 25G→25, 40G→40, 100G→100, 400G→400.
+# Use --streams to override when the default is not appropriate.
+calc_parallel_streams() {
+    local speed_mbps="$1"
+    if [[ ! "$speed_mbps" =~ ^[0-9]+$ ]] || [[ "$speed_mbps" -le 0 ]]; then
+        echo "10"   # unknown speed: safe default
+        return
+    fi
+    local speed_gbps=$(( speed_mbps / 1000 ))
+    echo $(( speed_gbps > 10 ? speed_gbps : 10 ))
+}
+
 # Run a single network test configuration.
 # Arguments:
 #   $1 - PTS test profile (e.g. pts/iperf)
@@ -464,6 +522,9 @@ run_network_test() {
 # Default values
 UPLOAD_RESULTS=0
 SERVER_ADDRESS=""
+INTERFACE=""          # auto-detected from routing table when --server is set
+NIC_SPEED_MBPS=""     # empty = auto-detect; override with --nic-speed for virtual NICs
+OVERRIDE_STREAMS=""   # empty = auto-scale from NIC speed; override with --streams
 UPLOAD_ID="benchmark-network-$(date +%Y-%m-%d-%H%M%S)"
 UPLOAD_NAME="Automated network benchmark run with benchmark-network-pts.sh"
 
@@ -472,6 +533,18 @@ while [[ "$#" -gt 0 ]]; do
     case $1 in
         -s|--server)
             SERVER_ADDRESS="$2"
+            shift
+            ;;
+        -I|--interface)
+            INTERFACE="$2"
+            shift
+            ;;
+        --nic-speed)
+            NIC_SPEED_MBPS="$2"
+            shift
+            ;;
+        --streams)
+            OVERRIDE_STREAMS="$2"
             shift
             ;;
         -u|--upload)
@@ -573,20 +646,47 @@ if [[ -n "$SERVER_ADDRESS" ]]; then
     echo "--- Running peer-to-peer tests against ${SERVER_ADDRESS} ---"
     echo "    Ensure iperf3 -s -D and netserver are running on the remote host."
 
+    # Auto-detect egress interface and NIC speed for the path to the server.
+    if [[ -z "$INTERFACE" ]]; then
+        INTERFACE=$(ip route get "$SERVER_ADDRESS" 2>/dev/null \
+            | grep -oP 'dev \K\S+' | head -1)
+        if [[ -n "$INTERFACE" ]]; then
+            echo "Auto-detected egress interface: ${INTERFACE}"
+        else
+            echo "WARNING: Could not determine egress interface; NIC speed detection skipped."
+        fi
+    fi
+
+    if [[ -z "$NIC_SPEED_MBPS" ]] && [[ -n "$INTERFACE" ]]; then
+        NIC_SPEED_MBPS=$(detect_nic_speed "$INTERFACE")
+        if [[ -n "$NIC_SPEED_MBPS" ]]; then
+            echo "Detected NIC speed: ${NIC_SPEED_MBPS} Mbps (interface: ${INTERFACE})"
+        else
+            echo "WARNING: NIC speed not available for ${INTERFACE} (virtual NIC or no carrier)."
+            echo "         Use --nic-speed <Mbps> to set it manually. Falling back to 1 Gbps defaults."
+        fi
+    fi
+
+    MULTI_STREAMS="${OVERRIDE_STREAMS:-$(calc_parallel_streams "$NIC_SPEED_MBPS")}"
+    echo "Parallel streams: ${MULTI_STREAMS}  (UDP-1G target is per stream; total ≈ ${MULTI_STREAMS} Gbps)"
+
     # TCP bulk throughput — single stream baseline.
     run_network_test "pts/iperf" \
         "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=TCP;pts/iperf.parallel=1;pts/iperf.duration=60" \
         "iperf_tcp_1stream"
 
-    # TCP bulk throughput — 10 parallel streams to saturate multi-queue NICs.
+    # TCP bulk throughput — multiple parallel streams scaled to NIC line rate.
+    # A single TCP stream cannot saturate >10 GbE links due to per-core throughput
+    # limits; the stream count is computed by calc_parallel_streams().
     run_network_test "pts/iperf" \
-        "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=TCP;pts/iperf.parallel=10;pts/iperf.duration=60" \
-        "iperf_tcp_10streams"
+        "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=TCP;pts/iperf.parallel=${MULTI_STREAMS};pts/iperf.duration=60" \
+        "iperf_tcp_${MULTI_STREAMS}streams"
 
-    # UDP at 1 Gbps target — measures packet loss and jitter under bounded load.
+    # UDP throughput — pts/iperf UDP-1G target is 1 Gbps per stream; scaling
+    # the parallel stream count raises the aggregate target to cover the link rate.
     run_network_test "pts/iperf" \
-        "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=UDP-1G;pts/iperf.parallel=1;pts/iperf.duration=60" \
-        "iperf_udp_1g"
+        "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=UDP-1G;pts/iperf.parallel=${MULTI_STREAMS};pts/iperf.duration=60" \
+        "iperf_udp_${MULTI_STREAMS}streams"
 
     # TCP throughput — client to server (same direction as iperf TCP above,
     # but measured by netperf for cross-tool validation).

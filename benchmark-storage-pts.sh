@@ -8,9 +8,16 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 2.1
+# Version: 2.2
 #
 # Changelog:
+#   - 2026-02-19: v2.2 - Replace fragile mtime-based result directory detection
+#                        with a before/after directory diff. Snapshots the results
+#                        directory before each batch-run and uses comm(1) to find
+#                        directories created during that specific run. If multiple
+#                        new directories appear (race condition or PTS artefact),
+#                        all candidates are logged and the most recently modified
+#                        one is selected with a warning.
 #   - 2026-02-19: v2.1 - Remove hardcoded DISKS array. Target disks are now supplied
 #                        via --disk <device;label> (repeatable) or --disk-file <path>.
 #                        The disk file format is one device;label per line with #
@@ -677,6 +684,11 @@ run_tests_on_disk() {
             export PRESET_OPTIONS="pts/fio.auto-disk-mount-points=${mount_point}"
         fi
 
+        # Snapshot existing result directories before the run so we can
+        # identify exactly which directory was created by this batch-run call.
+        local results_before
+        results_before=$(ls -d ~/.phoronix-test-suite/test-results/*/ 2>/dev/null | sort)
+
         if ! phoronix-test-suite batch-run "$test_name"; then
             echo "WARNING: $test_name failed on $label."
             FAILED_RUNS+=("${label}/${test_name}")
@@ -686,17 +698,31 @@ run_tests_on_disk() {
 
         unset PRESET_OPTIONS
 
-        # Find and rename the result directory for clarity
-        local result_dir
-        result_dir=$(ls -td ~/.phoronix-test-suite/test-results/* 2>/dev/null | head -n 1)
+        # Identify directories created during this run by diffing before/after.
+        local results_after
+        results_after=$(ls -d ~/.phoronix-test-suite/test-results/*/ 2>/dev/null | sort)
+
+        local new_dirs=()
+        mapfile -t new_dirs < <(comm -13 <(echo "$results_before") <(echo "$results_after"))
+
+        local result_dir=""
+        if [[ ${#new_dirs[@]} -eq 0 ]]; then
+            echo "Warning: no new result directory detected for $test_name on $label"
+        elif [[ ${#new_dirs[@]} -gt 1 ]]; then
+            echo "Warning: ${#new_dirs[@]} new directories detected after $test_name; expected 1."
+            echo "         Candidates:"
+            printf '           %s\n' "${new_dirs[@]}"
+            echo "         Picking the most recently modified one."
+            result_dir=$(ls -td "${new_dirs[@]}" | head -n 1)
+        else
+            result_dir="${new_dirs[0]}"
+        fi
 
         if [[ -d "$result_dir" ]]; then
             local result_name="${label}_${test_name}_result"
             mv "$result_dir" "$HOME/.phoronix-test-suite/test-results/$result_name"
             RESULT_NAMES+=("$result_name")
             echo "Result for $test_name on $label saved as: $result_name"
-        else
-            echo "Warning: No result directory found for $test_name on $label"
         fi
     done
 

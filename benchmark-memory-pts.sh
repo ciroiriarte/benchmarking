@@ -13,9 +13,18 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.0
+# Version: 1.1
 #
 # Changelog:
+#   - 2026-02-19: v1.1 - Add pre-run system checks (governor, thermals, load,
+#                        steal time, Transparent Huge Pages) mirroring the CPU
+#                        benchmark script. Add capture_system_snapshot() recording
+#                        kernel, OS, CPU topology, frequency scaling, NUMA topology,
+#                        THP state, DIMM info (dmidecode -t 17), memory, and load
+#                        average. Add per-test install and run failure handling so
+#                        a single failure does not abort the script or orphan results;
+#                        failed tests are reported in a summary and the script exits
+#                        non-zero if any failed.
 #   - 2026-02-17: v1.0 - Initial release.
 #
 #
@@ -59,6 +68,14 @@ set -o pipefail
 # access pattern) are exercised automatically because batch-setup is configured
 # with RunAllTestCombinations=Y.
 REQUIRED_TESTS=("pts/stream" "pts/ramspeed" "pts/tinymembench" "pts/cachebench")
+# Recommended CPU frequency governor for benchmarking; minimises frequency-scaling variance.
+RECOMMENDED_GOVERNOR="performance"
+# CPU temperature threshold above which results may be affected by thermal throttling (millidegrees Celsius).
+CPU_TEMP_WARN_THRESHOLD_MC=80000
+# Warn if the 1-minute load average exceeds (available CPU count × this multiplier).
+LOAD_WARN_MULTIPLIER=1
+# VM CPU steal time percentage above which hypervisor contention may distort results.
+STEAL_TIME_WARN_THRESHOLD=5
 # === End Configuration ===
 
 # === Helper Functions ===
@@ -147,6 +164,240 @@ setup_opensuse_repo() {
     fi
 }
 
+# === Pre-run Check Functions ===
+
+# Detect whether the script has privileges to make system configuration changes.
+# Sets HAS_PRIVILEGE=1 and SUDO_CMD if running as root or passwordless sudo is available.
+SUDO_CMD=""
+HAS_PRIVILEGE=0
+detect_privileges() {
+    if [[ "$EUID" -eq 0 ]]; then
+        HAS_PRIVILEGE=1
+    elif sudo -n true 2>/dev/null; then
+        HAS_PRIVILEGE=1
+        SUDO_CMD="sudo"
+    else
+        HAS_PRIVILEGE=0
+        echo "INFO: Not running as root and no passwordless sudo available."
+        echo "      Pre-run checks will warn only; no system changes will be made."
+    fi
+}
+
+# Prompt the user for confirmation before applying a system change.
+# Automatically declines in non-interactive (piped/redirected) mode.
+confirm_change() {
+    local prompt="$1"
+    if [[ ! -t 0 ]]; then
+        echo "INFO: Non-interactive mode; skipping change."
+        return 1
+    fi
+    local response
+    read -r -p "$prompt [y/N]: " response
+    [[ "$response" =~ ^[Yy]$ ]]
+}
+
+# Check the CPU frequency governor on all CPUs and offer to set it to the recommended value.
+check_cpu_governor() {
+    if [[ ! -d "/sys/devices/system/cpu/cpu0/cpufreq" ]]; then
+        echo "INFO: cpufreq interface not available (VM or container); skipping governor check."
+        return
+    fi
+
+    local suboptimal_count=0
+    local gov_file gov
+    for gov_file in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+        gov=$(< "$gov_file")
+        if [[ "$gov" != "$RECOMMENDED_GOVERNOR" ]]; then
+            suboptimal_count=$(( suboptimal_count + 1 ))
+        fi
+    done
+
+    if [[ "$suboptimal_count" -eq 0 ]]; then
+        echo "OK: CPU governor is '$RECOMMENDED_GOVERNOR' on all CPUs."
+        return
+    fi
+
+    local current_govs
+    current_govs=$(sort -u /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor 2>/dev/null | tr '\n' ' ')
+    echo "WARNING: $suboptimal_count CPU(s) are not using the '$RECOMMENDED_GOVERNOR' governor."
+    echo "         Current governor(s): ${current_govs% }."
+    echo "         Frequency scaling may introduce variance in benchmark results."
+
+    if [[ "$HAS_PRIVILEGE" -eq 0 ]]; then
+        echo "         Insufficient privileges to change governor; proceeding with current settings."
+        return
+    fi
+
+    if confirm_change "Set CPU governor to '$RECOMMENDED_GOVERNOR' on all CPUs?"; then
+        for gov_file in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+            echo "$RECOMMENDED_GOVERNOR" | ${SUDO_CMD} tee "$gov_file" > /dev/null
+        done
+        echo "OK: CPU governor set to '$RECOMMENDED_GOVERNOR'."
+    else
+        echo "INFO: Keeping current governor; proceeding."
+    fi
+}
+
+# Warn if any thermal zone reports a temperature above the configured threshold.
+check_thermal() {
+    local temp_files=(/sys/class/thermal/thermal_zone*/temp)
+    if [[ ! -f "${temp_files[0]}" ]]; then
+        echo "INFO: Thermal sensors not available; skipping temperature check."
+        return
+    fi
+
+    local hot_zones=()
+    local temp_file temp
+    for temp_file in "${temp_files[@]}"; do
+        temp=$(< "$temp_file")
+        if [[ "$temp" -ge "$CPU_TEMP_WARN_THRESHOLD_MC" ]]; then
+            hot_zones+=("$(basename "$(dirname "$temp_file")"): $((temp / 1000))°C")
+        fi
+    done
+
+    if [[ "${#hot_zones[@]}" -eq 0 ]]; then
+        echo "OK: All thermal zones are below $((CPU_TEMP_WARN_THRESHOLD_MC / 1000))°C."
+    else
+        echo "WARNING: High temperatures detected; results may be affected by thermal throttling."
+        local zone
+        for zone in "${hot_zones[@]}"; do
+            echo "         $zone"
+        done
+    fi
+}
+
+# Warn if the 1-minute load average exceeds the available CPU count.
+check_system_load() {
+    local load_1min cpu_count
+    load_1min=$(cut -d' ' -f1 /proc/loadavg)
+    cpu_count=$(nproc)
+    if awk "BEGIN { exit !($load_1min > $cpu_count * $LOAD_WARN_MULTIPLIER) }"; then
+        echo "WARNING: 1-minute load average ($load_1min) exceeds CPU count ($cpu_count)."
+        echo "         Background activity may distort benchmark results."
+    else
+        echo "OK: System load ($load_1min) is within normal range for $cpu_count CPUs."
+    fi
+}
+
+# Warn if CPU steal time (sampled over 1 second) exceeds the configured threshold.
+# Steal time indicates the hypervisor is withholding CPU cycles from this VM.
+# On physical machines the value is expected to be 0.
+check_steal_time() {
+    local s1 s2
+    s1=$(grep '^cpu ' /proc/stat)
+    sleep 1
+    s2=$(grep '^cpu ' /proc/stat)
+    local steal_pct
+    steal_pct=$(awk -v s1="$s1" -v s2="$s2" '
+        BEGIN {
+            split(s1, a); split(s2, b)
+            delta_total = 0
+            for (i = 2; i <= length(a); i++) delta_total += b[i] - a[i]
+            delta_steal = b[9] - a[9]
+            printf "%.1f", (delta_total > 0) ? (delta_steal / delta_total) * 100 : 0
+        }')
+    if awk "BEGIN { exit !($steal_pct >= $STEAL_TIME_WARN_THRESHOLD) }"; then
+        echo "WARNING: CPU steal time is ${steal_pct}% (threshold: ${STEAL_TIME_WARN_THRESHOLD}%)."
+        echo "         The hypervisor may be withholding CPU time; results may be unreliable."
+    else
+        echo "OK: CPU steal time is ${steal_pct}% (below ${STEAL_TIME_WARN_THRESHOLD}% threshold)."
+    fi
+}
+
+# Warn if Transparent Huge Pages is set to 'always'.
+# In that mode the khugepaged background scanner can promote pages mid-benchmark,
+# adding noise to memory bandwidth and latency measurements.
+check_thp() {
+    local thp_file="/sys/kernel/mm/transparent_hugepage/enabled"
+    if [[ ! -f "$thp_file" ]]; then
+        echo "INFO: Transparent Huge Pages interface not available; skipping THP check."
+        return
+    fi
+    local thp_setting
+    thp_setting=$(sed 's/.*\[\([^]]*\)\].*/\1/' "$thp_file")
+    if [[ "$thp_setting" == "always" ]]; then
+        echo "WARNING: Transparent Huge Pages is set to 'always'."
+        echo "         The khugepaged scanner may promote pages during measurement,"
+        echo "         adding noise to memory bandwidth and latency results."
+        echo "         Consider: echo 'never' | sudo tee $thp_file"
+    else
+        echo "OK: Transparent Huge Pages is set to '${thp_setting}'."
+    fi
+}
+
+# Capture system and memory subsystem metadata to a file for reproducibility.
+# Records kernel, OS, CPU topology, frequency scaling state, NUMA topology,
+# Transparent Huge Pages state, DIMM information, memory, and load average.
+capture_system_snapshot() {
+    local snapshot_file="${UPLOAD_ID}-system-snapshot.txt"
+    {
+        echo "=== Benchmark Configuration ==="
+        echo "Date:        $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        echo "Result ID:   $UPLOAD_ID"
+        echo "Result Name: $UPLOAD_NAME"
+        echo "Tests:       ${REQUIRED_TESTS[*]}"
+        echo ""
+
+        echo "=== Kernel ==="
+        uname -a
+        echo ""
+
+        echo "=== OS Release ==="
+        cat /etc/os-release
+        echo ""
+
+        echo "=== CPU Topology ==="
+        lscpu
+        echo ""
+
+        echo "=== CPU Frequency Scaling ==="
+        if [[ -d "/sys/devices/system/cpu/cpu0/cpufreq" ]]; then
+            echo "governor:  $(sort -u /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor 2>/dev/null | tr '\n' ' ')"
+            echo "driver:    $(sort -u /sys/devices/system/cpu/cpu*/cpufreq/scaling_driver 2>/dev/null | tr '\n' ' ')"
+            echo "min_freq:  $(< /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq) kHz"
+            echo "max_freq:  $(< /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq) kHz"
+            echo "hw_max:    $(< /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq) kHz"
+        else
+            echo "cpufreq interface not available"
+        fi
+        echo ""
+
+        echo "=== NUMA Topology ==="
+        if command -v numactl &>/dev/null; then
+            numactl --hardware
+        else
+            echo "numactl not available; falling back to /proc/cpuinfo"
+            grep -E "^physical id|^core id|^cpu MHz" /proc/cpuinfo | head -40 || true
+        fi
+        echo ""
+
+        echo "=== Transparent Huge Pages ==="
+        local thp_file="/sys/kernel/mm/transparent_hugepage/enabled"
+        if [[ -f "$thp_file" ]]; then
+            echo "enabled: $(cat "$thp_file")"
+            [[ -f "/sys/kernel/mm/transparent_hugepage/defrag" ]] && \
+                echo "defrag:  $(cat /sys/kernel/mm/transparent_hugepage/defrag)"
+        else
+            echo "THP interface not available"
+        fi
+        echo ""
+
+        echo "=== Memory ==="
+        free -h
+        echo ""
+
+        echo "=== Load Average ==="
+        cat /proc/loadavg
+        echo ""
+
+        if command -v dmidecode &>/dev/null && [[ "$HAS_PRIVILEGE" -eq 1 ]]; then
+            echo "=== Memory Modules (dmidecode) ==="
+            ${SUDO_CMD} dmidecode -t 17
+        fi
+    } > "$snapshot_file"
+    echo "System snapshot saved to: $(realpath "$snapshot_file")"
+}
+
 # === Main Script ===
 
 # Default values
@@ -186,6 +437,16 @@ if ! command -v phoronix-test-suite &> /dev/null; then
     install_packages
 fi
 
+# === Pre-run System Checks ===
+echo "--- Pre-run System Checks ---"
+detect_privileges
+check_cpu_governor
+check_thermal
+check_system_load
+check_steal_time
+check_thp
+echo "------------------------------"
+
 # === Configure Phoronix Test Suite for Batch Mode ===
 # RunAllTestCombinations=Y (5th prompt) ensures every sub-option permutation
 # is exercised in a single batch-run call per test, without requiring
@@ -200,10 +461,20 @@ Y
 EOF
 
 # === Install Required Phoronix Tests ===
+FAILED_TESTS=()
+INSTALLED_TESTS=()
 for test_name in "${REQUIRED_TESTS[@]}"; do
     echo "Installing test: $test_name"
-    phoronix-test-suite install "$test_name"
+    if phoronix-test-suite install "$test_name"; then
+        INSTALLED_TESTS+=("$test_name")
+    else
+        echo "WARNING: Failed to install $test_name; skipping."
+        FAILED_TESTS+=("$test_name (install)")
+    fi
 done
+
+# === System Snapshot ===
+capture_system_snapshot
 
 # === Run Tests ===
 RESULT_NAMES=()
@@ -214,14 +485,19 @@ RESULT_NAMES=()
 export FORCE_TIMES_TO_RUN=1
 export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
 
-for test_name in "${REQUIRED_TESTS[@]}"; do
+for test_name in "${INSTALLED_TESTS[@]}"; do
     echo -e "\n=== Running memory benchmark: $test_name ==="
 
     # Name each result as <result-id>_<short-test-name> (strip leading 'pts/').
     local_name="${UPLOAD_ID}_${test_name##*/}"
     export TEST_RESULTS_NAME="$local_name"
 
-    phoronix-test-suite batch-run "$test_name"
+    if ! phoronix-test-suite batch-run "$test_name"; then
+        echo "WARNING: $test_name failed."
+        FAILED_TESTS+=("$test_name")
+        unset TEST_RESULTS_NAME
+        continue
+    fi
 
     RESULT_NAMES+=("$local_name")
     echo "Result saved as: $local_name"
@@ -241,4 +517,23 @@ if [[ "$UPLOAD_RESULTS" -eq 1 ]]; then
     echo "All uploads complete."
 fi
 
-echo -e "\n=== Memory benchmark complete ==="
+# === Results Summary ===
+echo -e "\n=== Memory Benchmark Summary ==="
+echo "Completed results: ${#RESULT_NAMES[@]}"
+for r in "${RESULT_NAMES[@]}"; do
+    echo "  [OK] $r"
+done
+
+if [[ ${#FAILED_TESTS[@]} -gt 0 ]]; then
+    echo ""
+    echo "Failed: ${#FAILED_TESTS[@]}"
+    for f in "${FAILED_TESTS[@]}"; do
+        echo "  [FAIL] $f"
+    done
+    echo ""
+    echo "ERROR: ${#FAILED_TESTS[@]} test(s) failed. See output above for details."
+    exit 1
+fi
+
+echo ""
+echo "All tests completed successfully."

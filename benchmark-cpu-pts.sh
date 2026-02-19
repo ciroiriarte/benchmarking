@@ -12,7 +12,7 @@
 # 		the test accordingly. It also provides an option to manually specify the number
 # 		of threads to use.
 #
-# Author: Ciro Iriarte <ciro.iriarte@millicom.com>
+# Author: Ciro Iriarte <ciro.iriarte@gmail.com>
 # Version: 1.7
 #
 # Changelog:

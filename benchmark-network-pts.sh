@@ -21,7 +21,7 @@
 #
 #              PTS is installed automatically on supported systems if not present.
 #
-# Author: Ciro Iriarte <ciro.iriarte@millicom.com>
+# Author: Ciro Iriarte <ciro.iriarte@gmail.com>
 # Version: 1.6
 #
 # Changelog:

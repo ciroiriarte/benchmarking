@@ -13,9 +13,14 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.1
+# Version: 1.2
 #
 # Changelog:
+#   - 2026-02-19: v1.2 - Remove FORCE_TIMES_TO_RUN=1. PTS DynamicRunCount is
+#                        enabled by default and reruns each test until the
+#                        coefficient of variation falls below ~3.5%, providing
+#                        statistical validity and rendering a fixed run count
+#                        unnecessary.
 #   - 2026-02-19: v1.1 - Add pre-run system checks (governor, thermals, load,
 #                        steal time, Transparent Huge Pages) mirroring the CPU
 #                        benchmark script. Add capture_system_snapshot() recording
@@ -479,10 +484,10 @@ capture_system_snapshot
 # === Run Tests ===
 RESULT_NAMES=()
 
-# Run each test once. Because RunAllTestCombinations=Y, a single batch-run
-# exercises all sub-options (e.g. Copy/Scale/Add/Triad for pts/stream) and
-# saves them together as one result set.
-export FORCE_TIMES_TO_RUN=1
+# PTS DynamicRunCount is enabled by default and runs each test repeatedly
+# until the coefficient of variation falls below the threshold (~3.5%),
+# providing both statistical validity and implicit warmup: if the first run
+# is an outlier it raises variance and triggers additional runs.
 export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
 
 for test_name in "${INSTALLED_TESTS[@]}"; do
@@ -505,7 +510,6 @@ done
 
 unset TEST_RESULTS_NAME
 unset TEST_RESULTS_DESCRIPTION
-unset FORCE_TIMES_TO_RUN
 
 # === Upload Results if Requested ===
 if [[ "$UPLOAD_RESULTS" -eq 1 ]]; then

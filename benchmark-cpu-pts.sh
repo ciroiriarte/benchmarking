@@ -13,9 +13,11 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.5
+# Version: 1.6
 #
 # Changelog:
+#   - 2026-02-19: v1.6 - Add one unmeasured warmup run per test before timed runs to
+#                        bring CPU caches and branch predictor to steady state.
 #   - 2026-02-19: v1.5 - Expand default test suite to cover integer, floating point,
 #                        cryptographic, compression, and branchy integer workloads.
 #                        Add -T/--tests option to override the test list at runtime.
@@ -513,11 +515,24 @@ fi
 # === System Snapshot ===
 capture_system_snapshot
 
+# Warmup result identifier: prefixed so it is clearly distinguishable from real
+# results and can be safely removed after each per-test warmup run.
+WARMUP_RESULT_ID="warmup-${UPLOAD_ID}"
+
 # === Run Tests ===
 for TEST_NAME in "${REQUIRED_TESTS[@]}"; do
-	echo -e "\n=== Starting CPU Benchmark ==="
-	echo "Test profile: $TEST_NAME"
-	phoronix-test-suite batch-run "$TEST_NAME"
+    echo -e "\n=== Starting CPU Benchmark ==="
+    echo "Test profile: $TEST_NAME"
+
+    # Warmup run: execute the test once without recording results to bring CPU
+    # caches and branch predictor to steady state before the timed runs begin.
+    echo "--- Warmup run (result discarded) ---"
+    FORCE_TIMES_TO_RUN=1 TEST_RESULTS_NAME="$WARMUP_RESULT_ID" \
+        phoronix-test-suite batch-run "$TEST_NAME"
+    rm -rf "${HOME}/.phoronix-test-suite/test-results/${WARMUP_RESULT_ID}"
+
+    echo "--- Timed runs ($TIMES_TO_RUN) ---"
+    phoronix-test-suite batch-run "$TEST_NAME"
 done
 
 # === Upload Results if Requested ===

@@ -4,23 +4,34 @@
 #
 # A script to benchmark network performance using the Phoronix Test Suite (PTS).
 #
-# Description: Runs a comprehensive set of network benchmarks in two modes:
+# Description: Runs a comprehensive set of network benchmarks in three modes:
 #
 #              Standalone (always run — no second machine required):
 #                pts/network-loopback - TCP stack throughput via loopback interface.
 #                pts/sockperf         - Socket API latency and throughput; starts
 #                                       its own server locally.
 #
-#              Peer (run when --server is provided):
+#              Peer/client (run when --server is provided):
 #                pts/iperf   - TCP/UDP bulk throughput with single and multi-stream.
 #                pts/netperf - TCP/UDP throughput and request-response latency.
+#
+#              Server (run with --server-mode on the remote host):
+#                Installs test binaries via PTS and starts iperf3 and netserver as
+#                local daemons, bound to a specific interface/IP or all interfaces.
 #
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.5
+# Version: 1.6
 #
 # Changelog:
+#   - 2026-02-19: v1.6 - Add --server-mode: installs pts/iperf and pts/netperf
+#                        to obtain compiled binaries, then starts iperf3 (-s) and
+#                        netserver as local server daemons. --interface accepts an
+#                        interface name (resolved to its primary IPv4) or a literal
+#                        IP address and passes it as the bind address to both daemons.
+#                        Omitting --interface binds to all interfaces. Both daemons
+#                        are stopped cleanly on SIGINT / SIGTERM.
 #   - 2026-02-19: v1.5 - Remove FORCE_TIMES_TO_RUN=1. None of the network test
 #                        profiles support DynamicRunCount; PTS falls back to the
 #                        static TimesToRun declared in each profile (pts/iperf: 3,
@@ -68,25 +79,33 @@
 # OPTIONS:
 #   -s, --server <address>       IP or hostname of the peer for iperf3/netperf tests.
 #                                If omitted, only standalone tests are run.
-#   -I, --interface <iface>      Network interface used for peer tests (e.g. eth0, bond0).
-#                                Auto-detected from the routing table when --server is
-#                                provided. Needed for NIC speed detection.
-#   --nic-speed <Mbps>           Override the detected NIC speed in Mbps (e.g. 100000 for
-#                                100 GbE). Use when the interface does not report speed
-#                                via sysfs, which is common with virtual NICs such as
-#                                virtio-net and vmxnet3.
+#                                Mutually exclusive with --server-mode.
+#   --server-mode                Run as the server side: install test binaries and
+#                                start iperf3 and netserver as local daemons. Stops
+#                                both daemons cleanly on Ctrl+C / SIGTERM.
+#                                Mutually exclusive with --server.
+#   -I, --interface <iface|IP>   In client mode: egress interface for NIC speed
+#                                detection; auto-detected from the routing table.
+#                                In server mode: interface name (e.g. eth0, bond0)
+#                                or literal IP address to bind both daemons to.
+#                                If omitted in server mode, daemons bind to all
+#                                interfaces (0.0.0.0).
+#   --nic-speed <Mbps>           Override the detected NIC speed in Mbps (e.g. 100000
+#                                for 100 GbE). Client mode only. Use when the
+#                                interface does not report speed via sysfs, which is
+#                                common with virtual NICs such as virtio-net, vmxnet3.
 #   --streams <N>                Override the parallel stream count for the multi-stream
-#                                TCP test. Auto-scaled from NIC speed when not specified.
-#   -u, --upload                 Upload results to OpenBenchmarking.org.
-#   -i, --result-id <id>         Test identifier (e.g. 'dc1-vm1-to-vm2').
+#                                TCP test. Client mode only. Auto-scaled from NIC speed
+#                                when not specified.
+#   -u, --upload                 Upload results to OpenBenchmarking.org. Client mode only.
+#   -i, --result-id <id>         Test identifier (e.g. 'dc1-vm1-to-vm2'). Client mode only.
 #   -n, --result-name <name>     Display name (e.g. 'VM1 to VM2 - 100GbE vSwitch').
+#                                Client mode only.
 #   -h, --help                   Display this help message and exit.
 #
 # NOTES:
-#   Before running peer tests, start the server daemons on the remote host:
-#
-#     iperf3 server:   iperf3 -s -D
-#     netperf server:  netserver
+#   The same script is used on both sides of a peer test. Run it with --server-mode
+#   on the remote host first, then run the client on the local host with --server.
 #
 #   pts/network-loopback uses nc (netcat). On RHEL/Rocky Linux the default nc
 #   is ncat (from nmap), whose -d flag semantics differ from OpenBSD netcat.
@@ -94,21 +113,30 @@
 #   disregard the loopback result; the remaining tests are unaffected.
 #
 # EXAMPLES:
-#   # Run standalone loopback and socket tests only.
+#   # On the remote host: start server daemons bound to a specific interface.
+#   ./benchmark-network-pts.sh --server-mode --interface eth0
+#
+#   # On the remote host: bind to a specific IP instead of interface name.
+#   ./benchmark-network-pts.sh --server-mode --interface 192.168.100.10
+#
+#   # On the remote host: bind to all interfaces (no --interface).
+#   ./benchmark-network-pts.sh --server-mode
+#
+#   # On the local host: run standalone tests only (no second machine needed).
 #   ./benchmark-network-pts.sh
 #
-#   # Run peer tests; interface and speed auto-detected from routing table.
+#   # On the local host: run full peer suite; interface and speed auto-detected.
 #   ./benchmark-network-pts.sh --server 192.168.100.10 \
 #     --result-id "dc1-vm1-to-vm2" \
 #     --result-name "VM1 to VM2 - Ceph cluster network"
 #
-#   # Run on a 100 GbE link where the virtual NIC does not report speed via sysfs.
+#   # On the local host: 100 GbE link where the virtual NIC does not report speed.
 #   ./benchmark-network-pts.sh --server 192.168.100.10 \
 #     --interface eth0 --nic-speed 100000 \
 #     --result-id "dc1-vm1-to-vm2" \
 #     --result-name "VM1 to VM2 - 100GbE vSwitch"
 #
-#   # Run with a manually specified stream count and upload results.
+#   # On the local host: manually specified stream count, upload results.
 #   ./benchmark-network-pts.sh --server 192.168.100.10 --streams 64 --upload \
 #     --result-id "dc1-vm1-to-vm2" \
 #     --result-name "VM1 to VM2 - 400GbE"
@@ -619,6 +647,107 @@ check_tcp_buffers() {
     echo ""
 }
 
+# Locate a binary by name: prefer the system PATH, then fall back to any binary
+# compiled by PTS under ~/.phoronix-test-suite/installed-tests/pts/.
+find_binary() {
+    local name="$1"
+    if command -v "$name" &>/dev/null; then
+        command -v "$name"
+        return 0
+    fi
+    local pts_bin
+    pts_bin=$(find "${HOME}/.phoronix-test-suite/installed-tests/pts/" \
+        -name "$name" -type f 2>/dev/null | head -1)
+    [[ -n "$pts_bin" ]] && echo "$pts_bin" && return 0
+    return 1
+}
+
+# Start iperf3 and netserver as local server daemons for peer benchmark tests.
+# --interface (interface name or IP) controls the bind address for both daemons.
+# Both processes are stopped cleanly on SIGINT / SIGTERM.
+run_server_mode() {
+    echo "=== Network benchmark server mode ==="
+
+    # Resolve bind address from --interface: interface name → primary IPv4,
+    # or a literal IP address passed through unchanged.
+    local bind_addr=""
+    if [[ -n "$INTERFACE" ]]; then
+        if [[ "$INTERFACE" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            bind_addr="$INTERFACE"
+            echo "Bind address: ${bind_addr} (explicit IP)"
+        else
+            bind_addr=$(ip addr show "$INTERFACE" 2>/dev/null \
+                | grep -oP '(?<=inet )\d+\.\d+\.\d+\.\d+' | head -1)
+            if [[ -z "$bind_addr" ]]; then
+                echo "ERROR: Could not determine IPv4 address for interface '${INTERFACE}'."
+                echo "       Check available interfaces with: ip addr"
+                exit 1
+            fi
+            echo "Bind address: ${bind_addr} (interface: ${INTERFACE})"
+        fi
+    else
+        echo "Bind address: all interfaces (use --interface to restrict)"
+    fi
+
+    # Install PTS and build dependencies if not already present.
+    if ! command -v phoronix-test-suite &>/dev/null; then
+        install_packages
+    fi
+
+    # Install pts/iperf and pts/netperf to obtain compiled server binaries.
+    echo "--- Installing test binaries ---"
+    phoronix-test-suite install pts/iperf
+    phoronix-test-suite install pts/netperf
+
+    # Locate binaries (system PATH or PTS-compiled).
+    local iperf3_bin netserver_bin
+    iperf3_bin=$(find_binary "iperf3") || {
+        echo "ERROR: iperf3 binary not found after installing pts/iperf."
+        exit 1
+    }
+    netserver_bin=$(find_binary "netserver") || {
+        echo "ERROR: netserver binary not found after installing pts/netperf."
+        exit 1
+    }
+    echo "iperf3:    ${iperf3_bin}"
+    echo "netserver: ${netserver_bin}"
+
+    # Build argument lists for each daemon.
+    local iperf3_args=("-s")
+    [[ -n "$bind_addr" ]] && iperf3_args+=("-B" "$bind_addr")
+
+    local netserver_args=()
+    [[ -n "$bind_addr" ]] && netserver_args+=("-L" "$bind_addr")
+
+    # Start iperf3 in the background (no -D so we own the PID).
+    echo "--- Starting iperf3 server (port 5201) ---"
+    "$iperf3_bin" "${iperf3_args[@]}" &
+    local iperf3_pid=$!
+
+    # Start netserver — it daemonizes itself; clean up via pkill on exit.
+    echo "--- Starting netserver (port 12865) ---"
+    "$netserver_bin" "${netserver_args[@]}"
+
+    echo ""
+    echo "=== Server daemons running ==="
+    [[ -n "$bind_addr" ]] \
+        && echo "  Bind address : ${bind_addr}" \
+        || echo "  Bind address : all interfaces (0.0.0.0)"
+    echo "  iperf3       : port 5201   (PID ${iperf3_pid})"
+    echo "  netserver    : port 12865"
+    echo ""
+    echo "Press Ctrl+C to stop."
+
+    # Stop both daemons cleanly on exit.
+    trap 'echo; echo "Stopping server daemons..."; \
+          kill "${iperf3_pid}" 2>/dev/null; \
+          pkill -x netserver 2>/dev/null; \
+          echo "Done."; exit 0' SIGINT SIGTERM
+
+    # Block until iperf3 exits (or the trap fires).
+    wait "$iperf3_pid"
+}
+
 # Return 0 if the named PTS test was successfully installed, 1 otherwise.
 # Used to skip run steps when their install failed.
 is_installed() {
@@ -652,8 +781,9 @@ check_server_reachable() {
 
 # Default values
 UPLOAD_RESULTS=0
+SERVER_MODE=0
 SERVER_ADDRESS=""
-INTERFACE=""          # auto-detected from routing table when --server is set
+INTERFACE=""          # client: auto-detected from routing table; server: bind address
 NIC_SPEED_MBPS=""     # empty = auto-detect; override with --nic-speed for virtual NICs
 OVERRIDE_STREAMS=""   # empty = auto-scale from NIC speed; override with --streams
 UPLOAD_ID="benchmark-network-$(date +%Y-%m-%d-%H%M%S)"
@@ -665,6 +795,9 @@ while [[ "$#" -gt 0 ]]; do
         -s|--server)
             SERVER_ADDRESS="$2"
             shift
+            ;;
+        --server-mode)
+            SERVER_MODE=1
             ;;
         -I|--interface)
             INTERFACE="$2"
@@ -701,6 +834,19 @@ while [[ "$#" -gt 0 ]]; do
     esac
     shift
 done
+
+# --server-mode and --server are mutually exclusive.
+if [[ "$SERVER_MODE" -eq 1 ]] && [[ -n "$SERVER_ADDRESS" ]]; then
+    echo "ERROR: --server-mode and --server are mutually exclusive."
+    usage
+    exit 1
+fi
+
+# === Server Mode ===
+if [[ "$SERVER_MODE" -eq 1 ]]; then
+    run_server_mode
+    exit 0
+fi
 
 # === Install packages if not already present ===
 if ! command -v phoronix-test-suite &> /dev/null; then

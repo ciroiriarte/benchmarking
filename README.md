@@ -104,28 +104,41 @@ OPTIONS:
 
 ## benchmark-network-pts.sh
 
-Benchmarks network performance in two modes depending on whether a remote peer
-is available. Standalone tests always run on a single host; peer tests require
-server daemons started on a second machine.
+Benchmarks network performance in three modes. Standalone tests always run on a
+single host. Peer tests require server daemons on a second machine — the same
+script starts those daemons via `--server-mode`.
 
 | Test | Mode | Measures |
 |---|---|---|
 | `pts/network-loopback` | Standalone | TCP stack throughput through loopback (kernel buffer performance) |
 | `pts/sockperf` | Standalone | Socket API latency (ping-pong, under-load) and throughput |
-| `pts/iperf` | Peer | TCP bulk throughput (1 and 10 streams), UDP at 1 Gbps target |
+| `pts/iperf` | Peer | TCP bulk throughput (single and multi-stream scaled to link speed), UDP throughput |
 | `pts/netperf` | Peer | TCP/UDP throughput (both directions) and request-response latency |
 
-### Peer server setup
+Parallel stream count and UDP target bandwidth scale automatically with NIC line
+rate (e.g. 25 streams on 25 GbE, 100 streams on 100 GbE). Override with
+`--streams` or supply the speed manually with `--nic-speed` for virtual NICs that
+do not expose speed via sysfs.
 
-Before running with `--server`, start the server daemons on the remote host:
+### Server setup
+
+Run the script with `--server-mode` on the remote host. It installs the test
+binaries via PTS and starts `iperf3` and `netserver` as local daemons. Use
+`--interface` to bind to a specific interface or IP; omit it to bind to all
+interfaces.
 
 ```bash
-# iperf3 server (runs in background)
-iperf3 -s -D
+# Bind to a specific interface
+./benchmark-network-pts.sh --server-mode --interface eth0
 
-# netperf server
-netserver
+# Bind to a specific IP
+./benchmark-network-pts.sh --server-mode --interface 192.168.100.10
+
+# Bind to all interfaces
+./benchmark-network-pts.sh --server-mode
 ```
+
+Stop the daemons with **Ctrl+C** when the benchmark run is complete.
 
 ### Usage
 
@@ -135,27 +148,48 @@ netserver
 OPTIONS:
   -s, --server <address>       IP or hostname of the peer for iperf3/netperf tests.
                                If omitted, only standalone tests are run.
+                               Mutually exclusive with --server-mode.
+  --server-mode                Start iperf3 and netserver as local server daemons.
+                               Mutually exclusive with --server.
+  -I, --interface <iface|IP>   Client: egress interface for NIC speed detection.
+                               Server: interface name or IP to bind daemons to.
+  --nic-speed <Mbps>           Override NIC speed (e.g. 100000 for 100 GbE).
+                               Client mode only. Useful for virtual NICs.
+  --streams <N>                Override parallel stream count. Client mode only.
   -u, --upload                 Upload results to OpenBenchmarking.org
   -i, --result-id <id>         Test identifier (e.g. 'dc1-vm1-to-vm2')
-  -n, --result-name <name>     Display name (e.g. 'VM1 to VM2 - 10GbE vSwitch')
+  -n, --result-name <name>     Display name (e.g. 'VM1 to VM2 - 100GbE vSwitch')
   -h, --help                   Show help
 ```
 
 ### Examples
 
 ```bash
+# --- Server host ---
+
+# Start server daemons bound to a specific interface
+./benchmark-network-pts.sh --server-mode --interface eth0
+
+# --- Client host ---
+
 # Run standalone tests only (no second machine needed)
 ./benchmark-network-pts.sh
 
-# Run full suite including peer tests
+# Run full suite; interface and stream count auto-detected
 ./benchmark-network-pts.sh --server 192.168.100.10 \
   --result-id "dc1-vm1-to-vm2" \
   --result-name "VM1 to VM2 - Ceph cluster network"
 
-# Run and upload results
+# 100 GbE link where the virtual NIC does not report speed via sysfs
+./benchmark-network-pts.sh --server 192.168.100.10 \
+  --interface eth0 --nic-speed 100000 \
+  --result-id "dc1-vm1-to-vm2" \
+  --result-name "VM1 to VM2 - 100GbE vSwitch"
+
+# Upload results
 ./benchmark-network-pts.sh --server 192.168.100.10 --upload \
   --result-id "dc1-vm1-to-vm2" \
-  --result-name "VM1 to VM2 - 10GbE vSwitch"
+  --result-name "VM1 to VM2 - 100GbE vSwitch"
 ```
 
 ---

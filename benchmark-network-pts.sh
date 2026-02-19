@@ -18,9 +18,14 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.4
+# Version: 1.5
 #
 # Changelog:
+#   - 2026-02-19: v1.5 - Remove FORCE_TIMES_TO_RUN=1. None of the network test
+#                        profiles support DynamicRunCount; PTS falls back to the
+#                        static TimesToRun declared in each profile (pts/iperf: 3,
+#                        pts/netperf: 3, pts/sockperf: 5, pts/network-loopback: 3).
+#                        Forcing a single run discarded that repeatability entirely.
 #   - 2026-02-19: v1.4 - Add check_tcp_buffers(): computes the bandwidth-delay
 #                        product (BDP) for the link under test using ping RTT and
 #                        NIC speed, then warns if rmem_max/wmem_max are below
@@ -756,7 +761,10 @@ fi
 # === Run Tests ===
 RESULT_NAMES=()
 
-export FORCE_TIMES_TO_RUN=1
+# FORCE_TIMES_TO_RUN is intentionally not set here. PTS will use the run count
+# declared in each test profile (pts/iperf: 3, pts/netperf: 3, pts/sockperf: 5,
+# pts/network-loopback: 3). None of these profiles support DynamicRunCount, so
+# the profile TimesToRun values are the correct mechanism for statistical validity.
 export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
 
 # --- Standalone tests (no remote peer required) ---
@@ -869,7 +877,6 @@ else
     echo "--- No --server provided; skipping peer-to-peer tests ---"
 fi
 
-unset FORCE_TIMES_TO_RUN
 unset TEST_RESULTS_DESCRIPTION
 
 # === Results Summary ===

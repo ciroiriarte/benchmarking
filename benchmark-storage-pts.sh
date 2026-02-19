@@ -8,9 +8,14 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.6
+# Version: 1.8
 #
 # Changelog:
+#   - 2026-02-19: v1.8 - Replace device-name and rotational-flag detection with driver-based
+#                        detection via sysfs. Adds get_device_driver() which resolves the
+#                        host controller driver for SCSI-layer devices by walking the sysfs
+#                        tree, correctly identifying virtio-scsi, PVSCSI, and physical HBAs.
+#                        Adds 'virtual' device type for paravirtual drivers.
 #   - 2026-02-19: v1.7 - Change recommended scheduler for SSD from mq-deadline to none;
 #                        SSD has no seek penalty and scheduler overhead distorts measurements.
 #   - 2026-02-19: v1.6 - Add device type detection (NVMe/SSD/HDD via sysfs) and
@@ -170,49 +175,102 @@ detect_privileges() {
     fi
 }
 
-# Detect the storage device type from kernel sysfs attributes.
-# Outputs: nvme | ssd | hdd | unknown
+# Resolve the kernel driver handling a block device from sysfs.
+# For simple devices (NVMe, virtio-blk) this is the direct device driver.
+# For SCSI-layer devices the disk is always driven by the generic 'sd' driver;
+# this function walks up the sysfs device tree to find the underlying host
+# controller driver (e.g. virtio_scsi, vmw_pvscsi, ahci, mpt3sas).
+# Outputs the driver name, or 'unknown' if it cannot be determined.
+get_device_driver() {
+    local dev_name="$1"
+    local driver_link="/sys/block/${dev_name}/device/driver"
+
+    if [[ ! -L "$driver_link" ]]; then
+        echo "unknown"
+        return
+    fi
+
+    local direct_driver
+    direct_driver=$(basename "$(readlink "$driver_link")")
+
+    # For non-SCSI drivers the direct driver is the answer.
+    if [[ "$direct_driver" != "sd" ]]; then
+        echo "$direct_driver"
+        return
+    fi
+
+    # For SCSI block devices the direct driver is always the generic 'sd'.
+    # Walk up the sysfs tree to find the host controller driver.
+    local device_path
+    device_path=$(readlink -f "/sys/block/${dev_name}/device")
+    local path="$device_path"
+
+    while [[ "$path" =~ ^/sys/ ]]; do
+        path=$(dirname "$path")
+        if [[ -L "${path}/driver" ]]; then
+            local host_drv
+            host_drv=$(basename "$(readlink "${path}/driver")")
+            # Skip intermediate SCSI transport layer drivers and keep walking up.
+            case "$host_drv" in
+                sd|scsi_transport_sas|scsi_transport_fc|scsi_transport_spi)
+                    continue
+                    ;;
+                *)
+                    echo "$host_drv"
+                    return
+                    ;;
+            esac
+        fi
+    done
+
+    echo "sd"
+}
+
+# Detect the storage device type using the kernel driver rather than device name
+# or rotational flag, which are unreliable for paravirtual devices in VMs.
+# Outputs: nvme | virtual | ssd | hdd | unknown
 detect_device_type() {
     local device="$1"
     local dev_name
     dev_name=$(basename "$device")
 
-    # NVMe: device name prefix is the most reliable indicator (nvme0n1, nvme1n1, etc.)
-    if [[ "$dev_name" == nvme* ]]; then
-        echo "nvme"
-        return
-    fi
+    local driver
+    driver=$(get_device_driver "$dev_name")
 
-    # Check sysfs transport attribute, present on some virtio-nvme configurations.
-    local transport_file="/sys/block/${dev_name}/device/transport"
-    if [[ -f "$transport_file" ]] && grep -qi "nvme" "$transport_file" 2>/dev/null; then
-        echo "nvme"
-        return
-    fi
-
-    # Fall back to the rotational flag: 0 = SSD/NVMe-like, 1 = spinning HDD.
-    local rotational_file="/sys/block/${dev_name}/queue/rotational"
-    if [[ ! -f "$rotational_file" ]]; then
-        echo "unknown"
-        return
-    fi
-
-    if [[ "$(< "$rotational_file")" -eq 0 ]]; then
-        echo "ssd"
-    else
-        echo "hdd"
-    fi
+    case "$driver" in
+        nvme)
+            # NVMe: real hardware or paravirtual NVMe controller.
+            echo "nvme"
+            ;;
+        virtio_blk|virtio_scsi|vmw_pvscsi|xen-blkfront|xen_blkfront)
+            # Known paravirtual drivers: the hypervisor handles scheduling.
+            echo "virtual"
+            ;;
+        unknown|sd)
+            # Driver interface unavailable or unresolved; fall back to rotational flag.
+            local rotational_file="/sys/block/${dev_name}/queue/rotational"
+            [[ -f "$rotational_file" ]] || { echo "unknown"; return; }
+            [[ "$(< "$rotational_file")" -eq 0 ]] && echo "ssd" || echo "hdd"
+            ;;
+        *)
+            # Physical HBA driver (ahci, mpt3sas, megaraid_sas, hpsa, etc.).
+            # Use the rotational flag to distinguish SSD from HDD.
+            local rotational_file="/sys/block/${dev_name}/queue/rotational"
+            [[ -f "$rotational_file" ]] || { echo "unknown"; return; }
+            [[ "$(< "$rotational_file")" -eq 0 ]] && echo "ssd" || echo "hdd"
+            ;;
+    esac
 }
 
 # Return the recommended I/O scheduler for a given device type.
-# NVMe and SSD devices have no rotational seek penalty; bypassing the kernel
-# scheduler (none) eliminates overhead and measures raw device capability.
+# NVMe, SSD, and paravirtual devices benefit from 'none': the device or hypervisor
+# handles scheduling and adding a guest-level scheduler only introduces overhead.
 # HDDs still benefit from mq-deadline's seek reordering and deadline guarantees.
 recommended_scheduler() {
     case "$1" in
-        nvme|ssd) echo "none" ;;
-        hdd)      echo "mq-deadline" ;;
-        *)        echo "mq-deadline" ;;
+        nvme|ssd|virtual) echo "none" ;;
+        hdd)              echo "mq-deadline" ;;
+        *)                echo "mq-deadline" ;;
     esac
 }
 
@@ -230,6 +288,8 @@ configure_io_scheduler() {
         return
     fi
 
+    local driver
+    driver=$(get_device_driver "$(basename "$device")")
     local device_type
     device_type=$(detect_device_type "$device")
     local recommended
@@ -239,6 +299,7 @@ configure_io_scheduler() {
     current=$(sed 's/.*\[\([^]]*\)\].*/\1/' "$scheduler_file")
 
     echo "  Device:    $device"
+    echo "  Driver:    $driver"
     echo "  Type:      $device_type"
     echo "  Scheduler: current=${current}  recommended=${recommended}"
 

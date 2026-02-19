@@ -18,9 +18,16 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.2
+# Version: 1.3
 #
 # Changelog:
+#   - 2026-02-19: v1.3 - Add TCP port reachability check before peer tests
+#                        (iperf3 :5201, netserver :12865) so unreachable daemons
+#                        are reported clearly instead of failing silently. Add
+#                        install failure tracking: failed installs are recorded
+#                        and their dependent run steps are skipped; a summary
+#                        is printed at the end and the script exits non-zero if
+#                        any install failed.
 #   - 2026-02-19: v1.2 - Add interface auto-detection (ip route get) and
 #                        --interface/--nic-speed/--streams options. Detect NIC
 #                        speed from sysfs and scale the parallel stream count for
@@ -517,6 +524,35 @@ run_network_test() {
     unset TEST_RESULTS_NAME
 }
 
+# Return 0 if the named PTS test was successfully installed, 1 otherwise.
+# Used to skip run steps when their install failed.
+is_installed() {
+    local target="$1"
+    local t
+    for t in "${INSTALLED_TESTS[@]}"; do
+        [[ "$t" == "$target" ]] && return 0
+    done
+    return 1
+}
+
+# Probe a TCP port on the remote server with a 5-second timeout.
+# Prints the result and returns 0 on success, 1 on failure.
+# Uses the bash /dev/tcp built-in — no external nc/nmap dependency.
+# Arguments: $1=host $2=port $3=service-name
+check_server_reachable() {
+    local host="$1"
+    local port="$2"
+    local service="$3"
+    if timeout 5 bash -c ">/dev/tcp/${host}/${port}" 2>/dev/null; then
+        echo "  ${service} (${host}:${port}): OK"
+        return 0
+    else
+        echo "WARNING: ${service} (${host}:${port}) is not reachable."
+        echo "         Start the daemon on the remote host before running peer tests."
+        return 1
+    fi
+}
+
 # === Main Script ===
 
 # Default values
@@ -602,15 +638,28 @@ N
 EOF
 
 # === Install Tests ===
+INSTALLED_TESTS=()
+FAILED_INSTALLS=()
+
 echo "--- Installing standalone tests ---"
 for test_name in "${STANDALONE_TESTS[@]}"; do
-    phoronix-test-suite install "$test_name"
+    if phoronix-test-suite install "$test_name"; then
+        INSTALLED_TESTS+=("$test_name")
+    else
+        echo "WARNING: Failed to install ${test_name}; dependent tests will be skipped."
+        FAILED_INSTALLS+=("$test_name")
+    fi
 done
 
 if [[ -n "$SERVER_ADDRESS" ]]; then
     echo "--- Installing peer tests ---"
     for test_name in "${PEER_TESTS[@]}"; do
-        phoronix-test-suite install "$test_name"
+        if phoronix-test-suite install "$test_name"; then
+            INSTALLED_TESTS+=("$test_name")
+        else
+            echo "WARNING: Failed to install ${test_name}; dependent tests will be skipped."
+            FAILED_INSTALLS+=("$test_name")
+        fi
     done
 fi
 
@@ -624,27 +673,37 @@ export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
 
 # TCP stack throughput through the loopback interface (10 GB transfer via nc+dd).
 # Characterises kernel network buffer performance independent of NIC or fabric.
-run_network_test "pts/network-loopback" "" "loopback"
+if is_installed "pts/network-loopback"; then
+    run_network_test "pts/network-loopback" "" "loopback"
+fi
 
-# Socket API latency — pure ping-pong round-trip time with no background load.
-run_network_test "pts/sockperf" \
-    "pts/sockperf.run-test=ping-pong" \
-    "sockperf_pingpong"
+if is_installed "pts/sockperf"; then
+    # Socket API latency — pure ping-pong round-trip time with no background load.
+    run_network_test "pts/sockperf" \
+        "pts/sockperf.run-test=ping-pong" \
+        "sockperf_pingpong"
 
-# Socket API latency — round-trip time while the link is saturated.
-run_network_test "pts/sockperf" \
-    "pts/sockperf.run-test=under-load" \
-    "sockperf_underload"
+    # Socket API latency — round-trip time while the link is saturated.
+    run_network_test "pts/sockperf" \
+        "pts/sockperf.run-test=under-load" \
+        "sockperf_underload"
 
-# Socket-level throughput through loopback.
-run_network_test "pts/sockperf" \
-    "pts/sockperf.run-test=throughput" \
-    "sockperf_throughput"
+    # Socket-level throughput through loopback.
+    run_network_test "pts/sockperf" \
+        "pts/sockperf.run-test=throughput" \
+        "sockperf_throughput"
+fi
 
 # --- Peer tests (require --server) ---
 if [[ -n "$SERVER_ADDRESS" ]]; then
     echo "--- Running peer-to-peer tests against ${SERVER_ADDRESS} ---"
     echo "    Ensure iperf3 -s -D and netserver are running on the remote host."
+
+    # Verify server daemons are reachable before committing to peer tests.
+    echo "--- Checking server reachability ---"
+    check_server_reachable "$SERVER_ADDRESS" 5201  "iperf3 server"
+    check_server_reachable "$SERVER_ADDRESS" 12865 "netperf server (netserver)"
+    echo "------------------------------"
 
     # Auto-detect egress interface and NIC speed for the path to the server.
     if [[ -z "$INTERFACE" ]]; then
@@ -670,51 +729,63 @@ if [[ -n "$SERVER_ADDRESS" ]]; then
     MULTI_STREAMS="${OVERRIDE_STREAMS:-$(calc_parallel_streams "$NIC_SPEED_MBPS")}"
     echo "Parallel streams: ${MULTI_STREAMS}  (UDP-1G target is per stream; total ≈ ${MULTI_STREAMS} Gbps)"
 
-    # TCP bulk throughput — single stream baseline.
-    run_network_test "pts/iperf" \
-        "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=TCP;pts/iperf.parallel=1;pts/iperf.duration=60" \
-        "iperf_tcp_1stream"
+    if is_installed "pts/iperf"; then
+        # TCP bulk throughput — single stream baseline.
+        run_network_test "pts/iperf" \
+            "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=TCP;pts/iperf.parallel=1;pts/iperf.duration=60" \
+            "iperf_tcp_1stream"
 
-    # TCP bulk throughput — multiple parallel streams scaled to NIC line rate.
-    # A single TCP stream cannot saturate >10 GbE links due to per-core throughput
-    # limits; the stream count is computed by calc_parallel_streams().
-    run_network_test "pts/iperf" \
-        "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=TCP;pts/iperf.parallel=${MULTI_STREAMS};pts/iperf.duration=60" \
-        "iperf_tcp_${MULTI_STREAMS}streams"
+        # TCP bulk throughput — multiple parallel streams scaled to NIC line rate.
+        # A single TCP stream cannot saturate >10 GbE links due to per-core throughput
+        # limits; the stream count is computed by calc_parallel_streams().
+        run_network_test "pts/iperf" \
+            "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=TCP;pts/iperf.parallel=${MULTI_STREAMS};pts/iperf.duration=60" \
+            "iperf_tcp_${MULTI_STREAMS}streams"
 
-    # UDP throughput — pts/iperf UDP-1G target is 1 Gbps per stream; scaling
-    # the parallel stream count raises the aggregate target to cover the link rate.
-    run_network_test "pts/iperf" \
-        "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=UDP-1G;pts/iperf.parallel=${MULTI_STREAMS};pts/iperf.duration=60" \
-        "iperf_udp_${MULTI_STREAMS}streams"
+        # UDP throughput — pts/iperf UDP-1G target is 1 Gbps per stream; scaling
+        # the parallel stream count raises the aggregate target to cover the link rate.
+        run_network_test "pts/iperf" \
+            "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=UDP-1G;pts/iperf.parallel=${MULTI_STREAMS};pts/iperf.duration=60" \
+            "iperf_udp_${MULTI_STREAMS}streams"
+    fi
 
-    # TCP throughput — client to server (same direction as iperf TCP above,
-    # but measured by netperf for cross-tool validation).
-    run_network_test "pts/netperf" \
-        "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=TCP_STREAM;pts/netperf.duration=60" \
-        "netperf_tcp_stream"
+    if is_installed "pts/netperf"; then
+        # TCP throughput — client to server (same direction as iperf TCP above,
+        # but measured by netperf for cross-tool validation).
+        run_network_test "pts/netperf" \
+            "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=TCP_STREAM;pts/netperf.duration=60" \
+            "netperf_tcp_stream"
 
-    # TCP throughput — server to client (reverse direction).
-    run_network_test "pts/netperf" \
-        "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=TCP_MAERTS;pts/netperf.duration=60" \
-        "netperf_tcp_maerts"
+        # TCP throughput — server to client (reverse direction).
+        run_network_test "pts/netperf" \
+            "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=TCP_MAERTS;pts/netperf.duration=60" \
+            "netperf_tcp_maerts"
 
-    # TCP request-response — transactions/sec as a latency proxy.
-    # Higher values indicate lower per-transaction overhead.
-    run_network_test "pts/netperf" \
-        "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=TCP_RR;pts/netperf.duration=60" \
-        "netperf_tcp_rr"
+        # TCP request-response — transactions/sec as a latency proxy.
+        # Higher values indicate lower per-transaction overhead.
+        run_network_test "pts/netperf" \
+            "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=TCP_RR;pts/netperf.duration=60" \
+            "netperf_tcp_rr"
 
-    # UDP request-response — same as TCP_RR but over UDP.
-    run_network_test "pts/netperf" \
-        "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=UDP_RR;pts/netperf.duration=60" \
-        "netperf_udp_rr"
+        # UDP request-response — same as TCP_RR but over UDP.
+        run_network_test "pts/netperf" \
+            "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=UDP_RR;pts/netperf.duration=60" \
+            "netperf_udp_rr"
+    fi
 else
     echo "--- No --server provided; skipping peer-to-peer tests ---"
 fi
 
 unset FORCE_TIMES_TO_RUN
 unset TEST_RESULTS_DESCRIPTION
+
+# === Results Summary ===
+if [[ "${#FAILED_INSTALLS[@]}" -gt 0 ]]; then
+    echo -e "\nWARNING: The following tests failed to install and were skipped:"
+    for t in "${FAILED_INSTALLS[@]}"; do
+        echo "  - $t"
+    done
+fi
 
 # === Upload Results if Requested ===
 if [[ "$UPLOAD_RESULTS" -eq 1 ]]; then
@@ -727,3 +798,7 @@ if [[ "$UPLOAD_RESULTS" -eq 1 ]]; then
 fi
 
 echo -e "\n=== Network benchmark complete ==="
+
+if [[ "${#FAILED_INSTALLS[@]}" -gt 0 ]]; then
+    exit 1
+fi

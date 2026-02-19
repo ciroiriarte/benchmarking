@@ -18,9 +18,18 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.3
+# Version: 1.4
 #
 # Changelog:
+#   - 2026-02-19: v1.4 - Add check_tcp_buffers(): computes the bandwidth-delay
+#                        product (BDP) for the link under test using ping RTT and
+#                        NIC speed, then warns if rmem_max/wmem_max are below
+#                        BDP + 20% headroom; includes sysctl recommendations for
+#                        both client and server sides. Extend iperf and netperf
+#                        test duration from 60 s to 360 s — the maximum value
+#                        supported by the pts/iperf and pts/netperf profiles —
+#                        to allow TCP slow-start to complete and produce stable
+#                        steady-state throughput measurements.
 #   - 2026-02-19: v1.3 - Add TCP port reachability check before peer tests
 #                        (iperf3 :5201, netserver :12865) so unreachable daemons
 #                        are reported clearly instead of failing silently. Add
@@ -121,6 +130,14 @@ CPU_TEMP_WARN_THRESHOLD_MC=80000
 LOAD_WARN_MULTIPLIER=1
 # VM CPU steal time percentage above which hypervisor contention may distort results.
 STEAL_TIME_WARN_THRESHOLD=5
+# Test duration in seconds for pts/iperf and pts/netperf.
+# 360 s is the maximum value exposed by both PTS profiles. A long run allows
+# TCP slow-start to complete and gives the congestion-control algorithm time
+# to reach steady state, producing stable, reproducible throughput figures.
+# Valid values for pts/iperf:   10, 30, 60, 360
+# Valid values for pts/netperf: 10, 60, 360
+IPERF_DURATION=360
+NETPERF_DURATION=360
 # === End Configuration ===
 
 # === Helper Functions ===
@@ -524,6 +541,79 @@ run_network_test() {
     unset TEST_RESULTS_NAME
 }
 
+# Check whether TCP socket buffer sizes are large enough to fill the
+# bandwidth-delay product (BDP) for the link under test.
+#
+# BDP (bytes) = line_rate_bps × RTT_s
+#             = speed_mbps × 1 000 000 × rtt_ms × 0.001 / 8
+#             = speed_mbps × rtt_ms × 125
+#
+# A 20% headroom is added to the raw BDP. rmem_max and wmem_max are compared
+# against the result; if either falls short, the function prints the expected
+# throughput ceiling and the sysctl commands needed to fix it on both the client
+# (this host) and the server (which must be tuned separately by the operator).
+#
+# Arguments: $1=server_address  $2=speed_mbps (may be empty)
+check_tcp_buffers() {
+    local server="$1"
+    local speed_mbps="$2"
+    local rmem_max wmem_max
+    rmem_max=$(cat /proc/sys/net/core/rmem_max 2>/dev/null || echo 0)
+    wmem_max=$(cat /proc/sys/net/core/wmem_max 2>/dev/null || echo 0)
+
+    echo "=== TCP Buffer Sizes ==="
+    echo "  rmem_max: ${rmem_max} bytes  ($(( rmem_max / 1024 )) KiB)"
+    echo "  wmem_max: ${wmem_max} bytes  ($(( wmem_max / 1024 )) KiB)"
+
+    if [[ ! "$speed_mbps" =~ ^[0-9]+$ ]] || [[ "$speed_mbps" -le 0 ]]; then
+        echo "  NIC speed unknown — skipping BDP calculation."
+        echo "  Use --nic-speed <Mbps> to enable the buffer adequacy check."
+        echo ""
+        return
+    fi
+
+    # Measure round-trip time to the peer via ICMP ping.
+    local rtt_ms
+    rtt_ms=$(ping -c 4 -q "$server" 2>/dev/null | awk -F'/' '/rtt/ {print $5}')
+    if [[ -z "$rtt_ms" ]]; then
+        echo "  RTT measurement to ${server} failed (ping unavailable or ICMP blocked)."
+        echo "  Skipping BDP adequacy check."
+        echo ""
+        return
+    fi
+    echo "  RTT to ${server}: ${rtt_ms} ms"
+
+    # Compute required buffer size: BDP + 20% headroom.
+    local required_bytes required_mib
+    required_bytes=$(awk -v s="$speed_mbps" -v r="$rtt_ms" \
+        'BEGIN { printf "%d", s * r * 125 * 1.2 }')
+    required_mib=$(( required_bytes / 1024 / 1024 ))
+    echo "  Required (BDP + 20%): ${required_bytes} bytes  (${required_mib} MiB)"
+
+    if [[ "$rmem_max" -lt "$required_bytes" ]] || [[ "$wmem_max" -lt "$required_bytes" ]]; then
+        local cap_rx cap_tx
+        cap_rx=$(awk -v b="$rmem_max" -v r="$rtt_ms" \
+            'BEGIN { printf "%.1f Gbps", b * 8 / r / 1e6 }')
+        cap_tx=$(awk -v b="$wmem_max" -v r="$rtt_ms" \
+            'BEGIN { printf "%.1f Gbps", b * 8 / r / 1e6 }')
+        echo ""
+        echo "WARNING: TCP buffers too small for this link's bandwidth-delay product."
+        echo "  Effective throughput ceiling: RX ${cap_rx}  TX ${cap_tx}"
+        echo ""
+        echo "  Apply on this host (client):"
+        echo "    sudo sysctl -w net.core.rmem_max=${required_bytes}"
+        echo "    sudo sysctl -w net.core.wmem_max=${required_bytes}"
+        echo "    sudo sysctl -w net.ipv4.tcp_rmem=\"4096 87380 ${required_bytes}\""
+        echo "    sudo sysctl -w net.ipv4.tcp_wmem=\"4096 65536 ${required_bytes}\""
+        echo ""
+        echo "  IMPORTANT: Apply the same settings on the server (${server})."
+        echo "  Asymmetric buffer limits will cap throughput in one direction."
+    else
+        echo "  Buffers are sufficient for this link's BDP."
+    fi
+    echo ""
+}
+
 # Return 0 if the named PTS test was successfully installed, 1 otherwise.
 # Used to skip run steps when their install failed.
 is_installed() {
@@ -726,26 +816,29 @@ if [[ -n "$SERVER_ADDRESS" ]]; then
         fi
     fi
 
+    # TCP buffer adequacy check against the link's bandwidth-delay product.
+    check_tcp_buffers "$SERVER_ADDRESS" "$NIC_SPEED_MBPS"
+
     MULTI_STREAMS="${OVERRIDE_STREAMS:-$(calc_parallel_streams "$NIC_SPEED_MBPS")}"
     echo "Parallel streams: ${MULTI_STREAMS}  (UDP-1G target is per stream; total ≈ ${MULTI_STREAMS} Gbps)"
 
     if is_installed "pts/iperf"; then
         # TCP bulk throughput — single stream baseline.
         run_network_test "pts/iperf" \
-            "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=TCP;pts/iperf.parallel=1;pts/iperf.duration=60" \
+            "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=TCP;pts/iperf.parallel=1;pts/iperf.duration=${IPERF_DURATION}" \
             "iperf_tcp_1stream"
 
         # TCP bulk throughput — multiple parallel streams scaled to NIC line rate.
         # A single TCP stream cannot saturate >10 GbE links due to per-core throughput
         # limits; the stream count is computed by calc_parallel_streams().
         run_network_test "pts/iperf" \
-            "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=TCP;pts/iperf.parallel=${MULTI_STREAMS};pts/iperf.duration=60" \
+            "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=TCP;pts/iperf.parallel=${MULTI_STREAMS};pts/iperf.duration=${IPERF_DURATION}" \
             "iperf_tcp_${MULTI_STREAMS}streams"
 
         # UDP throughput — pts/iperf UDP-1G target is 1 Gbps per stream; scaling
         # the parallel stream count raises the aggregate target to cover the link rate.
         run_network_test "pts/iperf" \
-            "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=UDP-1G;pts/iperf.parallel=${MULTI_STREAMS};pts/iperf.duration=60" \
+            "pts/iperf.server-address=${SERVER_ADDRESS};pts/iperf.test=UDP-1G;pts/iperf.parallel=${MULTI_STREAMS};pts/iperf.duration=${IPERF_DURATION}" \
             "iperf_udp_${MULTI_STREAMS}streams"
     fi
 
@@ -753,23 +846,23 @@ if [[ -n "$SERVER_ADDRESS" ]]; then
         # TCP throughput — client to server (same direction as iperf TCP above,
         # but measured by netperf for cross-tool validation).
         run_network_test "pts/netperf" \
-            "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=TCP_STREAM;pts/netperf.duration=60" \
+            "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=TCP_STREAM;pts/netperf.duration=${NETPERF_DURATION}" \
             "netperf_tcp_stream"
 
         # TCP throughput — server to client (reverse direction).
         run_network_test "pts/netperf" \
-            "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=TCP_MAERTS;pts/netperf.duration=60" \
+            "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=TCP_MAERTS;pts/netperf.duration=${NETPERF_DURATION}" \
             "netperf_tcp_maerts"
 
         # TCP request-response — transactions/sec as a latency proxy.
         # Higher values indicate lower per-transaction overhead.
         run_network_test "pts/netperf" \
-            "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=TCP_RR;pts/netperf.duration=60" \
+            "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=TCP_RR;pts/netperf.duration=${NETPERF_DURATION}" \
             "netperf_tcp_rr"
 
         # UDP request-response — same as TCP_RR but over UDP.
         run_network_test "pts/netperf" \
-            "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=UDP_RR;pts/netperf.duration=60" \
+            "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=UDP_RR;pts/netperf.duration=${NETPERF_DURATION}" \
             "netperf_udp_rr"
     fi
 else

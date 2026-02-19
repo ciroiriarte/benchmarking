@@ -13,9 +13,11 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@millicom.com>
-# Version: 1.2
+# Version: 1.3
 #
 # Changelog:
+#   - 2026-02-19: v1.3 - Add pre-run system checks: CPU governor (with optional
+#                        remediation), thermal state, system load, and VM steal time.
 #   - 2026-02-19: v1.2 - Replace hardcoded FORCE_TIMES_TO_RUN=1 with DEFAULT_RUNS=3
 #                        and expose -r/--runs option for statistical validity.
 #   - 2026-02-17: v1.1 - Fix --threads/--upload argument parsing (bad shift counts).
@@ -65,6 +67,14 @@ REQUIRED_TESTS=("pts/build-linux-kernel")
 # Minimum number of timed runs required for statistical confidence.
 # A single run cannot reveal variance; 3 runs provide a baseline mean ± range.
 DEFAULT_RUNS=3
+# Recommended CPU frequency governor for benchmarking; minimises frequency-scaling variance.
+RECOMMENDED_GOVERNOR="performance"
+# CPU temperature threshold above which results may be affected by thermal throttling (millidegrees Celsius).
+CPU_TEMP_WARN_THRESHOLD_MC=80000
+# Warn if the 1-minute load average exceeds (available CPU count × this multiplier).
+LOAD_WARN_MULTIPLIER=1
+# VM CPU steal time percentage above which hypervisor contention may distort results.
+STEAL_TIME_WARN_THRESHOLD=5
 # === End Configuration ===
 
 # === Helper Functions ===
@@ -155,6 +165,148 @@ setup_opensuse_repo() {
     fi
 }
 
+# === Pre-run Check Functions ===
+
+# Detect whether the script has privileges to make system configuration changes.
+# Sets HAS_PRIVILEGE=1 and SUDO_CMD if running as root or passwordless sudo is available.
+SUDO_CMD=""
+HAS_PRIVILEGE=0
+detect_privileges() {
+    if [[ "$EUID" -eq 0 ]]; then
+        HAS_PRIVILEGE=1
+    elif sudo -n true 2>/dev/null; then
+        HAS_PRIVILEGE=1
+        SUDO_CMD="sudo"
+    else
+        HAS_PRIVILEGE=0
+        echo "INFO: Not running as root and no passwordless sudo available."
+        echo "      Pre-run checks will warn only; no system changes will be made."
+    fi
+}
+
+# Prompt the user for confirmation before applying a system change.
+# Automatically declines in non-interactive (piped/redirected) mode.
+confirm_change() {
+    local prompt="$1"
+    if [[ ! -t 0 ]]; then
+        echo "INFO: Non-interactive mode; skipping change."
+        return 1
+    fi
+    local response
+    read -r -p "$prompt [y/N]: " response
+    [[ "$response" =~ ^[Yy]$ ]]
+}
+
+# Check the CPU frequency governor on all CPUs and offer to set it to the recommended value.
+check_cpu_governor() {
+    if [[ ! -d "/sys/devices/system/cpu/cpu0/cpufreq" ]]; then
+        echo "INFO: cpufreq interface not available (VM or container); skipping governor check."
+        return
+    fi
+
+    local suboptimal_count=0
+    local gov_file gov
+    for gov_file in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+        gov=$(< "$gov_file")
+        if [[ "$gov" != "$RECOMMENDED_GOVERNOR" ]]; then
+            suboptimal_count=$(( suboptimal_count + 1 ))
+        fi
+    done
+
+    if [[ "$suboptimal_count" -eq 0 ]]; then
+        echo "OK: CPU governor is '$RECOMMENDED_GOVERNOR' on all CPUs."
+        return
+    fi
+
+    local current_govs
+    current_govs=$(sort -u /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor 2>/dev/null | tr '\n' ' ')
+    echo "WARNING: $suboptimal_count CPU(s) are not using the '$RECOMMENDED_GOVERNOR' governor."
+    echo "         Current governor(s): ${current_govs% }."
+    echo "         Frequency scaling may introduce variance in benchmark results."
+
+    if [[ "$HAS_PRIVILEGE" -eq 0 ]]; then
+        echo "         Insufficient privileges to change governor; proceeding with current settings."
+        return
+    fi
+
+    if confirm_change "Set CPU governor to '$RECOMMENDED_GOVERNOR' on all CPUs?"; then
+        for gov_file in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
+            echo "$RECOMMENDED_GOVERNOR" | ${SUDO_CMD} tee "$gov_file" > /dev/null
+        done
+        echo "OK: CPU governor set to '$RECOMMENDED_GOVERNOR'."
+    else
+        echo "INFO: Keeping current governor; proceeding."
+    fi
+}
+
+# Warn if any thermal zone reports a temperature above the configured threshold.
+check_thermal() {
+    local temp_files=(/sys/class/thermal/thermal_zone*/temp)
+    if [[ ! -f "${temp_files[0]}" ]]; then
+        echo "INFO: Thermal sensors not available; skipping temperature check."
+        return
+    fi
+
+    local hot_zones=()
+    local temp_file temp
+    for temp_file in "${temp_files[@]}"; do
+        temp=$(< "$temp_file")
+        if [[ "$temp" -ge "$CPU_TEMP_WARN_THRESHOLD_MC" ]]; then
+            hot_zones+=("$(basename "$(dirname "$temp_file")"): $((temp / 1000))°C")
+        fi
+    done
+
+    if [[ "${#hot_zones[@]}" -eq 0 ]]; then
+        echo "OK: All thermal zones are below $((CPU_TEMP_WARN_THRESHOLD_MC / 1000))°C."
+    else
+        echo "WARNING: High temperatures detected; results may be affected by thermal throttling."
+        local zone
+        for zone in "${hot_zones[@]}"; do
+            echo "         $zone"
+        done
+    fi
+}
+
+# Warn if the 1-minute load average exceeds the available CPU count.
+check_system_load() {
+    local load_1min cpu_count
+    load_1min=$(cut -d' ' -f1 /proc/loadavg)
+    cpu_count=$(nproc)
+    if awk "BEGIN { exit !($load_1min > $cpu_count * $LOAD_WARN_MULTIPLIER) }"; then
+        echo "WARNING: 1-minute load average ($load_1min) exceeds CPU count ($cpu_count)."
+        echo "         Background activity may distort benchmark results."
+    else
+        echo "OK: System load ($load_1min) is within normal range for $cpu_count CPUs."
+    fi
+}
+
+# Warn if CPU steal time (sampled over 1 second) exceeds the configured threshold.
+# Steal time indicates the hypervisor is withholding CPU cycles from this VM.
+# On physical machines the value is expected to be 0.
+check_steal_time() {
+    local s1 s2
+    s1=$(grep '^cpu ' /proc/stat)
+    sleep 1
+    s2=$(grep '^cpu ' /proc/stat)
+    # /proc/stat cpu line fields: user nice system idle iowait irq softirq steal ...
+    # steal is field 9 (field 1 is the 'cpu' label).
+    local steal_pct
+    steal_pct=$(awk -v s1="$s1" -v s2="$s2" '
+        BEGIN {
+            split(s1, a); split(s2, b)
+            delta_total = 0
+            for (i = 2; i <= length(a); i++) delta_total += b[i] - a[i]
+            delta_steal = b[9] - a[9]
+            printf "%.1f", (delta_total > 0) ? (delta_steal / delta_total) * 100 : 0
+        }')
+    if awk "BEGIN { exit !($steal_pct >= $STEAL_TIME_WARN_THRESHOLD) }"; then
+        echo "WARNING: CPU steal time is ${steal_pct}% (threshold: ${STEAL_TIME_WARN_THRESHOLD}%)."
+        echo "         The hypervisor may be withholding CPU time; results may be unreliable."
+    else
+        echo "OK: CPU steal time is ${steal_pct}% (below ${STEAL_TIME_WARN_THRESHOLD}% threshold)."
+    fi
+}
+
 # === Main Script ===
 
 # Default values
@@ -203,6 +355,15 @@ done
 if ! command -v phoronix-test-suite &> /dev/null; then
   install_packages
 fi
+
+# === Pre-run System Checks ===
+echo "--- Pre-run System Checks ---"
+detect_privileges
+check_cpu_governor
+check_thermal
+check_system_load
+check_steal_time
+echo "------------------------------"
 
 # === Configure Phoronix Test Suite for Batch Mode ===
 echo "Setting up Phoronix Test Suite in batch mode..."

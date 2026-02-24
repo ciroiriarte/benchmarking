@@ -68,7 +68,11 @@ set -o pipefail
 # Target disks are supplied at runtime via --disk or --disk-file (see usage).
 # Each entry uses the format:  <block_device>;<label>
 # The label names the mount point (/mnt/<label>) and result files.
-# Example (equivalent inline flags or disk-file lines):
+# Inline flag examples (quotes are required to prevent ';' from being interpreted
+# by the shell as a command separator):
+#   --disk "/dev/vdb;NVMe_Replica3"
+#   --disk "/dev/vdc;NVMe_EC32"
+# Disk-file lines (no quoting needed, one entry per line):
 #   /dev/vdb;NVMe_Replica3
 #   /dev/vdc;NVMe_EC32
 #   /dev/vdd;HDD_Replica3
@@ -85,15 +89,17 @@ PRECONDITIONING_ENABLED=1
 
 # === Function to Display Usage ===
 usage() {
-    echo "Usage: $0 --disk <dev;label> [--disk <dev;label> ...] [options]"
+    echo "Usage: $0 --disk \"<dev;label>\" [--disk \"<dev;label>\" ...] [options]"
     echo "       $0 --disk-file <path> [options]"
     echo
     echo "Disk target options (at least one disk is required):"
-    echo "  --disk <device;label>      Add a target disk. May be repeated for multiple disks."
+    echo "  --disk \"<device;label>\"    Add a target disk. May be repeated for multiple disks."
     echo "                             <device> is the block device path (e.g. /dev/vdb)."
     echo "                             <label>  is a short name used for the mount point and"
     echo "                             result files (e.g. NVMe_Replica3)."
-    echo "                             Example: --disk /dev/vdb;NVMe_Replica3"
+    echo "                             The argument must be quoted so the shell does not"
+    echo "                             interpret ';' as a command separator."
+    echo "                             Example: --disk \"/dev/vdb;NVMe_Replica3\""
     echo "  --disk-file <path>         Read disk entries from a file (one device;label per"
     echo "                             line). Lines starting with # and blank lines are"
     echo "                             ignored. May be combined with --disk."
@@ -111,13 +117,13 @@ usage() {
     echo "  --help                     Display this help message."
     echo
     echo "Examples:"
-    echo "  $0 --disk /dev/vdb;NVMe_Replica3 --disk /dev/vdc;NVMe_EC32 \\"
-    echo "     --disk /dev/vdd;HDD_Replica3  --disk /dev/vde;HDD_EC32"
+    echo "  $0 --disk \"/dev/vdb;NVMe_Replica3\" --disk \"/dev/vdc;NVMe_EC32\" \\"
+    echo "     --disk \"/dev/vdd;HDD_Replica3\"  --disk \"/dev/vde;HDD_EC32\""
     echo
     echo "  $0 --disk-file disks.conf --upload \\"
     echo "     --result-name \"Ceph NVMe vs HDD\" --result-id \"ceph-dc1-q1-2026\""
     echo
-    echo "  $0 --disk /dev/vdb;NVMe_Replica3 --skip-preconditioning"
+    echo "  $0 --disk \"/dev/vdb;NVMe_Replica3\" --skip-preconditioning"
 }
 
 # Read disk entries from a file into the DISKS array.

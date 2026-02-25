@@ -20,7 +20,7 @@ Scripts work on both physical machines and virtual machines (vSphere, OpenStack)
 | `benchmark-cpu-pts.sh` | CPU-bound | `pts/build-linux-kernel` |
 | `benchmark-memory-pts.sh` | Memory-bound | `pts/stream`, `pts/ramspeed`, `pts/tinymembench`, `pts/cachebench` |
 | `benchmark-network-pts.sh` | Network-bound | `pts/network-loopback`, `pts/sockperf`, `pts/iperf`, `pts/netperf` |
-| `benchmark-storage-pts.sh` | Disk I/O-bound | `iozone`, `fio`, `postmark`, `compilebench` |
+| `benchmark-storage-pts.sh` | Disk I/O-bound | `pts/fio`, `pts/dbench`, `pts/fs-mark`, `pts/compilebench` |
 
 ---
 
@@ -365,6 +365,32 @@ installed and registered as the default compiler via `update-alternatives`.
 3. Identify the device names inside the guest (e.g. via `lsblk`) and pass
    them to the script via `--disk` or `--disk-file`.
 4. Clone this repository on the instance and run the desired script.
+
+### Notes on virtual machines and shared storage
+
+Benchmarking on virtual machines with shared storage backends (e.g. vSAN,
+Ceph, NFS-backed datastores) introduces I/O jitter that is not present on
+bare-metal systems with locally attached drives. The hypervisor scheduler,
+storage backend contention, network latency between the guest and the storage
+cluster, and dynamic resource allocation (ballooning, QoS policies) all
+contribute to run-to-run variation that the benchmark framework cannot
+eliminate.
+
+In practice this means:
+
+- **PTS will exceed the minimum 3 runs** per test combination. Deviations of
+  10–40% are common on virtual disks, causing PTS to repeat each test up to
+  its maximum iteration limit before accepting a result. This significantly
+  extends total benchmark time compared to bare-metal runs.
+- **Results across hypervisor platforms or storage backends are not directly
+  comparable** unless the VMs are identically sized, pinned to the same
+  physical hosts, and tested under equivalent storage load conditions.
+- **Absolute throughput and IOPS values will be lower** than the underlying
+  storage hardware can deliver, due to virtualisation overhead and the
+  shared-tenancy nature of the backend.
+
+Results from virtual machine runs should be interpreted as indicative of
+general performance characteristics rather than precise absolute values.
 
 ---
 

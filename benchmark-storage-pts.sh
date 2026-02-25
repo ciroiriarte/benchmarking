@@ -215,6 +215,16 @@ install_packages() {
 # === openSUSE Repository Setup ===
 setup_opensuse_repo() {
     local repo_url
+    # python_pkg: Leap 15.x ships 'python' (Python 2) as a PTS build dependency.
+    # Leap 16+ dropped Python 2; the interpreter is a versioned package (e.g.
+    # python313). Detect the actual provider of the 'python3' capability so the
+    # correct package name is used regardless of the Python version bundled with
+    # the release. Tumbleweed/Slowroll also no longer ship plain 'python'.
+    local python_pkg
+    python_pkg=$(zypper -q search --provides --match-exact python3 2>/dev/null \
+        | awk -F'|' '/\| python3[0-9]+/{gsub(/ /,"",$2); print $2; exit}')
+    : "${python_pkg:=python}"   # fall back to 'python' if detection fails
+
     # Match on $ID (e.g. opensuse-tumbleweed, opensuse-slowroll, opensuse-leap)
     # because $VERSION_ID is a snapshot date on Tumbleweed/Slowroll, not the OS name.
     case "$ID" in
@@ -239,9 +249,10 @@ setup_opensuse_repo() {
             exit 1
             ;;
     esac
+    echo "  Python package: ${python_pkg}"
     sudo zypper ar -f -p 90 "$repo_url" benchmark
     sudo zypper --gpg-auto-import-keys refresh
-    sudo zypper install -y phoronix-test-suite xfsprogs util-linux fio gcc gcc-c++ ${gcc_extra} make autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel libaio-devel python
+    sudo zypper install -y phoronix-test-suite xfsprogs util-linux fio gcc gcc-c++ ${gcc_extra} make autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel libaio-devel "${python_pkg}"
     if [[ "$ID" == "opensuse-leap" ]]; then
         sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100

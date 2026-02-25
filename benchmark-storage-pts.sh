@@ -8,9 +8,45 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.2
+# Version: 2.5
 #
 # Changelog:
+#   - 2026-02-24: v2.5 - Fix fio disk-target auto-detection problem: with
+#                        RunAllTestCombinations=Y, PTS calls batch_user_options()
+#                        which ignores PRESET_OPTIONS entirely, causing fio to run
+#                        tests on ALL writable disk mount points auto-detected from
+#                        /proc/mounts (potentially 9+ filesystems) instead of just
+#                        the target disk. Fix: patch the system-level
+#                        test-definition.xml before each fio batch-run to replace
+#                        the auto-disk-mount-points option with a fixed single-value
+#                        menu entry pointing to the target mount point. The regex
+#                        handles re-patching for subsequent disks. Remove the now-
+#                        useless PRESET_OPTIONS export from the fio run loop.
+#   - 2026-02-24: v2.4 - Fix fio-2.2.0 parameter mismatch: the profile passes
+#                        $6=disk_target but the bundled fio-run script reads
+#                        $6=NUM_JOBS and $7=DIRECTORY. This caused
+#                        numjobs=<mount_path> and DIRECTORY="" (defaulting to
+#                        "fiofile" on the root FS), making every fio sub-test
+#                        fail immediately. Fix: after successful fio install,
+#                        patch fio-run to shift parameter positions ($6→$5 for
+#                        NUM_JOBS, $7→$6 for DIRECTORY). Also move
+#                        PRESET_OPTIONS for fio to before phoronix-test-suite
+#                        install so the disk target is baked into
+#                        pts-install.json at install time, not just at run time.
+#   - 2026-02-24: v2.3 - Fix three bugs that prevented tests from running on
+#                        openSUSE Leap 16:
+#                        1. zypper ar now skipped when benchmark repo alias
+#                           already exists (was triggering set -e exit).
+#                        2. update-alternatives for gcc-12 restricted to Leap
+#                           15.6 only (was running on all Leap versions).
+#                        3. batch-setup heredoc extended from 5 to 7 answers;
+#                           missing answer for PromptSaveName left it TRUE,
+#                           causing batch-run to hang waiting for user input.
+#                        Add save_results_from_disk(): copies test artifacts
+#                        from the mount point to ~/benchmark-artifacts-<label>/
+#                        before the disk is unmounted and wiped.
+#   - 2026-02-24: v2.2a - Quote device;label examples in usage to prevent
+#                         shell misinterpretation of ';'.
 #   - 2026-02-19: v2.2 - Replace fragile mtime-based result directory detection
 #                        with a before/after directory diff. Snapshots the results
 #                        directory before each batch-run and uses comm(1) to find
@@ -250,10 +286,18 @@ setup_opensuse_repo() {
             ;;
     esac
     echo "  Python package: ${python_pkg}"
-    sudo zypper ar -f -p 90 "$repo_url" benchmark
+    # Add benchmark repo only if the alias does not already exist (idempotent).
+    if sudo zypper lr benchmark &>/dev/null; then
+        echo "  Benchmark repo already present; skipping add."
+    else
+        sudo zypper ar -f -p 90 "$repo_url" benchmark
+    fi
     sudo zypper --gpg-auto-import-keys refresh
     sudo zypper install -y phoronix-test-suite xfsprogs util-linux fio gcc gcc-c++ ${gcc_extra} make autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel libaio-devel "${python_pkg}"
-    if [[ "$ID" == "opensuse-leap" ]]; then
+    # Leap 15.6 ships an old GCC as the system default; point alternatives at
+    # the gcc12 package that was added to gcc_extra above.  Leap 16+ ships a
+    # current GCC as the default so no alternatives change is needed.
+    if [[ "$VERSION_ID" == "15.6" ]]; then
         sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
     fi
@@ -547,6 +591,40 @@ precondition_device() {
     echo "  Pre-conditioning complete for $label."
 }
 
+# === Result Preservation ===
+# Copy any test artifacts (logs, configs, small output files) from a disk's
+# mount point to a safe directory on the OS filesystem BEFORE the mount is
+# torn down and the disk is wiped.  Large scratch/test-data files (> 10 MiB)
+# are excluded — they are just filler written by fio/iozone and carry no
+# result value.  PTS result XML files are always written to
+# ~/.phoronix-test-suite/test-results/ (on the OS disk) so they are safe
+# regardless; this function captures any supplementary per-disk artifacts.
+save_results_from_disk() {
+    local mount_point="$1"
+    local label="$2"
+    local pts_dir="${mount_point}/pts"   # PTS creates this with the trailing-slash path
+
+    [[ -d "$pts_dir" ]] || return 0
+
+    local backup_dir="${HOME}/benchmark-artifacts-${label}"
+    echo "  Preserving test artifacts: ${pts_dir} -> ${backup_dir}"
+    mkdir -p "$backup_dir"
+
+    # rsync with --max-size skips large scratch files cleanly; fall back to
+    # find+cp on systems where rsync is absent.
+    if command -v rsync &>/dev/null; then
+        rsync -a --max-size=10m "$pts_dir/" "$backup_dir/" 2>/dev/null || true
+    else
+        find "$pts_dir" -type f -size -10M | while IFS= read -r f; do
+            local rel_dir
+            rel_dir=$(dirname "${f#${mount_point}/}")
+            mkdir -p "${backup_dir}/${rel_dir}"
+            cp "$f" "${backup_dir}/${rel_dir}/" 2>/dev/null || true
+        done
+    fi
+    echo "  Artifacts saved to: ${backup_dir}"
+}
+
 # === Release and Clean Up Disks ===
 # Defined here, before main execution, so the EXIT trap can always call it
 # regardless of where the script exits (including early failures via set -e).
@@ -560,16 +638,18 @@ release_disk() {
 
     echo "--- Releasing disk $device ($label) ---"
 
-    # Unmount the filesystem if it's mounted
+    # Preserve any test artifacts before the mount is torn down.
     if mountpoint -q "$mount_point"; then
+        save_results_from_disk "$mount_point" "$label"
         echo "Unmounting $mount_point..."
-        sudo umount "$mount_point"
+        sudo umount "$mount_point" 2>/dev/null || \
+            sudo umount -l "$mount_point" 2>/dev/null || true
     fi
 
     # Remove the mount point directory
     if [ -d "$mount_point" ]; then
         echo "Removing mount point directory $mount_point..."
-        sudo rmdir "$mount_point"
+        sudo rmdir "$mount_point" 2>/dev/null || true
     fi
 
     # Wipe filesystem signatures from the device to clean it
@@ -601,13 +681,26 @@ if ! command -v phoronix-test-suite &> /dev/null; then
 fi
 
 # === Configure Phoronix Test Suite for Batch Mode ===
+# batch-setup asks exactly 7 yes/no questions (when SaveResults=Y):
+#   1. Save test results when in batch mode?          → Y
+#   2. Open the web browser automatically?            → N  (headless server)
+#   3. Auto upload results to OpenBenchmarking.org?   → N
+#   4. Prompt for test identifier?                    → N
+#   5. Prompt for test description?                   → N
+#   6. Prompt for saved results file-name?            → N  (was missing; left
+#                                                          PromptSaveName=TRUE
+#                                                          which caused batch-run
+#                                                          to hang for user input)
+#   7. Run all test options?                          → Y  (all permutations)
 echo "Setting up Phoronix Test Suite in batch mode..."
 phoronix-test-suite batch-setup <<EOF
 Y
+N
+N
+N
+N
+N
 Y
-N
-N
-N
 EOF
 
 # === Pre-run Device Configuration ===
@@ -652,10 +745,24 @@ prepare_disk() {
     echo "--- Preparing $device as $label ---"
     echo "WARNING: All data on $device will be erased."
 
-    sudo umount "$device" 2>/dev/null || true # Ignore error if not mounted
+    # Ensure the device is not mounted before formatting.  A previous aborted
+    # run may have left the device mounted with orphaned processes still holding
+    # it open.  Use lazy unmount (-l) as the final fallback: it immediately
+    # detaches the filesystem from the VFS directory tree even if processes
+    # still have files open, allowing mkfs to proceed safely.
+    if mountpoint -q "$mount_point" 2>/dev/null || \
+       grep -q "^${device} " /proc/mounts 2>/dev/null; then
+        echo "  Force-unmounting ${device}..."
+        sudo umount "$mount_point" 2>/dev/null || \
+            sudo umount "$device"   2>/dev/null || \
+            sudo umount -l "$mount_point" 2>/dev/null || \
+            sudo umount -l "$device" 2>/dev/null || true
+    fi
     sudo mkfs.xfs -f -L "$label" "$device"
     sudo mkdir -p "$mount_point"
-    sudo mount LABEL="$label" "$mount_point"
+    # Mount by device path rather than LABEL= to avoid a race where udev has
+    # not yet processed the new filesystem signature written by mkfs.xfs.
+    sudo mount "$device" "$mount_point"
     sudo chown "$TESTUSER:" "$mount_point"
     echo "Disk $device mounted at $mount_point and ready for testing."
 }
@@ -668,6 +775,56 @@ done
 RESULT_NAMES=()
 FAILED_RUNS=()
 
+# Patch the fio-2.2.0 test-definition.xml to replace the auto-disk-mount-points
+# option with a fixed single-value disk target pointing at the target mount point.
+#
+# Background: The auto-disk-mount-points identifier causes PTS to scan /proc/mounts
+# and build a list of all writable mount points on the system. With
+# RunAllTestCombinations=Y, PTS runs tests on EVERY detected mount point (potentially
+# 9+ filesystems), not just the target disk.  PTS's batch run path calls
+# batch_user_options() which ignores PRESET_OPTIONS entirely.
+#
+# Fix: Replace the auto-disk-mount-points option with a regular <Menu> containing
+# only the target mount point.  The regex matches both the original auto-detection
+# form and the already-patched form so re-patching for a second disk works correctly.
+patch_fio_disk_target() {
+    local mount_point="$1"
+    local fio_xml="/var/lib/phoronix-test-suite/test-profiles/pts/fio-2.2.0/test-definition.xml"
+
+    if [[ ! -f "$fio_xml" ]]; then
+        echo "  INFO: fio test-definition.xml not found at ${fio_xml}; skipping patch."
+        return 0
+    fi
+
+    echo "  Patching fio test-definition.xml: Disk Target → ${mount_point}"
+    python3 - "$fio_xml" "$mount_point" <<'PYEOF'
+import sys, re
+xml_path, mount = sys.argv[1], sys.argv[2]
+with open(xml_path, 'r') as f:
+    content = f.read()
+new_option = (
+    '<Option>\n'
+    '      <DisplayName>Disk Target</DisplayName>\n'
+    '      <Identifier>disk-target</Identifier>\n'
+    '      <Menu>\n'
+    '        <Entry>\n'
+    '          <Name>' + mount + '</Name>\n'
+    '          <Value>' + mount + '</Value>\n'
+    '        </Entry>\n'
+    '      </Menu>\n'
+    '    </Option>')
+# Match both original auto-disk-mount-points form and already-patched disk-target form.
+content = re.sub(
+    r'<Option>\s*<DisplayName>Disk Target</DisplayName>\s*'
+    r'<Identifier>(?:auto-disk-mount-points|disk-target)</Identifier>'
+    r'(?:\s*<Menu>.*?</Menu>)?\s*</Option>',
+    new_option, content, flags=re.DOTALL)
+with open(xml_path, 'w') as f:
+    f.write(content)
+print('    Patched: ' + xml_path)
+PYEOF
+}
+
 run_tests_on_disk() {
     local disk_entry=$1
     local label
@@ -678,46 +835,98 @@ run_tests_on_disk() {
     # PTS_TEST_INSTALL_ROOT_PATH overrides the install root for all tests,
     # so both the test binaries and their scratch/data files land on the
     # target disk rather than the OS disk.
-    export PTS_TEST_INSTALL_ROOT_PATH="$mount_point"
+    # The trailing slash is required: PTS concatenates this path directly with
+    # "pts/" and without it produces "/mnt/labelpts/" instead of "/mnt/label/pts/".
+    export PTS_TEST_INSTALL_ROOT_PATH="${mount_point}/"
 
     echo "--- Installing tests on $label ($mount_point) ---"
     local installed_tests=()
     for test_name in "${REQUIRED_TESTS[@]}"; do
+        # fio: pre-answer the disk-target option before install so the target
+        # disk path is baked into pts-install.json rather than being applied
+        # only at run time.  Clear PRESET_OPTIONS after install to avoid
+        # leaking it into subsequent test installations.
+        if [[ "$test_name" == "fio" ]]; then
+            export PRESET_OPTIONS="pts/fio.auto-disk-mount-points=${mount_point}"
+        fi
+
         if phoronix-test-suite install "$test_name"; then
-            installed_tests+=("$test_name")
+            # PTS exits 0 even when a test fails to compile; detect a build
+            # failure by looking for install-failed.log in the test's directory.
+            # PTS installs directly under ${mount_point}/pts/<test>-<ver>/ (no
+            # 'installed-tests/' level).  '|| true' prevents set -o pipefail
+            # from triggering when the pts/ directory does not yet exist or
+            # find returns no matches.
+            local failed_log
+            failed_log=$(find "${mount_point}/pts" -maxdepth 2 \
+                -name "install-failed.log" -path "*${test_name}*" \
+                2>/dev/null | head -1) || true
+            if [[ -n "$failed_log" ]]; then
+                echo "WARNING: $test_name build failed (see ${failed_log}); skipping."
+                FAILED_RUNS+=("${label}/${test_name} (build failed)")
+            else
+                # fio-2.2.0 profile bug: test-definition.xml passes 6 args:
+                #   $1=type $2=engine $3=direct $4=block_size $5=cpu-threads $6=disk_target
+                # but the bundled fio-run script reads $6=NUM_JOBS, $7=DIRECTORY.
+                # Result: disk_target lands in NUM_JOBS ("numjobs=/mnt/..."),
+                # DIRECTORY is empty so fio writes to "fiofile" on the root FS,
+                # and every sub-test fails immediately.
+                # Fix: patch fio-run post-install to shift parameter positions
+                # ($6→$5 for NUM_JOBS, $7→$6 for DIRECTORY).  Apply NUM_JOBS
+                # fix first so the $6→$5 substitution does not cascade onto
+                # the $7→$6 change in the same sed pass.
+                if [[ "$test_name" == "fio" ]]; then
+                    local fio_run_script
+                    fio_run_script=$(find "${mount_point}/pts" -name "fio-run" \
+                        -maxdepth 4 2>/dev/null | head -1) || true
+                    if [[ -n "$fio_run_script" ]]; then
+                        echo "  Patching fio-run for parameter position mismatch (fio-2.2.0 profile bug)..."
+                        sed -i -e 's/\$6/$5/g' -e 's/\$7/$6/g' "$fio_run_script"
+                        echo "  Patched: $fio_run_script"
+                    else
+                        echo "  WARNING: fio-run not found after install; fio tests may fail."
+                    fi
+                fi
+                installed_tests+=("$test_name")
+            fi
         else
             echo "WARNING: Failed to install $test_name on $label; skipping."
             FAILED_RUNS+=("${label}/${test_name} (install)")
         fi
+
+        unset PRESET_OPTIONS
     done
 
     for test_name in "${installed_tests[@]}"; do
         echo "--- Running $test_name on $label ($mount_point) ---"
 
-        # fio exposes an explicit disk-target option in its test profile.
-        # Pre-answering it via PRESET_OPTIONS ensures the generated fio config
-        # uses directory=<mount_point>, complementing PTS_TEST_INSTALL_ROOT_PATH.
+        # fio uses the auto-disk-mount-points option which PTS resolves at run
+        # time by scanning /proc/mounts.  With RunAllTestCombinations=Y, PTS
+        # ignores PRESET_OPTIONS and runs on ALL detected mount points.  Patch
+        # the test-definition.xml to restrict the disk target to the current
+        # test disk before calling batch-run.
         if [[ "$test_name" == "fio" ]]; then
-            export PRESET_OPTIONS="pts/fio.auto-disk-mount-points=${mount_point}"
+            patch_fio_disk_target "$mount_point"
         fi
 
         # Snapshot existing result directories before the run so we can
         # identify exactly which directory was created by this batch-run call.
+        # '|| true' prevents set -e from firing when test-results is empty
+        # (ls exits 1 when no glob matches).
         local results_before
-        results_before=$(ls -d ~/.phoronix-test-suite/test-results/*/ 2>/dev/null | sort)
+        results_before=$(ls -d ~/.phoronix-test-suite/test-results/*/ 2>/dev/null \
+            | sort || true)
 
         if ! phoronix-test-suite batch-run "$test_name"; then
             echo "WARNING: $test_name failed on $label."
             FAILED_RUNS+=("${label}/${test_name}")
-            unset PRESET_OPTIONS
             continue
         fi
 
-        unset PRESET_OPTIONS
-
         # Identify directories created during this run by diffing before/after.
         local results_after
-        results_after=$(ls -d ~/.phoronix-test-suite/test-results/*/ 2>/dev/null | sort)
+        results_after=$(ls -d ~/.phoronix-test-suite/test-results/*/ 2>/dev/null \
+            | sort || true)
 
         local new_dirs=()
         mapfile -t new_dirs < <(comm -13 <(echo "$results_before") <(echo "$results_after"))

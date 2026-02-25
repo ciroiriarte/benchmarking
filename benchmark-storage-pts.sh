@@ -8,9 +8,62 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.5
+# Version: 3.4
 #
 # Changelog:
+#   - 2026-02-25: v3.4 - Fix persistent mkfs.xfs EBUSY: add explicit wait for
+#                        kernel in_flight I/O counter to reach 0 before each
+#                        mkfs attempt; the prior wipefs in cleanup leaves one
+#                        in-flight write that udevadm settle does not drain.
+#   - 2026-02-25: v3.3 - Fix install gate: check php presence in addition to
+#                        phoronix-test-suite, so a broken prior install (iU
+#                        dpkg state with PTS binary present but PHP missing)
+#                        still triggers install_packages() on the next run.
+#   - 2026-02-25: v3.2 - Fix Ubuntu/Debian PTS install: pre-install php-cli
+#                        and php-xml before the PTS deb so dpkg never fails on
+#                        missing PHP deps; add '|| true' to dpkg -i so set -e
+#                        does not abort before apt-get install -f -y runs.
+#   - 2026-02-25: v3.1 - Capture INVOKING_USER (SUDO_USER or whoami) and
+#                        INVOKING_GROUP at startup; chown benchmark-results/
+#                        output tree to that user after collection so results
+#                        are not root-owned when the script is run via sudo.
+#   - 2026-02-25: v3.0 - Extend run_lock cleanup in the EXIT trap to also cover
+#                        /var/lib/phoronix-test-suite/installed-tests and
+#                        ~/.phoronix-test-suite, where PTS writes a global lock
+#                        regardless of PTS_TEST_INSTALL_ROOT_PATH.  Previously
+#                        only the per-disk /mnt/<label>/pts path was cleaned.
+#   - 2026-02-25: v2.9 - Harden mkfs.xfs against intermittent EBUSY: replace
+#                        the single udevadm-settle+mkfs call with a retry loop
+#                        (up to 3 attempts, 5 s back-off) so that any residual
+#                        udevd probe triggered by a prior wipefs or lazy unmount
+#                        clears before the next attempt.
+#   - 2026-02-25: v2.8 - Fix cpu-threads expansion in patch_fio_disk_target():
+#                        PTS treats 'cpu-threads' as a special identifier that
+#                        auto-generates 1/2/N job-count permutations regardless
+#                        of XML content, turning each combination into three
+#                        sequential runs.  Rename identifier to 'job-count' (a
+#                        regular, non-special name) and set a single value equal
+#                        to the machine's CPU count so fio runs all workers in
+#                        parallel (numjobs=<nproc>) rather than sweeping through
+#                        job counts sequentially.  This reduces the total test
+#                        count from 1152 to 384 (4 types × 4 engines × 2 direct
+#                        × 12 block sizes × 1 job count × 1 disk target).
+#   - 2026-02-25: v2.7 - Replace iozone and postmark (both fail to build with
+#                        GCC 15) with pts/dbench and pts/fs-mark.
+#                        Add Python 2 pre-check: skip compilebench with a clear
+#                        warning instead of silently producing empty result logs.
+#                        Add Windows AIO removal to patch_fio_disk_target() so
+#                        those permutations are not attempted on Linux.
+#                        Add run_lock cleanup to release_disk() EXIT trap so
+#                        killed runs never block subsequent executions.
+#                        Add phoronix-test-suite estimate-run-time call before
+#                        each batch-run so operators know expected duration.
+#                        Capture script invocation CWD and copy final results
+#                        (PTS result XMLs + system snapshot) to
+#                        ./benchmark-results/<run-id>/ as required by spec.
+#   - 2026-02-25: v2.6 - Add udevadm settle before mkfs.xfs in prepare_disk()
+#                        to prevent EBUSY race when udevd briefly opens the
+#                        block device after wipefs or a prior lazy unmount.
 #   - 2026-02-24: v2.5 - Fix fio disk-target auto-detection problem: with
 #                        RunAllTestCombinations=Y, PTS calls batch_user_options()
 #                        which ignores PRESET_OPTIONS entirely, causing fio to run
@@ -114,7 +167,11 @@ set -o pipefail
 #   /dev/vdd;HDD_Replica3
 #   /dev/vde;HDD_EC32
 DISKS=()
-REQUIRED_TESTS=("iozone" "fio" "postmark" "compilebench")
+# iozone (pts/iozone-1.9.6) and postmark (pts/postmark-1.1.2) are excluded:
+# both fail to compile with GCC 15 due to K&R-style function declarations.
+# pts/dbench and pts/fs-mark cover comparable metadata-heavy and filesystem
+# throughput workloads and build cleanly on modern toolchains.
+REQUIRED_TESTS=("fio" "dbench" "fs-mark" "compilebench")
 TESTUSER=$(whoami)
 
 # Perform two sequential full-drive write passes on SSD/NVMe/virtual devices
@@ -209,8 +266,24 @@ if [[ "$UPLOAD_RESULTS" -eq 1 ]] && ([[ -z "$UPLOAD_NAME" ]] || [[ -z "$UPLOAD_I
     exit 1
 fi
 
+# Capture the directory from which the operator invoked the script.
+# Used at the end to copy results into ./benchmark-results/<run-id>/ relative
+# to that location (CLAUDE.md requirement).  Must be captured before any
+# subshell or cd changes the working directory.
+SCRIPT_INVOCATION_DIR=$(pwd)
+
+# The user who actually invoked the script.  When run via sudo, SUDO_USER
+# holds the original login name; otherwise fall back to whoami.
+# Output files in benchmark-results/ are chowned to this user so root does
+# not end up owning results the operator needs to read.
+INVOKING_USER="${SUDO_USER:-$(whoami)}"
+INVOKING_GROUP=$(id -gn "$INVOKING_USER" 2>/dev/null || echo "$INVOKING_USER")
+
+# Run identifier used for the snapshot filename and the output directory.
+RUN_ID="${UPLOAD_ID:-storage-benchmark-$(date +%Y-%m-%d_%H%M%S)}"
+
 # Snapshot file is named after the result identifier when provided, or a timestamp otherwise.
-SNAPSHOT_FILE="${UPLOAD_ID:-storage-benchmark-$(date +%Y-%m-%d-%H%M%S)}-system-snapshot.txt"
+SNAPSHOT_FILE="${RUN_ID}-system-snapshot.txt"
 
 # === OS Detection and Package Installation ===
 install_packages() {
@@ -225,12 +298,17 @@ install_packages() {
             ubuntu|debian)
                 echo "Detected Ubuntu or Debian-based system"
                 sudo apt-get update
-                # util-linux provides wipefs
-                sudo apt-get install -y phoronix-test-suite xfsprogs util-linux fio || {
+                # util-linux provides wipefs; php-cli + php-xml are PTS runtime deps
+                # (needed when PTS is installed from the upstream .deb rather than
+                # the distro repo, which may not pull them automatically).
+                sudo apt-get install -y xfsprogs util-linux fio php-cli php-xml
+                sudo apt-get install -y phoronix-test-suite || {
                     echo "Phoronix Test Suite not found in repo, attempting fallback install..."
                     wget -O /tmp/phoronix.deb https://phoronix-test-suite.com/releases/repo/pts.debian/files/phoronix-test-suite_10.8.4_all.deb
-                    sudo dpkg -i /tmp/phoronix.deb
-                    sudo apt-get install -f -y # Install dependencies
+                    # dpkg -i may exit non-zero when optional deps are absent;
+                    # apt-get install -f resolves them, so suppress the dpkg error.
+                    sudo dpkg -i /tmp/phoronix.deb || true
+                    sudo apt-get install -f -y
                 }
                 ;;
             opensuse*|suse)
@@ -625,6 +703,48 @@ save_results_from_disk() {
     echo "  Artifacts saved to: ${backup_dir}"
 }
 
+# === Collect Final Results ===
+# Copy PTS result XML directories and the system snapshot into
+# ./benchmark-results/<run-id>/ relative to the directory from which the
+# operator invoked the script.  This satisfies the project requirement that
+# results land in a predictable, versioned location next to the calling CWD.
+#
+# PTS always writes its result XML to ~/.phoronix-test-suite/test-results/,
+# so they are safe even if the benchmark disk has already been wiped.
+collect_results() {
+    local output_dir="${SCRIPT_INVOCATION_DIR}/benchmark-results/${RUN_ID}"
+    echo "--- Collecting results to ${output_dir} ---"
+    mkdir -p "$output_dir"
+
+    # System snapshot
+    if [[ -f "$SNAPSHOT_FILE" ]]; then
+        cp "$SNAPSHOT_FILE" "$output_dir/"
+        echo "  Copied snapshot: $SNAPSHOT_FILE"
+    fi
+
+    # PTS result directories (one XML dir per test/disk combination)
+    local copied=0
+    for result_name in "${RESULT_NAMES[@]}"; do
+        local pts_result_dir="$HOME/.phoronix-test-suite/test-results/${result_name}"
+        if [[ -d "$pts_result_dir" ]]; then
+            cp -r "$pts_result_dir" "$output_dir/"
+            echo "  Copied result: $result_name"
+            (( copied++ )) || true
+        else
+            echo "  WARNING: PTS result directory not found for $result_name"
+        fi
+    done
+
+    # Transfer ownership from root to the invoking user so the operator can
+    # read and manage results without needing sudo.
+    if [[ "$INVOKING_USER" != "root" ]]; then
+        chown -R "${INVOKING_USER}:${INVOKING_GROUP}" "$output_dir" 2>/dev/null || true
+    fi
+
+    echo "Results collected: ${copied} PTS result(s) + snapshot → ${output_dir}"
+    echo "  Owner: ${INVOKING_USER}:${INVOKING_GROUP}"
+}
+
 # === Release and Clean Up Disks ===
 # Defined here, before main execution, so the EXIT trap can always call it
 # regardless of where the script exits (including early failures via set -e).
@@ -637,6 +757,14 @@ release_disk() {
     local mount_point="/mnt/${label}"
 
     echo "--- Releasing disk $device ($label) ---"
+
+    # Remove stale PTS run_lock files before unmounting.  When the script is
+    # killed mid-run, PTS leaves a run_lock file in each test profile directory
+    # on the benchmark disk.  These block subsequent batch-run calls with
+    # "the <test> test is already running" until manually removed.
+    if [[ -d "${mount_point}/pts" ]]; then
+        find "${mount_point}/pts" -name "run_lock" -delete 2>/dev/null || true
+    fi
 
     # Preserve any test artifacts before the mount is torn down.
     if mountpoint -q "$mount_point"; then
@@ -667,6 +795,14 @@ cleanup() {
     for disk in "${DISKS[@]}"; do
         release_disk "$disk"
     done
+    # Clean up any stale PTS run_lock files in the system-level installed-tests
+    # directory.  These are created by PTS as a global lock regardless of
+    # PTS_TEST_INSTALL_ROOT_PATH and persist if the script is killed mid-run,
+    # blocking subsequent executions with "the test is already running".
+    find /var/lib/phoronix-test-suite/installed-tests -name "run_lock" \
+        -delete 2>/dev/null || true
+    find "$HOME/.phoronix-test-suite" -name "run_lock" \
+        -delete 2>/dev/null || true
     echo "--- Benchmark script finished ---"
 }
 trap cleanup EXIT
@@ -676,7 +812,11 @@ trap cleanup EXIT
 echo "Starting storage benchmark script..."
 
 # === Install packages if not already present ===
-if ! command -v phoronix-test-suite &> /dev/null; then
+# Check both PTS and PHP: a prior failed install may leave the PTS binary
+# in place (dpkg iU state) while PHP is still absent, causing PTS to fail
+# immediately with "PHP must be installed".  Gating on php as well ensures
+# install_packages() re-runs to fix the broken state on the next invocation.
+if ! command -v phoronix-test-suite &>/dev/null || ! command -v php &>/dev/null; then
     install_packages
 fi
 
@@ -758,7 +898,46 @@ prepare_disk() {
             sudo umount -l "$mount_point" 2>/dev/null || \
             sudo umount -l "$device" 2>/dev/null || true
     fi
-    sudo mkfs.xfs -f -L "$label" "$device"
+    # Wait for udev to finish processing any device events (e.g. from wipefs or
+    # a prior lazy unmount) before formatting; avoids EBUSY from mkfs.xfs.
+    # Two sources of EBUSY exist:
+    #  1. udevd briefly opens the block device for partition probing after an
+    #     unmount or wipefs event → drained by udevadm settle.
+    #  2. The kernel in_flight counter stays non-zero while the block layer
+    #     flushes the write issued by the prior wipefs in cleanup(); this is
+    #     invisible to udev but blocks O_EXCL opens used by mkfs.xfs.
+    # Both sources are transient (clear within seconds); we wait for both and
+    # retry up to MKFS_MAX_ATTEMPTS times with short back-off.
+    local mkfs_attempt=0
+    local mkfs_max_attempts=5
+    local dev_name
+    dev_name=$(basename "$device")
+    while [[ $mkfs_attempt -lt $mkfs_max_attempts ]]; do
+        sudo udevadm settle --timeout=15 2>/dev/null || true
+        # Drain any in-flight kernel I/Os (e.g. from prior wipefs) that would
+        # cause O_EXCL to return EBUSY even with no userspace opener.
+        local inflight_wait=0
+        while [[ $inflight_wait -lt 30 ]]; do
+            local inflight
+            inflight=$(awk '{print $9}' /sys/block/${dev_name}/stat 2>/dev/null || echo 0)
+            [[ "$inflight" -eq 0 ]] && break
+            sleep 1
+            (( inflight_wait++ )) || true
+        done
+        if sudo mkfs.xfs -f -L "$label" "$device" 2>/dev/null; then
+            break
+        fi
+        (( mkfs_attempt++ )) || true
+        if [[ $mkfs_attempt -lt $mkfs_max_attempts ]]; then
+            echo "  mkfs.xfs attempt ${mkfs_attempt} failed (device busy?); retrying in 5s..."
+            sleep 5
+        fi
+    done
+    # Final attempt outside the loop so any remaining error is not swallowed.
+    if [[ $mkfs_attempt -ge $mkfs_max_attempts ]]; then
+        sudo udevadm settle --timeout=15 2>/dev/null || true
+        sudo mkfs.xfs -f -L "$label" "$device"
+    fi
     sudo mkdir -p "$mount_point"
     # Mount by device path rather than LABEL= to avoid a race where udev has
     # not yet processed the new filesystem signature written by mkfs.xfs.
@@ -775,18 +954,17 @@ done
 RESULT_NAMES=()
 FAILED_RUNS=()
 
-# Patch the fio-2.2.0 test-definition.xml to replace the auto-disk-mount-points
-# option with a fixed single-value disk target pointing at the target mount point.
+# Patch the fio-2.2.0 test-definition.xml to:
+#   1. Replace the auto-disk-mount-points option with a fixed single-value disk
+#      target pointing at the target mount point (prevents PTS from running fio
+#      on all detected mount points when RunAllTestCombinations=Y).
+#   2. Remove the Windows AIO engine entry (not supported on Linux; attempting
+#      it produces one failed permutation for every block-size × direct-IO ×
+#      type combination, wasting test slots and polluting results).
 #
-# Background: The auto-disk-mount-points identifier causes PTS to scan /proc/mounts
-# and build a list of all writable mount points on the system. With
-# RunAllTestCombinations=Y, PTS runs tests on EVERY detected mount point (potentially
-# 9+ filesystems), not just the target disk.  PTS's batch run path calls
-# batch_user_options() which ignores PRESET_OPTIONS entirely.
-#
-# Fix: Replace the auto-disk-mount-points option with a regular <Menu> containing
-# only the target mount point.  The regex matches both the original auto-detection
-# form and the already-patched form so re-patching for a second disk works correctly.
+# The disk-target regex matches both the original auto-disk-mount-points form
+# and the already-patched disk-target form so re-patching for a second disk
+# works correctly without doubling entries.
 patch_fio_disk_target() {
     local mount_point="$1"
     local fio_xml="/var/lib/phoronix-test-suite/test-profiles/pts/fio-2.2.0/test-definition.xml"
@@ -796,13 +974,20 @@ patch_fio_disk_target() {
         return 0
     fi
 
-    echo "  Patching fio test-definition.xml: Disk Target → ${mount_point}"
-    python3 - "$fio_xml" "$mount_point" <<'PYEOF'
+    # Detect the CPU count to use as the single parallel job count.
+    # nproc returns the number of available processing units (cores/vCPUs).
+    local cpu_count
+    cpu_count=$(nproc 2>/dev/null || grep -c ^processor /proc/cpuinfo)
+
+    echo "  Patching fio test-definition.xml: Disk Target → ${mount_point}, Job Count → ${cpu_count} (parallel workers), removing Windows AIO"
+    python3 - "$fio_xml" "$mount_point" "$cpu_count" <<'PYEOF'
 import sys, re
-xml_path, mount = sys.argv[1], sys.argv[2]
+xml_path, mount, cpu_count = sys.argv[1], sys.argv[2], sys.argv[3]
 with open(xml_path, 'r') as f:
     content = f.read()
-new_option = (
+
+# 1. Replace disk-target option (handles both auto-detection and already-patched forms).
+new_disk_option = (
     '<Option>\n'
     '      <DisplayName>Disk Target</DisplayName>\n'
     '      <Identifier>disk-target</Identifier>\n'
@@ -813,12 +998,43 @@ new_option = (
     '        </Entry>\n'
     '      </Menu>\n'
     '    </Option>')
-# Match both original auto-disk-mount-points form and already-patched disk-target form.
 content = re.sub(
     r'<Option>\s*<DisplayName>Disk Target</DisplayName>\s*'
     r'<Identifier>(?:auto-disk-mount-points|disk-target)</Identifier>'
     r'(?:\s*<Menu>.*?</Menu>)?\s*</Option>',
-    new_option, content, flags=re.DOTALL)
+    new_disk_option, content, flags=re.DOTALL)
+
+# 2. Replace the cpu-threads Job Count option.
+#    The 'cpu-threads' identifier is special in PTS: regardless of what values
+#    are listed in the XML, PTS auto-generates a permutation set based on the
+#    machine's CPU count (typically 1, 2, N for an N-core system).  This turns
+#    one test combination into three sequential runs with different numjobs
+#    values.  The project requirement is 1 parallel worker per CPU core — all
+#    running simultaneously — not a scalability sweep.
+#    Fix: rename the identifier to a non-special name ('job-count') and set a
+#    single entry equal to the actual CPU count so fio runs with numjobs=<cpu_count>.
+new_job_option = (
+    '<Option>\n'
+    '      <DisplayName>Job Count</DisplayName>\n'
+    '      <Identifier>job-count</Identifier>\n'
+    '      <Menu>\n'
+    '        <Entry>\n'
+    '          <Name>' + cpu_count + '</Name>\n'
+    '          <Value>' + cpu_count + '</Value>\n'
+    '        </Entry>\n'
+    '      </Menu>\n'
+    '    </Option>')
+content = re.sub(
+    r'<Option>\s*<DisplayName>Job Count</DisplayName>\s*'
+    r'<Identifier>(?:cpu-threads|job-count)</Identifier>'
+    r'(?:\s*<Menu>.*?</Menu>)?\s*</Option>',
+    new_job_option, content, flags=re.DOTALL)
+
+# 3. Remove the Windows AIO engine entry so it is not attempted on Linux.
+content = re.sub(
+    r'\s*<Entry>\s*<Name>Windows AIO</Name>\s*<Value>windowsaio</Value>\s*</Entry>',
+    '', content, flags=re.DOTALL)
+
 with open(xml_path, 'w') as f:
     f.write(content)
 print('    Patched: ' + xml_path)
@@ -842,6 +1058,22 @@ run_tests_on_disk() {
     echo "--- Installing tests on $label ($mount_point) ---"
     local installed_tests=()
     for test_name in "${REQUIRED_TESTS[@]}"; do
+        # compilebench (pts/compilebench-1.0.3) requires Python 2 to run.
+        # Modern distributions (Leap 16+, Ubuntu 24.04+, Rocky 9+) only ship
+        # Python 3.  Without Python 2 the benchmark installs successfully but
+        # produces empty result log files, giving no data and no error.
+        # Detect early and skip rather than wasting time on a silent no-op.
+        if [[ "$test_name" == "compilebench" ]]; then
+            if ! command -v python2 &>/dev/null && \
+               ! (command -v python &>/dev/null && \
+                  python --version 2>&1 | grep -q "^Python 2"); then
+                echo "WARNING: compilebench requires Python 2, which is not available; skipping."
+                FAILED_RUNS+=("${label}/${test_name} (Python 2 not available)")
+                unset PRESET_OPTIONS
+                continue
+            fi
+        fi
+
         # fio: pre-answer the disk-target option before install so the target
         # disk path is baked into pts-install.json rather than being applied
         # only at run time.  Clear PRESET_OPTIONS after install to avoid
@@ -909,6 +1141,15 @@ run_tests_on_disk() {
             patch_fio_disk_target "$mount_point"
         fi
 
+        # Print estimated run time before starting so the operator can judge
+        # whether to proceed or adjust the test configuration.  PTS calculates
+        # this from the TimesToRun value, average per-run duration (from prior
+        # runs on this machine), and the number of option permutations.
+        # '|| true' prevents set -e from stopping the script if the estimate
+        # command fails (e.g. first run with no timing history yet).
+        echo "  Estimating run time for $test_name on $label..."
+        phoronix-test-suite estimate-run-time "$test_name" 2>/dev/null || true
+
         # Snapshot existing result directories before the run so we can
         # identify exactly which directory was created by this batch-run call.
         # '|| true' prevents set -e from firing when test-results is empty
@@ -974,6 +1215,9 @@ if [[ "$UPLOAD_RESULTS" -eq 1 ]]; then
     unset PTS_UPLOAD_IDENTIFIER
     echo "All uploads complete."
 fi
+
+# === Collect Results to ./benchmark-results/ ===
+collect_results
 
 # === Compare Results Locally ===
 echo "--- Generating local result comparisons ---"

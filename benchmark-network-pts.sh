@@ -22,9 +22,14 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.6
+# Version: 1.7
 #
 # Changelog:
+#   - 2026-02-26: v1.7 - Add collect_results(): copy system snapshot and all PTS
+#                        result directories to benchmark-results/${RUN_ID}/ relative
+#                        to the invocation CWD; transfer ownership to the invoking
+#                        user (SUDO_USER) so results are readable without sudo.
+#                        Add RUN_ID, SNAPSHOT_FILE, INVOKING_USER/GROUP variables.
 #   - 2026-02-19: v1.6 - Add --server-mode: installs pts/iperf and pts/netperf
 #                        to obtain compiled binaries, then starts iperf3 (-s) and
 #                        netserver as local server daemons. --interface accepts an
@@ -407,8 +412,38 @@ check_steal_time() {
 # settings, and per-interface NIC attributes (speed, driver, firmware, MTU,
 # offload flags, ring buffer sizes). When a server address is known the routing
 # interface is identified automatically and highlighted in the snapshot.
+collect_results() {
+    local output_dir="${SCRIPT_INVOCATION_DIR}/benchmark-results/${RUN_ID}"
+    echo "--- Collecting results to ${output_dir} ---"
+    mkdir -p "$output_dir"
+
+    if [[ -f "$SNAPSHOT_FILE" ]]; then
+        cp "$SNAPSHOT_FILE" "$output_dir/"
+        echo "  Copied snapshot: $SNAPSHOT_FILE"
+    fi
+
+    local copied=0
+    for result_name in "${RESULT_NAMES[@]}"; do
+        local pts_result_dir="$HOME/.phoronix-test-suite/test-results/${result_name}"
+        if [[ -d "$pts_result_dir" ]]; then
+            cp -r "$pts_result_dir" "$output_dir/"
+            echo "  Copied result: $result_name"
+            (( copied++ )) || true
+        else
+            echo "  WARNING: PTS result directory not found for $result_name"
+        fi
+    done
+
+    if [[ "$INVOKING_USER" != "root" ]]; then
+        chown -R "${INVOKING_USER}:${INVOKING_GROUP}" "$output_dir" 2>/dev/null || true
+    fi
+
+    echo "Results collected: ${copied} PTS result(s) + snapshot → ${output_dir}"
+    echo "  Owner: ${INVOKING_USER}:${INVOKING_GROUP}"
+}
+
 capture_system_snapshot() {
-    local snapshot_file="${UPLOAD_ID}-system-snapshot.txt"
+    local snapshot_file="$SNAPSHOT_FILE"
 
     # Identify all non-loopback interfaces.
     local ifaces=()
@@ -835,6 +870,15 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
+# Capture invocation context after arg parsing so --result-id is reflected in
+# RUN_ID before SNAPSHOT_FILE and the output directory are derived from it.
+# Not needed in --server-mode (which exits before any benchmarking).
+SCRIPT_INVOCATION_DIR=$(pwd)
+INVOKING_USER="${SUDO_USER:-$(whoami)}"
+INVOKING_GROUP=$(id -gn "$INVOKING_USER" 2>/dev/null || echo "$INVOKING_USER")
+RUN_ID="${UPLOAD_ID}"
+SNAPSHOT_FILE="${RUN_ID}-system-snapshot.txt"
+
 # --server-mode and --server are mutually exclusive.
 if [[ "$SERVER_MODE" -eq 1 ]] && [[ -n "$SERVER_ADDRESS" ]]; then
     echo "ERROR: --server-mode and --server are mutually exclusive."
@@ -1024,6 +1068,9 @@ else
 fi
 
 unset TEST_RESULTS_DESCRIPTION
+
+# === Collect Results to ./benchmark-results/ ===
+collect_results
 
 # === Results Summary ===
 if [[ "${#FAILED_INSTALLS[@]}" -gt 0 ]]; then

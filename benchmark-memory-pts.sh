@@ -13,9 +13,14 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.2
+# Version: 1.3
 #
 # Changelog:
+#   - 2026-02-26: v1.3 - Add collect_results(): copy system snapshot and all PTS
+#                        result directories to benchmark-results/${RUN_ID}/ relative
+#                        to the invocation CWD; transfer ownership to the invoking
+#                        user (SUDO_USER) so results are readable without sudo.
+#                        Add RUN_ID, SNAPSHOT_FILE, INVOKING_USER/GROUP variables.
 #   - 2026-02-19: v1.2 - Remove FORCE_TIMES_TO_RUN=1. PTS DynamicRunCount is
 #                        enabled by default and reruns each test until the
 #                        coefficient of variation falls below ~3.5%, providing
@@ -333,8 +338,38 @@ check_thp() {
 # Capture system and memory subsystem metadata to a file for reproducibility.
 # Records kernel, OS, CPU topology, frequency scaling state, NUMA topology,
 # Transparent Huge Pages state, DIMM information, memory, and load average.
+collect_results() {
+    local output_dir="${SCRIPT_INVOCATION_DIR}/benchmark-results/${RUN_ID}"
+    echo "--- Collecting results to ${output_dir} ---"
+    mkdir -p "$output_dir"
+
+    if [[ -f "$SNAPSHOT_FILE" ]]; then
+        cp "$SNAPSHOT_FILE" "$output_dir/"
+        echo "  Copied snapshot: $SNAPSHOT_FILE"
+    fi
+
+    local copied=0
+    for result_name in "${RESULT_NAMES[@]}"; do
+        local pts_result_dir="$HOME/.phoronix-test-suite/test-results/${result_name}"
+        if [[ -d "$pts_result_dir" ]]; then
+            cp -r "$pts_result_dir" "$output_dir/"
+            echo "  Copied result: $result_name"
+            (( copied++ )) || true
+        else
+            echo "  WARNING: PTS result directory not found for $result_name"
+        fi
+    done
+
+    if [[ "$INVOKING_USER" != "root" ]]; then
+        chown -R "${INVOKING_USER}:${INVOKING_GROUP}" "$output_dir" 2>/dev/null || true
+    fi
+
+    echo "Results collected: ${copied} PTS result(s) + snapshot → ${output_dir}"
+    echo "  Owner: ${INVOKING_USER}:${INVOKING_GROUP}"
+}
+
 capture_system_snapshot() {
-    local snapshot_file="${UPLOAD_ID}-system-snapshot.txt"
+    local snapshot_file="$SNAPSHOT_FILE"
     {
         echo "=== Benchmark Configuration ==="
         echo "Date:        $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
@@ -437,6 +472,14 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
+# Capture invocation context after arg parsing so --result-id is reflected in
+# RUN_ID before SNAPSHOT_FILE and the output directory are derived from it.
+SCRIPT_INVOCATION_DIR=$(pwd)
+INVOKING_USER="${SUDO_USER:-$(whoami)}"
+INVOKING_GROUP=$(id -gn "$INVOKING_USER" 2>/dev/null || echo "$INVOKING_USER")
+RUN_ID="${UPLOAD_ID}"
+SNAPSHOT_FILE="${RUN_ID}-system-snapshot.txt"
+
 # === Install packages if not already present ===
 if ! command -v phoronix-test-suite &> /dev/null; then
     install_packages
@@ -510,6 +553,9 @@ done
 
 unset TEST_RESULTS_NAME
 unset TEST_RESULTS_DESCRIPTION
+
+# === Collect Results to ./benchmark-results/ ===
+collect_results
 
 # === Upload Results if Requested ===
 if [[ "$UPLOAD_RESULTS" -eq 1 ]]; then

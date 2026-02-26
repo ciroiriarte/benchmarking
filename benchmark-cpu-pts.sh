@@ -13,9 +13,14 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.7
+# Version: 1.8
 #
 # Changelog:
+#   - 2026-02-26: v1.8 - Add collect_results(): copy system snapshot and all PTS
+#                        result directories to benchmark-results/${RUN_ID}/ relative
+#                        to the invocation CWD; transfer ownership to the invoking
+#                        user (SUDO_USER) so results are readable without sudo.
+#                        Add RUN_ID, SNAPSHOT_FILE, INVOKING_USER/GROUP variables.
 #   - 2026-02-19: v1.7 - Replace set -e abort-on-failure in the run loop with per-test
 #                        error handling so that a single test failure does not orphan
 #                        results from completed tests. Failed tests are reported in a
@@ -339,8 +344,38 @@ check_steal_time() {
 # Capture system metadata to a file tied to the result identifier.
 # Provides an auditable environment record independent of PTS's own metadata,
 # covering kernel, OS, CPU topology, frequency scaling state, memory, and hardware info.
+collect_results() {
+    local output_dir="${SCRIPT_INVOCATION_DIR}/benchmark-results/${RUN_ID}"
+    echo "--- Collecting results to ${output_dir} ---"
+    mkdir -p "$output_dir"
+
+    if [[ -f "$SNAPSHOT_FILE" ]]; then
+        cp "$SNAPSHOT_FILE" "$output_dir/"
+        echo "  Copied snapshot: $SNAPSHOT_FILE"
+    fi
+
+    local copied=0
+    for result_name in "${RESULT_NAMES[@]}"; do
+        local pts_result_dir="$HOME/.phoronix-test-suite/test-results/${result_name}"
+        if [[ -d "$pts_result_dir" ]]; then
+            cp -r "$pts_result_dir" "$output_dir/"
+            echo "  Copied result: $result_name"
+            (( copied++ )) || true
+        else
+            echo "  WARNING: PTS result directory not found for $result_name"
+        fi
+    done
+
+    if [[ "$INVOKING_USER" != "root" ]]; then
+        chown -R "${INVOKING_USER}:${INVOKING_GROUP}" "$output_dir" 2>/dev/null || true
+    fi
+
+    echo "Results collected: ${copied} PTS result(s) + snapshot → ${output_dir}"
+    echo "  Owner: ${INVOKING_USER}:${INVOKING_GROUP}"
+}
+
 capture_system_snapshot() {
-    local snapshot_file="${UPLOAD_ID}-system-snapshot.txt"
+    local snapshot_file="$SNAPSHOT_FILE"
     {
         echo "=== Benchmark Configuration ==="
         echo "Date:          $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
@@ -431,6 +466,14 @@ while [[ "$#" -gt 0 ]]; do
     esac
     shift
 done
+
+# Capture invocation context after arg parsing so --result-id is reflected in
+# RUN_ID before SNAPSHOT_FILE and the output directory are derived from it.
+SCRIPT_INVOCATION_DIR=$(pwd)
+INVOKING_USER="${SUDO_USER:-$(whoami)}"
+INVOKING_GROUP=$(id -gn "$INVOKING_USER" 2>/dev/null || echo "$INVOKING_USER")
+RUN_ID="${UPLOAD_ID}"
+SNAPSHOT_FILE="${RUN_ID}-system-snapshot.txt"
 
 # === Check for PTS and install if it's missing ===
 if ! command -v phoronix-test-suite &> /dev/null; then
@@ -526,6 +569,8 @@ WARMUP_RESULT_ID="warmup-${UPLOAD_ID}"
 # Accumulates names of tests that failed so the run loop can continue and
 # completed results are not orphaned.
 FAILED_TESTS=()
+# All CPU tests share a single PTS result directory named after UPLOAD_ID.
+RESULT_NAMES=()
 
 # === Run Tests ===
 for TEST_NAME in "${REQUIRED_TESTS[@]}"; do
@@ -549,8 +594,16 @@ for TEST_NAME in "${REQUIRED_TESTS[@]}"; do
     if ! phoronix-test-suite batch-run "$TEST_NAME"; then
         echo "WARNING: Timed run failed for $TEST_NAME."
         FAILED_TESTS+=("$TEST_NAME")
+    else
+        # All tests share the same result directory; record it once.
+        if [[ ${#RESULT_NAMES[@]} -eq 0 ]]; then
+            RESULT_NAMES+=("$UPLOAD_ID")
+        fi
     fi
 done
+
+# === Collect Results to ./benchmark-results/ ===
+collect_results
 
 # === Upload Results if Requested ===
 # Runs regardless of individual test failures to preserve results from

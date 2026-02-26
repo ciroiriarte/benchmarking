@@ -334,22 +334,67 @@ OPTIONS:
   -h, --help               Show help
 ```
 
+### Result naming and comparison labels
+
+`--result-id` is the label that ties a run to its output directory and makes
+cross-run comparison possible. It controls:
+
+- The `benchmark-results/<result-id>/` output directory.
+- The prefix of each PTS result subdirectory inside it (CPU, memory, network).
+
+**Storage** is different: within a run, results are named `<disk-label>_<test>_result`
+where the disk label comes from the `--disk` argument, not from `--result-id`. This
+means the disk label is the differentiator *within* a run, while `--result-id`
+differentiates *across* runs.
+
+| Script | PTS result directory name | Differentiator |
+|---|---|---|
+| `benchmark-cpu-pts.sh` | `<result-id>` | `--result-id` |
+| `benchmark-memory-pts.sh` | `<result-id>_<test>` | `--result-id` |
+| `benchmark-network-pts.sh` | `<result-id>_<test-variant>` | `--result-id` |
+| `benchmark-storage-pts.sh` | `<disk-label>_<test>_result` | disk label in `--disk` |
+
 ### Examples
 
 ```bash
 # Single run — export all formats for each PTS test found
 ./create-report-pts.sh ./benchmark-results/dc1-node3-ddr5/
 
-# Compare two runs (same test type, different hardware)
-./create-report-pts.sh \
-  ./benchmark-results/dc1-node3-ddr5/ \
-  ./benchmark-results/dc2-node1-ddr4/
+# --- CPU / memory / network: compare two runs via --result-id ---
 
-# Compare three storage runs with a custom output location
+# Run baseline and a tuned variant
+./benchmark-memory-pts.sh --result-id "dc1-node3-baseline"
+./benchmark-memory-pts.sh --result-id "dc1-node3-tuned"
+
+# Compare: one merged report per test type (stream, ramspeed, …)
+./create-report-pts.sh \
+  ./benchmark-results/dc1-node3-baseline/ \
+  ./benchmark-results/dc1-node3-tuned/
+
+# --- Storage flavor A: compare disk types within a single run ---
+# Use different disk labels; pass one run directory.
+
+./benchmark-storage-pts.sh \
+  --disk /dev/vdb;NVMe_Replica3 \
+  --disk /dev/vdc;HDD_Replica3 \
+  --result-id "ceph-dc1-q1-2026"
+
+./create-report-pts.sh ./benchmark-results/ceph-dc1-q1-2026/
+
+# --- Storage flavor B: compare the same disk type across two runs ---
+# Use the same disk label in both runs; pass two run directories.
+
+./benchmark-storage-pts.sh --disk /dev/vdb;NVMe_Replica3 --result-id "ceph-dc1-before"
+./benchmark-storage-pts.sh --disk /dev/vdb;NVMe_Replica3 --result-id "ceph-dc1-after"
+
+./create-report-pts.sh \
+  ./benchmark-results/ceph-dc1-before/ \
+  ./benchmark-results/ceph-dc1-after/
+
+# Custom output directory
 ./create-report-pts.sh \
   --output-dir /tmp/storage-comparison \
   ./benchmark-results/nvme-run/ \
-  ./benchmark-results/ssd-run/ \
   ./benchmark-results/hdd-run/
 ```
 

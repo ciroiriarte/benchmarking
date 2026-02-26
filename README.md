@@ -22,6 +22,10 @@ Scripts work on both physical machines and virtual machines (vSphere, OpenStack)
 | `benchmark-network-pts.sh` | Network-bound | `pts/network-loopback`, `pts/sockperf`, `pts/iperf`, `pts/netperf` |
 | `benchmark-storage-pts.sh` | Disk I/O-bound | `pts/fio`, `pts/dbench`, `pts/fs-mark`, `pts/compilebench` |
 
+`create-report-pts.sh` consumes the `benchmark-results/` directories produced by any of
+the above scripts and generates reports in all supported PTS formats (text, CSV, JSON,
+HTML, PDF), with optional cross-run comparison when N > 1 run directories are supplied.
+
 ---
 
 ## benchmark-cpu-pts.sh
@@ -298,6 +302,55 @@ OPTIONS:
 ./benchmark-storage-pts.sh --disk-file disks.conf \
   --skip-preconditioning \
   --result-id "ceph-dc1-q1-2026-rerun"
+```
+
+---
+
+## create-report-pts.sh
+
+Generates PTS reports from `benchmark-results/` directories produced by any of the
+benchmark scripts. Accepts one or more run directories; when more than one is provided
+the same-type results are merged for cross-run comparison. Reports are written in all
+supported PTS export formats.
+
+| Format | File extension | Notes |
+|---|---|---|
+| Text | `.text` | Human-readable summary table |
+| CSV | `.csv` | Flat CSV for spreadsheet import |
+| JSON | `.json` | Structured data for custom processing |
+| HTML | `.html` | Self-contained HTML page with charts |
+| PDF | `.pdf` | Requires `wkhtmltopdf` to be installed |
+
+### Usage
+
+```
+./create-report-pts.sh [OPTIONS] <run-dir> [<run-dir> ...]
+
+ARGUMENTS:
+  <run-dir>                One or more benchmark-results/<run-id>/ directories.
+
+OPTIONS:
+  -o, --output-dir <path>  Directory to write reports (default: ./pts-reports/<timestamp>/)
+  -h, --help               Show help
+```
+
+### Examples
+
+```bash
+# Single run — export all formats for each PTS test found
+./create-report-pts.sh ./benchmark-results/dc1-node3-ddr5/
+
+# Compare two runs (same test type, different hardware)
+./create-report-pts.sh \
+  ./benchmark-results/dc1-node3-ddr5/ \
+  ./benchmark-results/dc2-node1-ddr4/
+
+# Compare three storage runs with a custom output location
+./create-report-pts.sh \
+  --output-dir /tmp/storage-comparison \
+  ./benchmark-results/nvme-run/ \
+  ./benchmark-results/ssd-run/ \
+  ./benchmark-results/hdd-run/
 ```
 
 ---

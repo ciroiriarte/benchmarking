@@ -1,0 +1,197 @@
+.TH BENCHMARK\-STORAGE\-PTS 1 "February 2026" "benchmarking" "User Commands"
+.SH NAME
+benchmark\-storage\-pts.sh \- benchmark storage I/O performance using the Phoronix Test Suite
+.SH SYNOPSIS
+.B benchmark\-storage\-pts.sh
+\fB\-\-disk\fR \fI"<device>;<label>"\fR
+[\fB\-\-disk\fR \fI"<device>;<label>"\fR ...]
+[\fIOPTIONS\fR]
+.br
+.B benchmark\-storage\-pts.sh
+\fB\-\-disk\-file\fR \fIPATH\fR
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+.B WARNING: This script is destructive.
+It formats and completely wipes all data on every target disk before testing.
+.PP
+Benchmarks storage I/O across one or more disks sequentially.
+For each disk the script formats it with XFS, mounts it, runs the full PTS
+storage test suite, and saves results before moving on to the next disk.
+Tests are never run in parallel across disks to avoid I/O contention.
+.PP
+The test suite covers latency, IOPS, throughput, and workload characterisation
+across multiple access patterns, block sizes, I/O engines, and read/write ratios.
+.PP
+.B SSD steady-state preconditioning
+is performed by default before formatting each SSD or NVMe device.
+The script writes across the full device twice (128\ KiB blocks, queue depth\ 32)
+to move it through its garbage-collection and wear-levelling cycle so that
+measurements reflect steady-state performance rather than a rested state.
+Preconditioning is skipped automatically for HDDs and unknown device types,
+and can be disabled with \fB\-\-skip\-preconditioning\fR.
+.PP
+PTS is installed automatically on supported distributions (Ubuntu, Debian,
+Rocky Linux, openSUSE) if not already present.
+.PP
+Results are collected into
+.B ./benchmark\-results/<result\-id>/
+relative to the directory from which the script is invoked.
+.SH PTS TESTS
+.TP
+.B pts/fio
+Flexible I/O tester.
+Covers sequential and random read/write, multiple I/O engines (sync, psync,
+Linux AIO, io_uring), direct and buffered I/O, and block sizes from 512\ B to 8\ MB.
+.TP
+.B pts/dbench
+Filesystem metadata throughput using CIFS-style workloads.
+.TP
+.B pts/fs\-mark
+Filesystem throughput benchmark focused on file creation and deletion patterns.
+.TP
+.B pts/compilebench
+Simulates kernel compilation I/O patterns (requires Python\ 2; skipped automatically
+when only Python\ 3 is available).
+.SH OPTIONS
+.SS Disk target options (at least one required)
+.TP
+.B \-\-disk " " \fI"<device>;<label>"\fR
+Add a target disk.
+.I device
+is the block device path (e.g.\&
+.BR /dev/vdb ).
+.I label
+is a short name used for the mount point
+.RB ( /mnt/<label> )
+and result directory names.
+The argument must be quoted so the shell does not interpret
+.RB ' ; '
+as a command separator.
+May be repeated for multiple disks.
+.TP
+.B \-\-disk\-file " " \fIPATH\fR
+Read disk entries from a file, one
+.I device;label
+entry per line.
+Lines beginning with
+.RB ' # '
+and blank lines are ignored.
+May be combined with \fB\-\-disk\fR.
+.SS General options
+.TP
+.B \-\-skip\-preconditioning
+Skip SSD steady-state preconditioning passes.
+Use when re-running tests immediately after a previous run (the device is
+already conditioned) or when turnaround time matters more than strict
+reproducibility.
+.TP
+.B \-\-upload
+Upload results to OpenBenchmarking.org after the run completes.
+Requires \fB\-\-result\-id\fR and \fB\-\-result\-name\fR.
+.TP
+.B \-\-result\-id " " \fIID\fR
+Short identifier for the run (e.g.\&
+.IR ceph\-dc1\-q1\-2026 ).
+Used as the output directory name and the upload identifier on
+OpenBenchmarking.org.
+Default: auto-generated timestamp string.
+.TP
+.B \-\-result\-name " " \fINAME\fR
+Human-readable display name for the result (e.g.\&
+.IR "Ceph DC1 \- NVMe vs HDD Q1 2026" ).
+Required when \fB\-\-upload\fR is specified.
+.TP
+.B \-\-help
+Display a help message and exit.
+.SH DISK FILE FORMAT
+One entry per line in the format
+.IR device ; label .
+Lines starting with
+.RB ' # '
+and blank lines are ignored.
+.PP
+.nf
+.RS
+# Storage benchmark disk list
+/dev/vdb;NVMe_Replica3
+/dev/vdc;NVMe_EC32
+
+/dev/vdd;HDD_Replica3
+/dev/vde;HDD_EC32
+.RE
+.fi
+.SH OUTPUT
+.TP
+.B ./benchmark\-results/<result\-id>/<result\-id>\-system\-snapshot.txt
+System snapshot captured before the run.
+.TP
+.BI ./benchmark\-results/<result\-id>/<label>_ test _result/
+One PTS result directory per (disk\~\[mu]\~test) combination (e.g.\&
+.BR NVMe_Replica3_fio_result/ ,
+.BR NVMe_Replica3_dbench_result/ ,
+\&...).
+Each contains
+.B composite.xml
+and all result data for that test on that disk.
+.SH COMPARISON
+When multiple disks are tested in a single run, a local comparison report is
+generated at the end using
+.BR "phoronix\-test\-suite compare\-results" .
+.PP
+To generate full reports in all formats across disks or across separate runs, use
+.BR create\-report\-pts.sh (1).
+.SH EXAMPLES
+.PP
+Test two disks with different characteristics in a single run:
+.PP
+.nf
+.RS
+\&./benchmark\-storage\-pts.sh \\
+    \-\-disk "/dev/vdb;NVMe_Replica3" \\
+    \-\-disk "/dev/vdc;HDD_Replica3"
+.RE
+.fi
+.PP
+Test from a disk file and upload results:
+.PP
+.nf
+.RS
+\&./benchmark\-storage\-pts.sh \-\-disk\-file disks.conf \-\-upload \\
+    \-\-result\-name "Ceph NVMe vs HDD \- Q1 2026" \\
+    \-\-result\-id "ceph\-dc1\-q1\-2026"
+.RE
+.fi
+.PP
+Skip preconditioning for a quick re-run immediately after a previous run:
+.PP
+.nf
+.RS
+\&./benchmark\-storage\-pts.sh \-\-disk\-file disks.conf \\
+    \-\-skip\-preconditioning \\
+    \-\-result\-id "ceph\-dc1\-q1\-2026\-rerun"
+.RE
+.fi
+.PP
+Compare two separate runs (before and after a storage upgrade) using
+.BR create\-report\-pts.sh (1):
+.PP
+.nf
+.RS
+\&./benchmark\-storage\-pts.sh \-\-disk "/dev/vdb;NVMe" \-\-result\-id "before\-upgrade"
+\&./benchmark\-storage\-pts.sh \-\-disk "/dev/vdb;NVMe" \-\-result\-id "after\-upgrade"
+\&./create\-report\-pts.sh \\
+    ./benchmark\-results/before\-upgrade/ \\
+    ./benchmark\-results/after\-upgrade/
+.RE
+.fi
+.SH SEE ALSO
+.BR benchmark\-cpu\-pts.sh (1),
+.BR benchmark\-memory\-pts.sh (1),
+.BR benchmark\-network\-pts.sh (1),
+.BR create\-report\-pts.sh (1),
+.BR phoronix\-test\-suite (1),
+.BR fio (1),
+.BR mkfs.xfs (8),
+.BR wipefs (8)
+.SH AUTHOR
+Ciro Iriarte <ciro.iriarte@gmail.com>

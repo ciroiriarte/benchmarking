@@ -1,0 +1,114 @@
+.TH BENCHMARK\-CPU\-PTS 1 "February 2026" "benchmarking" "User Commands"
+.SH NAME
+benchmark\-cpu\-pts.sh \- benchmark CPU performance using the Phoronix Test Suite
+.SH SYNOPSIS
+.B benchmark\-cpu\-pts.sh
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+Benchmarks CPU performance using a set of PTS test profiles that together cover
+integer, floating-point, cryptographic, compression, and branchy integer workloads.
+.PP
+The script auto-detects CPU topology (sockets, cores, threads) and scales the
+thread count accordingly.
+Before running tests it checks the CPU frequency governor, thermal state, system
+load, and VM steal time, and warns when conditions may affect result validity.
+An unmeasured warmup run is executed before each timed run to bring CPU caches and
+branch predictor to steady state.
+.PP
+PTS is installed automatically on supported distributions (Ubuntu, Debian,
+Rocky Linux, openSUSE) if not already present.
+.PP
+Results are collected into
+.B ./benchmark\-results/<result\-id>/
+relative to the directory from which the script is invoked.
+.SH OPTIONS
+.TP
+.BR \-t ", " \-\-threads " " \fIN\fR
+Number of threads to use for the benchmark.
+Default: all available hardware threads.
+.TP
+.BR \-T ", " \-\-tests " " \fILIST\fR
+Comma-separated list of PTS test profile identifiers to run, overriding the
+default set.
+Default:
+.BR pts/build\-linux\-kernel ,
+.BR pts/compress\-7zip ,
+.BR pts/c\-ray ,
+.BR pts/openssl ,
+.BR pts/stockfish .
+.TP
+.BR \-r ", " \-\-runs " " \fIN\fR
+Minimum number of timed runs per test.
+Default: 3.
+.TP
+.BR \-u ", " \-\-upload
+Upload results to OpenBenchmarking.org after the run completes.
+Requires \fB\-\-result\-id\fR and \fB\-\-result\-name\fR.
+.TP
+.BR \-i ", " \-\-result\-id " " \fIID\fR
+Short identifier for the run (e.g.\&
+.IR dc1\-node3\-baseline ).
+Used as the output directory name, the PTS result name, and the upload identifier
+on OpenBenchmarking.org.
+Default: auto-generated timestamp string.
+.TP
+.BR \-n ", " \-\-result\-name " " \fINAME\fR
+Human-readable display name for the result (e.g.\&
+.IR "DC1 Node3 \- Intel Xeon E5" ).
+Required when \fB\-\-upload\fR is specified.
+.TP
+.BR \-h ", " \-\-help
+Display a help message and exit.
+.SH OUTPUT
+.TP
+.B ./benchmark\-results/<result\-id>/<result\-id>\-system\-snapshot.txt
+System snapshot captured before the run: OS release, kernel version, CPU topology,
+frequency scaling state, memory, and processor information from dmidecode.
+.TP
+.B ./benchmark\-results/<result\-id>/<result\-id>/
+PTS result directory containing
+.B composite.xml
+and all test result data.
+.SH EXAMPLES
+.PP
+Run with all available CPU threads:
+.PP
+.nf
+.RS
+\&./benchmark\-cpu\-pts.sh
+.RE
+.fi
+.PP
+Run with a specific thread count:
+.PP
+.nf
+.RS
+\&./benchmark\-cpu\-pts.sh \-\-threads 4
+.RE
+.fi
+.PP
+Run a custom test subset:
+.PP
+.nf
+.RS
+\&./benchmark\-cpu\-pts.sh \-\-tests pts/compress\-7zip,pts/c\-ray
+.RE
+.fi
+.PP
+Run and upload results to OpenBenchmarking.org:
+.PP
+.nf
+.RS
+\&./benchmark\-cpu\-pts.sh \-\-upload \\
+    \-\-result\-id "dc1\-node3\-baseline" \\
+    \-\-result\-name "DC1 Node3 \- Intel Xeon E5"
+.RE
+.fi
+.SH SEE ALSO
+.BR benchmark\-memory\-pts.sh (1),
+.BR benchmark\-network\-pts.sh (1),
+.BR benchmark\-storage\-pts.sh (1),
+.BR create\-report\-pts.sh (1),
+.BR phoronix\-test\-suite (1)
+.SH AUTHOR
+Ciro Iriarte <ciro.iriarte@gmail.com>

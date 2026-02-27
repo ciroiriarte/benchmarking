@@ -1,0 +1,112 @@
+.TH BENCHMARK\-MEMORY\-PTS 1 "February 2026" "benchmarking" "User Commands"
+.SH NAME
+benchmark\-memory\-pts.sh \- benchmark memory subsystem performance using the Phoronix Test Suite
+.SH SYNOPSIS
+.B benchmark\-memory\-pts.sh
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+Benchmarks the memory subsystem using four complementary PTS test profiles that
+together characterise sustained DRAM bandwidth, integer vs.\& floating-point memory
+paths, cache hierarchy bandwidth, and combined bandwidth + latency across the full
+L1/L2/L3/DRAM hierarchy.
+All sub-option permutations (operation type, benchmark mode, access pattern) are
+exercised automatically in a single run per test via PTS batch mode.
+.PP
+Before running tests the script checks the CPU frequency governor, thermal state,
+system load, VM steal time, and Transparent Huge Pages state, and warns when
+conditions may affect result validity.
+.PP
+PTS is installed automatically on supported distributions (Ubuntu, Debian,
+Rocky Linux, openSUSE) if not already present.
+.PP
+Results are collected into
+.B ./benchmark\-results/<result\-id>/
+relative to the directory from which the script is invoked.
+.SH PTS TESTS
+.TP
+.B pts/stream
+Sustained DRAM bandwidth \(em Copy, Scale, Add, Triad operations.
+.TP
+.B pts/ramspeed
+Integer and floating-point bandwidth \(em Copy, Scale, Add, Triad, Average.
+.TP
+.B pts/tinymembench
+Bandwidth and access latency across L1/L2/L3 caches and DRAM.
+.TP
+.B pts/cachebench
+Cache-level bandwidth \(em Read, Write, Read/Modify/Write.
+.SH OPTIONS
+.TP
+.BR \-u ", " \-\-upload
+Upload results to OpenBenchmarking.org after the run completes.
+Requires \fB\-\-result\-id\fR and \fB\-\-result\-name\fR.
+.TP
+.BR \-i ", " \-\-result\-id " " \fIID\fR
+Short identifier for the run (e.g.\&
+.IR dc1\-node3\-ddr5 ).
+Used as the output directory name, the PTS result name prefix, and the upload
+identifier on OpenBenchmarking.org.
+Default: auto-generated timestamp string.
+.TP
+.BR \-n ", " \-\-result\-name " " \fINAME\fR
+Human-readable display name for the result (e.g.\&
+.IR "DC1 Node3 \- DDR5 6400 MT/s" ).
+Required when \fB\-\-upload\fR is specified.
+.TP
+.BR \-h ", " \-\-help
+Display a help message and exit.
+.SH OUTPUT
+.TP
+.B ./benchmark\-results/<result\-id>/<result\-id>\-system\-snapshot.txt
+System snapshot captured before the run: OS release, kernel version, CPU topology,
+frequency scaling state, NUMA topology, THP state, DIMM information (dmidecode),
+memory, and load average.
+.TP
+.BI ./benchmark\-results/<result\-id>/<result\-id>_ test /
+One PTS result directory per test (e.g.\&
+.BR <result\-id>_stream/ ,
+.BR <result\-id>_ramspeed/ ,
+\&...).
+Each contains
+.B composite.xml
+and all result data for that test.
+.SH EXAMPLES
+.PP
+Run all memory benchmarks:
+.PP
+.nf
+.RS
+\&./benchmark\-memory\-pts.sh
+.RE
+.fi
+.PP
+Run and upload results, labelled for later comparison:
+.PP
+.nf
+.RS
+\&./benchmark\-memory\-pts.sh \-\-upload \\
+    \-\-result\-id "dc1\-node3\-ddr5" \\
+    \-\-result\-name "DC1 Node3 \- DDR5 6400 MT/s"
+.RE
+.fi
+.PP
+Compare two runs with
+.BR create\-report\-pts.sh (1):
+.PP
+.nf
+.RS
+\&./benchmark\-memory\-pts.sh \-\-result\-id "node3\-baseline"
+\&./benchmark\-memory\-pts.sh \-\-result\-id "node3\-tuned"
+\&./create\-report\-pts.sh \\
+    ./benchmark\-results/node3\-baseline/ \\
+    ./benchmark\-results/node3\-tuned/
+.RE
+.fi
+.SH SEE ALSO
+.BR benchmark\-cpu\-pts.sh (1),
+.BR benchmark\-network\-pts.sh (1),
+.BR benchmark\-storage\-pts.sh (1),
+.BR create\-report\-pts.sh (1),
+.BR phoronix\-test\-suite (1)
+.SH AUTHOR
+Ciro Iriarte <ciro.iriarte@gmail.com>

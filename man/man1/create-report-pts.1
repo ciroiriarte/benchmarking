@@ -1,0 +1,155 @@
+.TH CREATE\-REPORT\-PTS 1 "February 2026" "benchmarking" "User Commands"
+.SH NAME
+create\-report\-pts.sh \- generate PTS reports from benchmark results
+.SH SYNOPSIS
+.B create\-report\-pts.sh
+[\fIOPTIONS\fR]
+\fIrun\-dir\fR
+[\fIrun\-dir\fR ...]
+.SH DESCRIPTION
+Generates reports in all supported PTS export formats from
+.B benchmark\-results/
+directories produced by any of the benchmark scripts
+(\fBbenchmark\-cpu\-pts.sh\fR, \fBbenchmark\-memory\-pts.sh\fR,
+\fBbenchmark\-network\-pts.sh\fR, \fBbenchmark\-storage\-pts.sh\fR).
+.PP
+PTS result directories are detected automatically by locating
+.B composite.xml
+files inside each supplied run directory.
+Results are grouped by test type (PTS identifier with version suffix stripped,
+e.g.\& all
+.I pts/fio\-*
+variants group under
+.IR pts/fio ).
+When more than one run directory is supplied and the same test type is found in
+multiple runs, the results are merged using
+.B phoronix\-test\-suite merge\-results
+for side-by-side comparison.
+A single run directory is also supported; in that case all test types found are
+exported individually without merging.
+.PP
+All temporary PTS result entries imported during processing are removed on exit.
+.SH SUPPORTED FORMATS
+.TP
+.B text
+Human-readable summary table.
+File extension:
+.BR .text .
+.TP
+.B csv
+Flat CSV suitable for spreadsheet import.
+File extension:
+.BR .csv .
+.TP
+.B json
+Structured JSON for custom processing or automation.
+File extension:
+.BR .json .
+.TP
+.B html
+Self-contained HTML page with charts.
+File extension:
+.BR .html .
+.TP
+.B pdf
+PDF report.
+Requires
+.BR wkhtmltopdf (1)
+to be installed.
+File extension:
+.BR .pdf .
+.SH OPTIONS
+.TP
+.BR \-o ", " \-\-output\-dir " " \fIPATH\fR
+Directory to write reports into.
+Default:
+.BR ./pts\-reports/<timestamp>/ .
+.TP
+.BR \-h ", " \-\-help
+Display a help message and exit.
+.SH RESULT NAMING
+The \fB\-\-result\-id\fR value supplied to a benchmark script controls the run
+directory name and, for CPU/memory/network scripts, the prefix of each PTS
+result subdirectory inside it.
+For the storage script the disk label (from \fB\-\-disk\fR) names the PTS result
+subdirectories within a run.
+.PP
+.TS
+lb lb lb
+l l l.
+Script	PTS result subdirectory name	Differentiator
+benchmark\-cpu\-pts.sh	<result\-id>	\-\-result\-id
+benchmark\-memory\-pts.sh	<result\-id>_<test>	\-\-result\-id
+benchmark\-network\-pts.sh	<result\-id>_<test\-variant>	\-\-result\-id
+benchmark\-storage\-pts.sh	<disk\-label>_<test>_result	disk label in \-\-disk
+.TE
+.SH OUTPUT
+Reports are written under
+.IR output\-dir ,
+organised by test type:
+.PP
+.nf
+.RS
+pts\-reports/<timestamp>/
+  pts\-fio/
+    pts\-fio.text
+    pts\-fio.csv
+    pts\-fio.json
+    pts\-fio.html
+    pts\-fio.pdf
+  pts\-stream/
+    \&...
+.RE
+.fi
+.SH EXAMPLES
+.PP
+Generate reports for a single memory benchmark run:
+.PP
+.nf
+.RS
+\&./create\-report\-pts.sh ./benchmark\-results/dc1\-node3\-ddr5/
+.RE
+.fi
+.PP
+Compare two memory runs (baseline vs tuned):
+.PP
+.nf
+.RS
+\&./benchmark\-memory\-pts.sh \-\-result\-id "node3\-baseline"
+\&./benchmark\-memory\-pts.sh \-\-result\-id "node3\-tuned"
+\&./create\-report\-pts.sh \\
+    ./benchmark\-results/node3\-baseline/ \\
+    ./benchmark\-results/node3\-tuned/
+.RE
+.fi
+.PP
+Compare two disk types from a single storage run:
+.PP
+.nf
+.RS
+\&./benchmark\-storage\-pts.sh \\
+    \-\-disk "/dev/vdb;NVMe" \\
+    \-\-disk "/dev/vdc;HDD" \\
+    \-\-result\-id "storage\-q1\-2026"
+\&./create\-report\-pts.sh ./benchmark\-results/storage\-q1\-2026/
+.RE
+.fi
+.PP
+Compare the same disk type across two storage runs with a custom output path:
+.PP
+.nf
+.RS
+\&./create\-report\-pts.sh \\
+    \-\-output\-dir /tmp/storage\-comparison \\
+    ./benchmark\-results/before\-upgrade/ \\
+    ./benchmark\-results/after\-upgrade/
+.RE
+.fi
+.SH SEE ALSO
+.BR benchmark\-cpu\-pts.sh (1),
+.BR benchmark\-memory\-pts.sh (1),
+.BR benchmark\-network\-pts.sh (1),
+.BR benchmark\-storage\-pts.sh (1),
+.BR phoronix\-test\-suite (1)
+.SH AUTHOR
+Ciro Iriarte <ciro.iriarte@gmail.com>

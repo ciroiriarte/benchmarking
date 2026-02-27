@@ -1,0 +1,177 @@
+.TH BENCHMARK\-NETWORK\-PTS 1 "February 2026" "benchmarking" "User Commands"
+.SH NAME
+benchmark\-network\-pts.sh \- benchmark network performance using the Phoronix Test Suite
+.SH SYNOPSIS
+.B benchmark\-network\-pts.sh
+[\fIOPTIONS\fR]
+.br
+.B benchmark\-network\-pts.sh
+\fB\-\-server\-mode\fR
+[\fB\-\-interface\fR \fIIFACE\fR|\fIIP\fR]
+.SH DESCRIPTION
+Benchmarks network performance across three modes.
+.PP
+.B Standalone
+tests always run on a single host and require no second machine:
+.RS
+.TP
+.B pts/network\-loopback
+TCP stack throughput through the loopback interface (kernel buffer performance).
+.TP
+.B pts/sockperf
+Socket API latency (ping-pong, under-load) and throughput; starts its own
+server process locally.
+.RE
+.PP
+.B Peer
+tests require a second host running the script in
+.B \-\-server\-mode
+and are enabled by supplying
+.BR \-\-server :
+.RS
+.TP
+.B pts/iperf
+TCP bulk throughput (single and multi-stream scaled to NIC line rate) and UDP throughput.
+.TP
+.B pts/netperf
+TCP/UDP throughput in both directions and request-response latency.
+.RE
+.PP
+.B Server mode
+(\fB\-\-server\-mode\fR) installs the test binaries via PTS on the remote host, then
+starts
+.B iperf3
+and
+.B netserver
+as local daemons.
+Stop the daemons with Ctrl\-C when the benchmark run is complete.
+.PP
+Parallel stream count and UDP target bandwidth scale automatically with NIC line
+rate (e.g.\& 25 streams on 25\ GbE, 100 streams on 100\ GbE).
+Override with \fB\-\-streams\fR or supply the speed manually with \fB\-\-nic\-speed\fR
+for virtual NICs that do not expose speed via sysfs.
+.PP
+Before peer tests the script computes the bandwidth-delay product (BDP) for the
+link and warns if TCP socket buffer sizes are too small to saturate the pipe.
+.PP
+PTS is installed automatically on supported distributions (Ubuntu, Debian,
+Rocky Linux, openSUSE) if not already present.
+.PP
+Results are collected into
+.B ./benchmark\-results/<result\-id>/
+relative to the directory from which the script is invoked.
+.SH OPTIONS
+.TP
+.BR \-s ", " \-\-server " " \fIADDRESS\fR
+IP address or hostname of the peer for
+.B pts/iperf
+and
+.B pts/netperf
+tests.
+When omitted, only standalone tests are run.
+Mutually exclusive with \fB\-\-server\-mode\fR.
+.TP
+.B \-\-server\-mode
+Start
+.B iperf3
+and
+.B netserver
+as local server daemons.
+Installs test binaries via PTS if not already installed.
+Mutually exclusive with \fB\-\-server\fR.
+.TP
+.BR \-I ", " \-\-interface " " \fIIFACE\fR|\fIIP\fR
+In client mode: egress interface used for NIC speed detection.
+In server mode: interface name or IP address to bind the daemons to.
+Omit to bind to all interfaces (server) or auto-detect (client).
+.TP
+.B \-\-nic\-speed " " \fIMbps\fR
+Override the NIC line rate in Mbps (e.g.\&
+.B 100000
+for 100\ GbE).
+Client mode only.
+Useful for virtual NICs that do not expose speed via sysfs.
+.TP
+.B \-\-streams " " \fIN\fR
+Override the parallel stream count for
+.B pts/iperf
+multi-stream tests.
+Client mode only.
+.TP
+.BR \-u ", " \-\-upload
+Upload results to OpenBenchmarking.org after the run completes.
+Requires \fB\-\-result\-id\fR and \fB\-\-result\-name\fR.
+.TP
+.BR \-i ", " \-\-result\-id " " \fIID\fR
+Short identifier for the run (e.g.\&
+.IR dc1\-vm1\-to\-vm2 ).
+Used as the output directory name, the PTS result name prefix, and the upload
+identifier on OpenBenchmarking.org.
+Default: auto-generated timestamp string.
+.TP
+.BR \-n ", " \-\-result\-name " " \fINAME\fR
+Human-readable display name for the result (e.g.\&
+.IR "VM1 to VM2 \- 100GbE vSwitch" ).
+Required when \fB\-\-upload\fR is specified.
+.TP
+.BR \-h ", " \-\-help
+Display a help message and exit.
+.SH OUTPUT
+.TP
+.B ./benchmark\-results/<result\-id>/<result\-id>\-system\-snapshot.txt
+System snapshot captured before the run.
+.TP
+.BI ./benchmark\-results/<result\-id>/<result\-id>_ test\-variant /
+One PTS result directory per test variant (e.g.\&
+.BR <result\-id>_network\-loopback/ ,
+.BR <result\-id>_sockperf/ ,
+.BR <result\-id>_iperf_tcp_1stream/ ,
+\&...).
+.SH EXAMPLES
+.PP
+Start server daemons on the remote host, bound to a specific interface:
+.PP
+.nf
+.RS
+\&./benchmark\-network\-pts.sh \-\-server\-mode \-\-interface eth0
+.RE
+.fi
+.PP
+Run standalone tests only (no second machine needed):
+.PP
+.nf
+.RS
+\&./benchmark\-network\-pts.sh
+.RE
+.fi
+.PP
+Run the full suite against a peer:
+.PP
+.nf
+.RS
+\&./benchmark\-network\-pts.sh \-\-server 192.168.100.10 \\
+    \-\-result\-id "dc1\-vm1\-to\-vm2" \\
+    \-\-result\-name "VM1 to VM2 \- Ceph cluster network"
+.RE
+.fi
+.PP
+100\ GbE link where the virtual NIC does not report speed via sysfs:
+.PP
+.nf
+.RS
+\&./benchmark\-network\-pts.sh \-\-server 192.168.100.10 \\
+    \-\-interface eth0 \-\-nic\-speed 100000 \\
+    \-\-result\-id "dc1\-vm1\-to\-vm2" \\
+    \-\-result\-name "VM1 to VM2 \- 100GbE vSwitch"
+.RE
+.fi
+.SH SEE ALSO
+.BR benchmark\-cpu\-pts.sh (1),
+.BR benchmark\-memory\-pts.sh (1),
+.BR benchmark\-storage\-pts.sh (1),
+.BR create\-report\-pts.sh (1),
+.BR phoronix\-test\-suite (1),
+.BR iperf3 (1),
+.BR netserver (1)
+.SH AUTHOR
+Ciro Iriarte <ciro.iriarte@gmail.com>

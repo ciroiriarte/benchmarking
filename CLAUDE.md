@@ -20,6 +20,7 @@
 * Scripts requiring input should fail with a usage guide when parameters are missing.
 * Bash should be used to its full capabilities before introducing additional dependencies.
 * All scripts should have inline documentation.
+* Follow versioning convention from https://semver.org/
 
 # Best Practices
 * Benchmark tests execution should be auditable and reproducible

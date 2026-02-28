@@ -1,38 +1,77 @@
-# benchmarking
+# Infrastructure Benchmarking
 
-Benchmark scripts for infrastructure using synthetic tests via the
+Benchmark scripts for infrastructure using synthetic workloads via the
 [Phoronix Test Suite (PTS)](https://www.phoronix-test-suite.com/).
-Each script targets a single workload dimension — CPU-bound, memory-bound,
-network-bound, or disk I/O-bound — and produces results that can optionally be uploaded to
-[OpenBenchmarking.org](https://openbenchmarking.org/) for comparison across
-runs and systems.
+Each script targets a single performance dimension and produces results that can
+be compared locally or uploaded to [OpenBenchmarking.org](https://openbenchmarking.org/).
 
-Supported distributions: **Ubuntu**, **Debian**, **Rocky Linux**, **openSUSE**
-(Leap 15.6, Tumbleweed, Slowroll).
-Scripts work on both physical machines and virtual machines (vSphere, OpenStack).
+**Supported distributions:** Ubuntu, Debian, Rocky Linux, openSUSE (Leap 15.6, Tumbleweed, Slowroll).
+Runs on physical machines and virtual machines (vSphere, OpenStack).
+
+---
+
+## Contents
+
+- [Scripts](#scripts)
+- [Quick start](#quick-start)
+- [benchmark-cpu-pts.sh](#benchmark-cpu-ptssh)
+- [benchmark-memory-pts.sh](#benchmark-memory-ptssh)
+- [benchmark-network-pts.sh](#benchmark-network-ptssh)
+- [benchmark-storage-pts.sh](#benchmark-storage-ptssh)
+- [create-report-pts.sh](#create-report-ptssh)
+- [Prerequisites](#prerequisites)
+- [OS preparation](#os-preparation)
+- [Virtual machine setup](#virtual-machine-setup)
 
 ---
 
 ## Scripts
 
-| Script | Workload | PTS tests used |
+| Script | Workload | PTS tests |
 |---|---|---|
-| `benchmark-cpu-pts.sh` | CPU-bound | `pts/build-linux-kernel` |
-| `benchmark-memory-pts.sh` | Memory-bound | `pts/stream`, `pts/ramspeed`, `pts/tinymembench`, `pts/cachebench` |
-| `benchmark-network-pts.sh` | Network-bound | `pts/network-loopback`, `pts/sockperf`, `pts/iperf`, `pts/netperf` |
-| `benchmark-storage-pts.sh` | Disk I/O-bound | `pts/fio`, `pts/dbench`, `pts/fs-mark`, `pts/compilebench` |
+| `benchmark-cpu-pts.sh` | CPU | `pts/build-linux-kernel`, `pts/compress-7zip`, `pts/c-ray`, `pts/openssl`, `pts/stockfish` |
+| `benchmark-memory-pts.sh` | Memory | `pts/stream`, `pts/ramspeed`, `pts/tinymembench`, `pts/cachebench` |
+| `benchmark-network-pts.sh` | Network | `pts/network-loopback`, `pts/sockperf`, `pts/iperf`, `pts/netperf` |
+| `benchmark-storage-pts.sh` | Disk I/O | `pts/fio`, `pts/dbench`, `pts/fs-mark`, `pts/compilebench` |
 
-`create-report-pts.sh` consumes the `benchmark-results/` directories produced by any of
-the above scripts and generates reports in all supported PTS formats (text, CSV, JSON,
-HTML, PDF), with optional cross-run comparison when N > 1 run directories are supplied.
+`create-report-pts.sh` consumes the `benchmark-results/` directories produced by any of the
+above scripts and generates reports in all supported PTS formats (text, CSV, JSON, HTML, PDF),
+with cross-run comparison when more than one run directory is supplied.
+
+---
+
+## Quick start
+
+```bash
+git clone https://github.com/ciroiriarte/benchmarking.git
+cd benchmarking
+
+# CPU benchmark — auto-detects topology, runs with all threads
+sudo ./benchmark-cpu-pts.sh --result-id "my-server-baseline"
+
+# Memory benchmark
+sudo ./benchmark-memory-pts.sh --result-id "my-server-baseline"
+
+# Storage benchmark (destructive — wipes target disk)
+sudo ./benchmark-storage-pts.sh --disk "/dev/vdb;nvme-test" --result-id "my-server-baseline"
+
+# Generate reports from results
+./create-report-pts.sh ./benchmark-results/my-server-baseline/
+```
+
+PTS and all test dependencies are installed automatically on first run.
+Results are saved to `./benchmark-results/<result-id>/`.
 
 ---
 
 ## benchmark-cpu-pts.sh
 
-Benchmarks CPU performance using a kernel compilation workload. Automatically
-detects CPU topology (sockets, cores, threads) and scales the test accordingly.
-PTS is installed automatically if not present.
+Benchmarks CPU performance across five complementary workload classes: integer
+multi-threaded compilation, LZMA compression, floating-point ray tracing,
+cryptographic operations, and branchy integer search. Automatically detects CPU
+topology (sockets, cores, threads) and scales accordingly. An unmeasured warmup
+run is executed before each timed run to bring caches and branch predictor to
+steady state.
 
 ### Usage
 
@@ -40,21 +79,26 @@ PTS is installed automatically if not present.
 ./benchmark-cpu-pts.sh [OPTIONS]
 
 OPTIONS:
-  -t, --threads <N>            Number of threads to use (default: all available)
+  -t, --threads <N>            Number of threads (default: all available)
+  -T, --tests <list>           Comma-separated PTS test identifiers (overrides defaults)
+  -r, --runs <N>               Minimum timed runs per test (default: 3)
   -u, --upload                 Upload results to OpenBenchmarking.org
-  -i, --result-id <id>         Test identifier for the result (e.g. 'prod-server-01')
-  -n, --result-name <name>     Display name for the result (e.g. 'Prod Server - Intel Xeon')
+  -i, --result-id <id>         Run identifier, e.g. "dc1-node3-baseline"
+  -n, --result-name <name>     Display name, e.g. "DC1 Node3 - AMD EPYC 9354"
   -h, --help                   Show help
 ```
 
 ### Examples
 
 ```bash
-# Run with all available CPU threads
-./benchmark-cpu-pts.sh
+# Run with all available threads
+./benchmark-cpu-pts.sh --result-id "dc1-node3-baseline"
 
-# Run with a specific thread count
-./benchmark-cpu-pts.sh --threads 4
+# Run with a fixed thread count
+./benchmark-cpu-pts.sh --threads 4 --result-id "dc1-node3-4t"
+
+# Run a custom test subset
+./benchmark-cpu-pts.sh --tests pts/compress-7zip,pts/c-ray --result-id "dc1-node3-fp"
 
 # Run and upload results
 ./benchmark-cpu-pts.sh --upload \
@@ -67,17 +111,15 @@ OPTIONS:
 ## benchmark-memory-pts.sh
 
 Benchmarks the memory subsystem using four complementary tests that together
-cover the full picture: sustained DRAM bandwidth, integer vs. floating-point
-memory paths, cache hierarchy bandwidth, and combined bandwidth + latency
-profiling. All sub-option permutations (operation type, benchmark mode, access
-pattern) are exercised automatically in a single run per test.
-PTS is installed automatically if not present.
+cover sustained DRAM bandwidth, integer vs. floating-point memory paths, cache
+hierarchy bandwidth, and combined bandwidth + latency profiling. All sub-option
+permutations are exercised automatically in a single run per test.
 
 | Test | Measures |
 |---|---|
 | `pts/stream` | Sustained DRAM bandwidth — Copy, Scale, Add, Triad |
 | `pts/ramspeed` | Integer and FP bandwidth — Copy, Scale, Add, Triad, Average |
-| `pts/tinymembench` | Bandwidth and access latency across L1/L2/L3/DRAM |
+| `pts/tinymembench` | Bandwidth and latency across L1/L2/L3/DRAM |
 | `pts/cachebench` | Cache-level bandwidth — Read, Write, Read/Modify/Write |
 
 ### Usage
@@ -87,8 +129,8 @@ PTS is installed automatically if not present.
 
 OPTIONS:
   -u, --upload                 Upload results to OpenBenchmarking.org
-  -i, --result-id <id>         Test identifier for the result (e.g. 'dc1-node3-ddr5')
-  -n, --result-name <name>     Display name for the result (e.g. 'DC1 Node3 - DDR5 6400')
+  -i, --result-id <id>         Run identifier, e.g. "dc1-node3-ddr5"
+  -n, --result-name <name>     Display name, e.g. "DC1 Node3 - DDR5 6400 MT/s"
   -h, --help                   Show help
 ```
 
@@ -96,7 +138,7 @@ OPTIONS:
 
 ```bash
 # Run all memory benchmarks
-./benchmark-memory-pts.sh
+./benchmark-memory-pts.sh --result-id "dc1-node3-baseline"
 
 # Run and upload results
 ./benchmark-memory-pts.sh --upload \
@@ -108,41 +150,34 @@ OPTIONS:
 
 ## benchmark-network-pts.sh
 
-Benchmarks network performance in three modes. Standalone tests always run on a
-single host. Peer tests require server daemons on a second machine — the same
-script starts those daemons via `--server-mode`.
+Benchmarks network performance across three modes:
 
 | Test | Mode | Measures |
 |---|---|---|
-| `pts/network-loopback` | Standalone | TCP stack throughput through loopback (kernel buffer performance) |
+| `pts/network-loopback` | Standalone | TCP stack throughput via loopback (kernel buffer performance) |
 | `pts/sockperf` | Standalone | Socket API latency (ping-pong, under-load) and throughput |
 | `pts/iperf` | Peer | TCP bulk throughput (single and multi-stream scaled to link speed), UDP throughput |
 | `pts/netperf` | Peer | TCP/UDP throughput (both directions) and request-response latency |
 
-Parallel stream count and UDP target bandwidth scale automatically with NIC line
-rate (e.g. 25 streams on 25 GbE, 100 streams on 100 GbE). Override with
-`--streams` or supply the speed manually with `--nic-speed` for virtual NICs that
-do not expose speed via sysfs.
+Standalone tests run on a single host. Peer tests require a second machine running
+the script in `--server-mode`. Parallel stream count and UDP bandwidth scale
+automatically with NIC line rate (e.g. 25 streams on 25 GbE). Override with
+`--streams` or `--nic-speed` for virtual NICs that do not expose speed via sysfs.
 
 ### Server setup
 
-Run the script with `--server-mode` on the remote host. It installs the test
-binaries via PTS and starts `iperf3` and `netserver` as local daemons. Use
-`--interface` to bind to a specific interface or IP; omit it to bind to all
-interfaces.
+Run on the remote host before starting the client. The script installs test
+binaries via PTS and starts `iperf3` and `netserver` as local daemons. Stop
+them with **Ctrl+C** when the run is complete.
 
 ```bash
-# Bind to a specific interface
+# Bind to a specific interface or IP
 ./benchmark-network-pts.sh --server-mode --interface eth0
-
-# Bind to a specific IP
 ./benchmark-network-pts.sh --server-mode --interface 192.168.100.10
 
 # Bind to all interfaces
 ./benchmark-network-pts.sh --server-mode
 ```
-
-Stop the daemons with **Ctrl+C** when the benchmark run is complete.
 
 ### Usage
 
@@ -150,36 +185,29 @@ Stop the daemons with **Ctrl+C** when the benchmark run is complete.
 ./benchmark-network-pts.sh [OPTIONS]
 
 OPTIONS:
-  -s, --server <address>       IP or hostname of the peer for iperf3/netperf tests.
-                               If omitted, only standalone tests are run.
+  -s, --server <address>       Peer IP/hostname for iperf3/netperf tests.
+                               Omit to run standalone tests only.
                                Mutually exclusive with --server-mode.
-  --server-mode                Start iperf3 and netserver as local server daemons.
+  --server-mode                Start iperf3 and netserver as local daemons.
                                Mutually exclusive with --server.
   -I, --interface <iface|IP>   Client: egress interface for NIC speed detection.
-                               Server: interface name or IP to bind daemons to.
-  --nic-speed <Mbps>           Override NIC speed (e.g. 100000 for 100 GbE).
-                               Client mode only. Useful for virtual NICs.
+                               Server: interface/IP to bind daemons to.
+  --nic-speed <Mbps>           Override NIC speed, e.g. 100000 for 100 GbE.
+                               Client mode only.
   --streams <N>                Override parallel stream count. Client mode only.
   -u, --upload                 Upload results to OpenBenchmarking.org
-  -i, --result-id <id>         Test identifier (e.g. 'dc1-vm1-to-vm2')
-  -n, --result-name <name>     Display name (e.g. 'VM1 to VM2 - 100GbE vSwitch')
+  -i, --result-id <id>         Run identifier, e.g. "dc1-vm1-to-vm2"
+  -n, --result-name <name>     Display name, e.g. "VM1 to VM2 - 100GbE vSwitch"
   -h, --help                   Show help
 ```
 
 ### Examples
 
 ```bash
-# --- Server host ---
+# Standalone tests only (no second machine needed)
+./benchmark-network-pts.sh --result-id "dc1-node3-loopback"
 
-# Start server daemons bound to a specific interface
-./benchmark-network-pts.sh --server-mode --interface eth0
-
-# --- Client host ---
-
-# Run standalone tests only (no second machine needed)
-./benchmark-network-pts.sh
-
-# Run full suite; interface and stream count auto-detected
+# Full suite against a peer (auto-detects interface and stream count)
 ./benchmark-network-pts.sh --server 192.168.100.10 \
   --result-id "dc1-vm1-to-vm2" \
   --result-name "VM1 to VM2 - Ceph cluster network"
@@ -190,7 +218,7 @@ OPTIONS:
   --result-id "dc1-vm1-to-vm2" \
   --result-name "VM1 to VM2 - 100GbE vSwitch"
 
-# Upload results
+# Full suite with upload
 ./benchmark-network-pts.sh --server 192.168.100.10 --upload \
   --result-id "dc1-vm1-to-vm2" \
   --result-name "VM1 to VM2 - 100GbE vSwitch"
@@ -200,35 +228,31 @@ OPTIONS:
 
 ## benchmark-storage-pts.sh
 
-> **WARNING: This script is destructive. It formats and completely wipes all
-> data on every target disk.**
+> **WARNING: This script is destructive. It formats and completely wipes all data on every target disk.**
 
-Benchmarks storage I/O across multiple disks sequentially. For each disk it
-runs the full suite of PTS storage tests covering latency, IOPS, throughput,
-and workload characterisation (read/write ratio, block size, access pattern).
-Results across disks are compared locally at the end of the run and can
-optionally be uploaded.
+Benchmarks disk I/O across one or more disks sequentially. For each disk it runs
+the full PTS storage suite covering latency, IOPS, throughput, and workload
+characterisation (read/write ratio, block size, I/O engine, access pattern).
+Disks are tested one at a time to avoid I/O contention.
 
 ### Disk configuration
 
-Target disks are supplied at runtime via `--disk` or `--disk-file` — no
-editing of the script is required. Each entry uses the format
-`<block_device>;<label>`. The label names the mount point (`/mnt/<label>`)
-and result files. Disks are tested sequentially — one at a time — to avoid
-I/O contention.
+Target disks are specified at runtime — no editing of the script is required.
+Each entry uses the format `"<device>;<label>"`. The label names the mount point
+(`/mnt/<label>`) and result directories. Always quote the argument to prevent the
+shell from interpreting `;` as a command separator.
 
 **Inline flags** (`--disk` may be repeated):
 
 ```bash
 ./benchmark-storage-pts.sh \
-  --disk /dev/vdb;NVMe_Replica3 \
-  --disk /dev/vdc;NVMe_EC32 \
-  --disk /dev/vdd;HDD_Replica3 \
-  --disk /dev/vde;HDD_EC32
+  --disk "/dev/vdb;NVMe_Replica3" \
+  --disk "/dev/vdc;NVMe_EC32" \
+  --disk "/dev/vdd;HDD_Replica3" \
+  --disk "/dev/vde;HDD_EC32"
 ```
 
-**Disk file** (one `device;label` per line; `#` comments and blank lines are
-ignored):
+**Disk file** (one `device;label` per line; `#` comments and blank lines are ignored):
 
 ```
 # Storage benchmark disk list
@@ -243,60 +267,54 @@ ignored):
 ./benchmark-storage-pts.sh --disk-file disks.conf
 ```
 
-Both sources may be combined in the same invocation. The script exits with a
-usage error when no disks are provided.
+Both sources may be combined in the same invocation.
 
 ### SSD steady-state preconditioning
 
-SSDs and NVMe drives perform significantly faster when in a rested or
-fresh-out-of-box state than under sustained load. Measuring from a rested
-state produces results that are not reproducible across repeated runs and
-that overstate real-world performance.
+SSDs and NVMe drives perform significantly faster in a rested state than under
+sustained load, producing results that overstate real-world performance and are
+not reproducible across repeated runs. To address this, the script writes across
+the full device twice before formatting it (two sequential passes, 128 KiB blocks,
+queue depth 32), driving the device through its garbage-collection and
+wear-levelling cycle so that measurements reflect steady-state performance.
 
-To produce stable, comparable results the script writes across the full device
-twice before formatting it (two sequential passes, 128 KiB blocks, queue
-depth 32). This drives the device through its garbage-collection and
-wear-levelling cycle so that subsequent measurements reflect steady-state
-performance.
-
-Preconditioning is **enabled by default** and skipped automatically for HDD
-and unknown device types. It can be disabled with `--skip-preconditioning`
-when re-running tests immediately after a previous run (the drive is already
-conditioned) or when turnaround time matters more than strict reproducibility.
-
-Note that preconditioning time scales with drive capacity — plan for roughly
-two full sequential write passes per disk before testing begins.
+Preconditioning is **enabled by default** and skipped automatically for HDDs.
+Disable it with `--skip-preconditioning` when re-running tests immediately after
+a previous run (the drive is already conditioned) or when turnaround time matters
+more than reproducibility. Note that preconditioning time scales with drive
+capacity — plan for two full sequential write passes per disk before testing begins.
 
 ### Usage
 
 ```
-./benchmark-storage-pts.sh --disk <dev;label> [--disk <dev;label> ...] [OPTIONS]
+./benchmark-storage-pts.sh --disk "<dev;label>" [--disk "<dev;label>" ...] [OPTIONS]
 ./benchmark-storage-pts.sh --disk-file <path> [OPTIONS]
 
 Disk target options (at least one required):
-  --disk <device;label>        Add a target disk (repeatable).
+  --disk "<device;label>"      Add a target disk (repeatable). Must be quoted.
   --disk-file <path>           Read disk entries from a file.
 
 OPTIONS:
   --upload                     Upload results to OpenBenchmarking.org
-  --result-name <name>         Display name for the upload (required with --upload)
-  --result-id <id>             Test identifier for the upload (required with --upload)
-  --skip-preconditioning       Skip steady-state preconditioning passes (see above)
+  --result-id <id>             Run identifier, e.g. "ceph-dc1-q1-2026"
+  --result-name <name>         Display name, e.g. "Ceph NVMe vs HDD - Q1 2026"
+  --skip-preconditioning       Skip SSD steady-state preconditioning (see above)
   --help                       Show help
 ```
 
 ### Examples
 
 ```bash
-# Run with inline disk flags
+# Two disks — NVMe vs HDD comparison in a single run
 ./benchmark-storage-pts.sh \
-  --disk /dev/vdb;NVMe_Replica3 \
-  --disk /dev/vdd;HDD_Replica3
-
-# Run from a disk file and upload results
-./benchmark-storage-pts.sh --disk-file disks.conf --upload \
-  --result-name "Ceph NVMe vs HDD - Q1 2026" \
+  --disk "/dev/vdb;NVMe_Replica3" \
+  --disk "/dev/vdd;HDD_Replica3" \
   --result-id "ceph-dc1-q1-2026"
+
+# From a disk file with upload
+./benchmark-storage-pts.sh --disk-file disks.conf --upload \
+  --result-id "ceph-dc1-q1-2026" \
+  --result-name "Ceph NVMe vs HDD - Q1 2026"
 
 # Skip preconditioning for a quick re-run immediately after a previous run
 ./benchmark-storage-pts.sh --disk-file disks.conf \
@@ -308,18 +326,17 @@ OPTIONS:
 
 ## create-report-pts.sh
 
-Generates PTS reports from `benchmark-results/` directories produced by any of the
-benchmark scripts. Accepts one or more run directories; when more than one is provided
-the same-type results are merged for cross-run comparison. Reports are written in all
-supported PTS export formats.
+Generates reports from `benchmark-results/` directories produced by any benchmark
+script. When more than one run directory is supplied, same-type results are merged
+for cross-run comparison. Reports are written in all supported PTS export formats.
 
-| Format | File extension | Notes |
+| Format | Extension | Notes |
 |---|---|---|
 | Text | `.text` | Human-readable summary table |
 | CSV | `.csv` | Flat CSV for spreadsheet import |
 | JSON | `.json` | Structured data for custom processing |
-| HTML | `.html` | Self-contained HTML page with charts |
-| PDF | `.pdf` | Requires `wkhtmltopdf` to be installed |
+| HTML | `.html` | Self-contained page with charts |
+| PDF | `.pdf` | Requires `wkhtmltopdf` |
 
 ### Usage
 
@@ -327,25 +344,18 @@ supported PTS export formats.
 ./create-report-pts.sh [OPTIONS] <run-dir> [<run-dir> ...]
 
 ARGUMENTS:
-  <run-dir>                One or more benchmark-results/<run-id>/ directories.
+  <run-dir>                One or more benchmark-results/<result-id>/ directories.
 
 OPTIONS:
   -o, --output-dir <path>  Directory to write reports (default: ./pts-reports/<timestamp>/)
   -h, --help               Show help
 ```
 
-### Result naming and comparison labels
+### Result naming
 
-`--result-id` is the label that ties a run to its output directory and makes
-cross-run comparison possible. It controls:
-
-- The `benchmark-results/<result-id>/` output directory.
-- The prefix of each PTS result subdirectory inside it (CPU, memory, network).
-
-**Storage** is different: within a run, results are named `<disk-label>_<test>_result`
-where the disk label comes from the `--disk` argument, not from `--result-id`. This
-means the disk label is the differentiator *within* a run, while `--result-id`
-differentiates *across* runs.
+`--result-id` controls the output directory name and the prefix of each PTS result
+subdirectory. For `benchmark-storage-pts.sh`, the disk label (from `--disk`) is the
+differentiator within a run — not `--result-id`.
 
 | Script | PTS result directory name | Differentiator |
 |---|---|---|
@@ -357,65 +367,51 @@ differentiates *across* runs.
 ### Examples
 
 ```bash
-# Single run — export all formats for each PTS test found
+# Single run — export all formats for every PTS test found
 ./create-report-pts.sh ./benchmark-results/dc1-node3-ddr5/
 
-# --- CPU / memory / network: compare two runs via --result-id ---
-
-# Run baseline and a tuned variant
-./benchmark-memory-pts.sh --result-id "dc1-node3-baseline"
-./benchmark-memory-pts.sh --result-id "dc1-node3-tuned"
-
-# Compare: one merged report per test type (stream, ramspeed, …)
+# CPU / memory / network: compare two runs
+./benchmark-memory-pts.sh --result-id "node3-baseline"
+./benchmark-memory-pts.sh --result-id "node3-tuned"
 ./create-report-pts.sh \
-  ./benchmark-results/dc1-node3-baseline/ \
-  ./benchmark-results/dc1-node3-tuned/
+  ./benchmark-results/node3-baseline/ \
+  ./benchmark-results/node3-tuned/
 
-# --- Storage flavor A: compare disk types within a single run ---
-# Use different disk labels; pass one run directory.
-
+# Storage — compare disk types within a single run (different disk labels)
 ./benchmark-storage-pts.sh \
-  --disk /dev/vdb;NVMe_Replica3 \
-  --disk /dev/vdc;HDD_Replica3 \
+  --disk "/dev/vdb;NVMe_Replica3" \
+  --disk "/dev/vdc;HDD_Replica3" \
   --result-id "ceph-dc1-q1-2026"
-
 ./create-report-pts.sh ./benchmark-results/ceph-dc1-q1-2026/
 
-# --- Storage flavor B: compare the same disk type across two runs ---
-# Use the same disk label in both runs; pass two run directories.
-
-./benchmark-storage-pts.sh --disk /dev/vdb;NVMe_Replica3 --result-id "ceph-dc1-before"
-./benchmark-storage-pts.sh --disk /dev/vdb;NVMe_Replica3 --result-id "ceph-dc1-after"
-
+# Storage — compare the same disk type across two runs (e.g. before/after upgrade)
+./benchmark-storage-pts.sh --disk "/dev/vdb;NVMe" --result-id "ceph-dc1-before"
+./benchmark-storage-pts.sh --disk "/dev/vdb;NVMe" --result-id "ceph-dc1-after"
 ./create-report-pts.sh \
   ./benchmark-results/ceph-dc1-before/ \
   ./benchmark-results/ceph-dc1-after/
-
-# Custom output directory
-./create-report-pts.sh \
-  --output-dir /tmp/storage-comparison \
-  ./benchmark-results/nvme-run/ \
-  ./benchmark-results/hdd-run/
 ```
 
 ---
 
-## OS preparation
-
-Scripts install all dependencies automatically on first run. No manual
-preparation is required beyond meeting the prerequisites below.
-
-### Prerequisites (all distributions)
+## Prerequisites
 
 - A user with `sudo` access
 - Internet connectivity to reach package repositories and PTS download mirrors
 - For `benchmark-storage-pts.sh`: raw block devices (not mounted, not in use)
 
+All other dependencies (PTS, test binaries, compilers) are installed automatically
+on first run.
+
+---
+
+## OS preparation
+
 ### Ubuntu / Debian
 
-No additional steps. The script uses `apt-get` and falls back to a direct
-`.deb` download from the PTS project if `phoronix-test-suite` is not in the
-distribution's repositories.
+No additional steps. The script uses `apt-get` and falls back to a direct `.deb`
+download from the PTS project if `phoronix-test-suite` is not in the distribution
+repositories.
 
 ### Rocky Linux / RHEL
 
@@ -428,8 +424,8 @@ sudo dnf install -y epel-release
 ### openSUSE
 
 The script adds the `benchmark` OBS repository automatically for the detected
-version (Leap 15.6, Tumbleweed, or Slowroll). On Leap 15.6, `gcc12` is
-installed and registered as the default compiler via `update-alternatives`.
+version (Leap 15.6, Tumbleweed, or Slowroll). On Leap 15.6, `gcc12` is installed
+and registered as the default compiler via `update-alternatives`.
 
 ---
 
@@ -437,22 +433,22 @@ installed and registered as the default compiler via `update-alternatives`.
 
 ### vSphere
 
-1. Create a VM with the desired CPU and memory configuration.
-2. For storage testing, attach additional virtual disks with the characteristics
+1. Install a supported guest OS and configure SSH access.
+2. Create a VM with the desired CPU and memory configuration.
+3. For storage testing, attach additional virtual disks with the characteristics
    to compare (e.g. one disk on an NVMe-backed datastore, one on an HDD-backed
-   datastore). Attach them as independent persistent disks so they are not
-   included in snapshots.
-3. Note the guest device names assigned to the extra disks (typically
-   `/dev/sdb`, `/dev/sdc`, … or `/dev/vdb`, `/dev/vdc`, … depending on the
-   controller type). Pass them to the script via `--disk` or `--disk-file`.
-4. Install a supported guest OS, configure SSH access, and clone this
-   repository.
+   datastore). Attach them as independent persistent disks so they are excluded
+   from snapshots.
+4. Note the guest device names assigned to the extra disks (typically `/dev/sdb`,
+   `/dev/sdc`, … or `/dev/vdb`, `/dev/vdc`, … depending on the controller type)
+   and pass them to the script via `--disk` or `--disk-file`.
+5. Clone this repository on the instance and run the desired script.
 
 ### OpenStack
 
-1. Create an instance with the desired flavor.
-2. For storage testing, create Cinder volumes with the desired volume types
-   (e.g. `ceph-nvme`, `ceph-hdd`) and attach them to the instance:
+1. Create an instance with the desired flavor and install a supported guest OS.
+2. For storage testing, create Cinder volumes with the desired volume types and
+   attach them to the instance:
 
    ```bash
    openstack volume create --size 100 --type ceph-nvme nvme-test-vol
@@ -460,41 +456,31 @@ installed and registered as the default compiler via `update-alternatives`.
    openstack server add volume <instance-id> <volume-id>
    ```
 
-3. Identify the device names inside the guest (e.g. via `lsblk`) and pass
-   them to the script via `--disk` or `--disk-file`.
+3. Identify the device names inside the guest (e.g. via `lsblk`) and pass them
+   to the script via `--disk` or `--disk-file`.
 4. Clone this repository on the instance and run the desired script.
 
 ### Notes on virtual machines and shared storage
 
-Benchmarking on virtual machines with shared storage backends (e.g. vSAN,
-Ceph, NFS-backed datastores) introduces I/O jitter that is not present on
-bare-metal systems with locally attached drives. The hypervisor scheduler,
-storage backend contention, network latency between the guest and the storage
-cluster, and dynamic resource allocation (ballooning, QoS policies) all
-contribute to run-to-run variation that the benchmark framework cannot
-eliminate.
+Benchmarking on virtual machines with shared storage backends (e.g. vSAN, Ceph,
+NFS-backed datastores) introduces I/O jitter that is not present on bare-metal
+systems with locally attached drives. The hypervisor scheduler, storage backend
+contention, network latency between the guest and the storage cluster, and dynamic
+resource allocation (ballooning, QoS policies) all contribute to run-to-run
+variation that the benchmark framework cannot eliminate.
 
 In practice this means:
 
 - **PTS will exceed the minimum 3 runs** per test combination. Deviations of
-  10–40% are common on virtual disks, causing PTS to repeat each test up to
-  its maximum iteration limit before accepting a result. This significantly
-  extends total benchmark time compared to bare-metal runs.
+  10–40% are common on virtual disks, causing PTS to repeat each test up to its
+  maximum iteration limit before accepting a result. This significantly extends
+  total benchmark time compared to bare-metal runs.
 - **Results across hypervisor platforms or storage backends are not directly
-  comparable** unless the VMs are identically sized, pinned to the same
-  physical hosts, and tested under equivalent storage load conditions.
+  comparable** unless the VMs are identically sized, pinned to the same physical
+  hosts, and tested under equivalent storage load conditions.
 - **Absolute throughput and IOPS values will be lower** than the underlying
   storage hardware can deliver, due to virtualisation overhead and the
   shared-tenancy nature of the backend.
 
-Results from virtual machine runs should be interpreted as indicative of
-general performance characteristics rather than precise absolute values.
-
----
-
-## Result comparison
-
-`benchmark-storage-pts.sh` automatically runs `phoronix-test-suite
-compare-results` at the end of each run, grouping results by test type across
-all tested disks. Results are also available under
-`~/.phoronix-test-suite/test-results/` for manual inspection or later upload.
+Results from virtual machine runs should be interpreted as indicative of general
+performance characteristics rather than precise absolute values.

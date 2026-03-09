@@ -8,9 +8,13 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 3.5
+# Version: 3.6
 #
 # Changelog:
+#   - 2026-03-09: v3.6 - Add unzip to Ubuntu/Debian and openSUSE deps; PTS
+#                        needs it to extract test archives (.zip). Rocky Linux
+#                        ships unzip in the base install so no change needed
+#                        there.
 #   - 2026-03-09: v3.5 - Move DEBIAN_FRONTEND=noninteractive and
 #                        NEEDRESTART_MODE=a exports to top-level scope so
 #                        they also cover PTS's own internal apt-get calls
@@ -316,7 +320,8 @@ install_packages() {
                 # util-linux provides wipefs; php-cli + php-xml are PTS runtime deps
                 # (needed when PTS is installed from the upstream .deb rather than
                 # the distro repo, which may not pull them automatically).
-                sudo apt-get install -y xfsprogs util-linux fio php-cli php-xml
+                # unzip is needed by PTS to extract test archives (.zip).
+                sudo apt-get install -y xfsprogs util-linux fio php-cli php-xml unzip
                 sudo apt-get install -y phoronix-test-suite || {
                     echo "Phoronix Test Suite not found in repo, attempting fallback install..."
                     wget -O /tmp/phoronix.deb https://phoronix-test-suite.com/releases/repo/pts.debian/files/phoronix-test-suite_10.8.4_all.deb
@@ -386,7 +391,7 @@ setup_opensuse_repo() {
         sudo zypper ar -f -p 90 "$repo_url" benchmark
     fi
     sudo zypper --gpg-auto-import-keys refresh
-    sudo zypper install -y phoronix-test-suite xfsprogs util-linux fio gcc gcc-c++ ${gcc_extra} make autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel libaio-devel "${python_pkg}"
+    sudo zypper install -y phoronix-test-suite xfsprogs util-linux fio gcc gcc-c++ ${gcc_extra} make autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel libaio-devel unzip "${python_pkg}"
     # Leap 15.6 ships an old GCC as the system default; point alternatives at
     # the gcc12 package that was added to gcc_extra above.  Leap 16+ ships a
     # current GCC as the default so no alternatives change is needed.

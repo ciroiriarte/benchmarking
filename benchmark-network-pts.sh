@@ -22,9 +22,13 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.9
+# Version: 2.0
 #
 # Changelog:
+#   - 2026-03-09: v2.0 - Add unzip to Ubuntu/Debian and openSUSE deps; PTS
+#                        needs it to extract test archives (.zip). Rocky Linux
+#                        ships unzip in the base install so no change needed
+#                        there.
 #   - 2026-03-09: v1.9 - Move DEBIAN_FRONTEND=noninteractive and
 #                        NEEDRESTART_MODE=a exports to top-level scope so
 #                        they also cover PTS's own internal apt-get calls
@@ -224,8 +228,9 @@ install_packages() {
                 # php-cli + php-xml are PTS runtime deps (needed when PTS is
                 # installed from the upstream .deb rather than the distro repo,
                 # which may not pull them automatically).
+                # unzip is needed by PTS to extract test archives (.zip).
                 sudo apt-get install -y build-essential autoconf automake \
-                    libtool netcat-openbsd ethtool php-cli php-xml
+                    libtool netcat-openbsd ethtool php-cli php-xml unzip
                 sudo apt-get install -y phoronix-test-suite || {
                     echo "Phoronix Test Suite not found in repo, attempting fallback install..."
                     wget -O /tmp/phoronix.deb https://phoronix-test-suite.com/releases/repo/pts.debian/files/phoronix-test-suite_10.8.4_all.deb
@@ -286,7 +291,7 @@ setup_opensuse_repo() {
     sudo zypper ar -f -p 90 "$repo_url" benchmark
     sudo zypper --gpg-auto-import-keys refresh
     sudo zypper install -y phoronix-test-suite gcc gcc-c++ ${gcc_extra} make \
-        autoconf automake libtool netcat-openbsd ethtool
+        autoconf automake libtool netcat-openbsd ethtool unzip
     if [[ "$ID" == "opensuse-leap" ]]; then
         sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100

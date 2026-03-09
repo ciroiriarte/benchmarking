@@ -13,9 +13,13 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.0
+# Version: 2.1
 #
 # Changelog:
+#   - 2026-03-09: v2.1 - Add unzip to Ubuntu/Debian and openSUSE deps; PTS
+#                        needs it to extract test archives (.zip). Rocky Linux
+#                        ships unzip in the base install so no change needed
+#                        there.
 #   - 2026-03-09: v2.0 - Move DEBIAN_FRONTEND=noninteractive and
 #                        NEEDRESTART_MODE=a exports to top-level scope so
 #                        they also cover PTS's own internal apt-get calls
@@ -158,8 +162,9 @@ install_packages() {
                 # installed from the upstream .deb rather than the distro repo,
                 # which may not pull them automatically).
                 # util-linux provides wipefs.
+                # unzip is needed by PTS to extract test archives (.zip).
                 sudo apt-get install -y xfsprogs util-linux build-essential \
-                    autoconf bison flex libssl-dev mesa-utils php-cli php-xml
+                    autoconf bison flex libssl-dev mesa-utils php-cli php-xml unzip
                 sudo apt-get install -y phoronix-test-suite || {
                     echo "Phoronix Test Suite not found in repo, attempting fallback install..."
                     wget -O /tmp/phoronix.deb https://phoronix-test-suite.com/releases/repo/pts.debian/files/phoronix-test-suite_10.8.4_all.deb
@@ -220,7 +225,7 @@ setup_opensuse_repo() {
     sudo zypper ar -f -p 90 "$repo_url" benchmark
     sudo zypper --gpg-auto-import-keys refresh
     sudo zypper install -y phoronix-test-suite
-    sudo zypper install -y xfsprogs util-linux gcc gcc-c++ ${gcc_extra} make autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel
+    sudo zypper install -y xfsprogs util-linux gcc gcc-c++ ${gcc_extra} make autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel unzip
     if [[ "$ID" == "opensuse-leap" ]]; then
         sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100

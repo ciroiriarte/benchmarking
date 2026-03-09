@@ -22,9 +22,13 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.8
+# Version: 1.9
 #
 # Changelog:
+#   - 2026-03-09: v1.9 - Set DEBIAN_FRONTEND=noninteractive and
+#                        NEEDRESTART_MODE=a on Ubuntu/Debian to prevent
+#                        dpkg config dialogs and needrestart from hanging
+#                        the script in non-interactive contexts.
 #   - 2026-03-09: v1.8 - Fix Ubuntu/Debian PTS install: pre-install php-cli
 #                        and php-xml before the PTS deb so dpkg never fails on
 #                        missing PHP deps; add '|| true' to dpkg -i so set -e
@@ -205,6 +209,12 @@ install_packages() {
                 ;;
             ubuntu|debian)
                 echo "Detected Ubuntu or Debian-based system"
+                # Prevent interactive prompts from dpkg config dialogs and the
+                # needrestart service-restart checker that ships on Ubuntu 22.04+.
+                # Without these, apt-get/dpkg can hang indefinitely when run
+                # non-interactively (e.g. via nohup or SSH without a TTY).
+                export DEBIAN_FRONTEND=noninteractive
+                export NEEDRESTART_MODE=a
                 sudo apt-get update
                 # php-cli + php-xml are PTS runtime deps (needed when PTS is
                 # installed from the upstream .deb rather than the distro repo,

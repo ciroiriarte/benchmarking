@@ -8,9 +8,13 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 3.4
+# Version: 3.5
 #
 # Changelog:
+#   - 2026-03-09: v3.5 - Set DEBIAN_FRONTEND=noninteractive and
+#                        NEEDRESTART_MODE=a on Ubuntu/Debian to prevent
+#                        dpkg config dialogs and needrestart from hanging
+#                        the script in non-interactive contexts.
 #   - 2026-02-25: v3.4 - Fix persistent mkfs.xfs EBUSY: add explicit wait for
 #                        kernel in_flight I/O counter to reach 0 before each
 #                        mkfs attempt; the prior wipefs in cleanup leaves one
@@ -297,6 +301,12 @@ install_packages() {
                 ;;
             ubuntu|debian)
                 echo "Detected Ubuntu or Debian-based system"
+                # Prevent interactive prompts from dpkg config dialogs and the
+                # needrestart service-restart checker that ships on Ubuntu 22.04+.
+                # Without these, apt-get/dpkg can hang indefinitely when run
+                # non-interactively (e.g. via nohup or SSH without a TTY).
+                export DEBIAN_FRONTEND=noninteractive
+                export NEEDRESTART_MODE=a
                 sudo apt-get update
                 # util-linux provides wipefs; php-cli + php-xml are PTS runtime deps
                 # (needed when PTS is installed from the upstream .deb rather than

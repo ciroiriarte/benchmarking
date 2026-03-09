@@ -22,9 +22,15 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.7
+# Version: 1.8
 #
 # Changelog:
+#   - 2026-03-09: v1.8 - Fix Ubuntu/Debian PTS install: pre-install php-cli
+#                        and php-xml before the PTS deb so dpkg never fails on
+#                        missing PHP deps; add '|| true' to dpkg -i so set -e
+#                        does not abort before apt-get install -f -y runs.
+#                        Add php to install gate check so a broken prior install
+#                        (dpkg iU state) triggers re-installation.
 #   - 2026-02-26: v1.7 - Add collect_results(): copy system snapshot and all PTS
 #                        result directories to benchmark-results/${RUN_ID}/ relative
 #                        to the invocation CWD; transfer ownership to the invoking
@@ -200,13 +206,18 @@ install_packages() {
             ubuntu|debian)
                 echo "Detected Ubuntu or Debian-based system"
                 sudo apt-get update
-                sudo apt-get install -y phoronix-test-suite build-essential \
-                    autoconf automake libtool netcat-openbsd ethtool || {
+                # php-cli + php-xml are PTS runtime deps (needed when PTS is
+                # installed from the upstream .deb rather than the distro repo,
+                # which may not pull them automatically).
+                sudo apt-get install -y build-essential autoconf automake \
+                    libtool netcat-openbsd ethtool php-cli php-xml
+                sudo apt-get install -y phoronix-test-suite || {
                     echo "Phoronix Test Suite not found in repo, attempting fallback install..."
                     wget -O /tmp/phoronix.deb https://phoronix-test-suite.com/releases/repo/pts.debian/files/phoronix-test-suite_10.8.4_all.deb
-                    sudo dpkg -i /tmp/phoronix.deb
+                    # dpkg -i may exit non-zero when optional deps are absent;
+                    # apt-get install -f resolves them, so suppress the dpkg error.
+                    sudo dpkg -i /tmp/phoronix.deb || true
                     sudo apt-get install -f -y
-                    sudo apt-get install -y build-essential autoconf automake libtool netcat-openbsd ethtool
                 }
                 ;;
             opensuse*|suse)
@@ -725,7 +736,9 @@ run_server_mode() {
     fi
 
     # Install PTS and build dependencies if not already present.
-    if ! command -v phoronix-test-suite &>/dev/null; then
+    # Check both PTS and PHP: a prior failed install may leave the PTS binary
+    # in place (dpkg iU state) while PHP is still absent.
+    if ! command -v phoronix-test-suite &>/dev/null || ! command -v php &>/dev/null; then
         install_packages
     fi
 
@@ -893,7 +906,9 @@ if [[ "$SERVER_MODE" -eq 1 ]]; then
 fi
 
 # === Install packages if not already present ===
-if ! command -v phoronix-test-suite &> /dev/null; then
+# Check both PTS and PHP: a prior failed install may leave the PTS binary
+# in place (dpkg iU state) while PHP is still absent.
+if ! command -v phoronix-test-suite &>/dev/null || ! command -v php &>/dev/null; then
     install_packages
 fi
 

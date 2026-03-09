@@ -25,10 +25,11 @@
 # Version: 1.9
 #
 # Changelog:
-#   - 2026-03-09: v1.9 - Set DEBIAN_FRONTEND=noninteractive and
-#                        NEEDRESTART_MODE=a on Ubuntu/Debian to prevent
-#                        dpkg config dialogs and needrestart from hanging
-#                        the script in non-interactive contexts.
+#   - 2026-03-09: v1.9 - Move DEBIAN_FRONTEND=noninteractive and
+#                        NEEDRESTART_MODE=a exports to top-level scope so
+#                        they also cover PTS's own internal apt-get calls
+#                        during phoronix-test-suite install (which triggered
+#                        the needrestart hang reported in issue #3).
 #   - 2026-03-09: v1.8 - Fix Ubuntu/Debian PTS install: pre-install php-cli
 #                        and php-xml before the PTS deb so dpkg never fails on
 #                        missing PHP deps; add '|| true' to dpkg -i so set -e
@@ -166,6 +167,16 @@ set -e
 set -o pipefail
 
 # === Configuration ===
+# Prevent interactive prompts from dpkg config dialogs and the needrestart
+# service-restart checker that ships on Ubuntu 22.04+.  Without these,
+# apt-get/dpkg can hang indefinitely when run non-interactively (e.g. via
+# nohup or SSH without a TTY).  Set at the top level so they apply to both
+# install_packages() and PTS's own internal apt-get calls when it installs
+# external test dependencies (e.g. during phoronix-test-suite install).
+# Harmless on non-Debian systems where these variables are simply ignored.
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+
 # Standalone tests run on a single host with no remote peer required.
 STANDALONE_TESTS=("pts/network-loopback" "pts/sockperf")
 # Peer tests require a server running on the host specified via --server.
@@ -209,12 +220,6 @@ install_packages() {
                 ;;
             ubuntu|debian)
                 echo "Detected Ubuntu or Debian-based system"
-                # Prevent interactive prompts from dpkg config dialogs and the
-                # needrestart service-restart checker that ships on Ubuntu 22.04+.
-                # Without these, apt-get/dpkg can hang indefinitely when run
-                # non-interactively (e.g. via nohup or SSH without a TTY).
-                export DEBIAN_FRONTEND=noninteractive
-                export NEEDRESTART_MODE=a
                 sudo apt-get update
                 # php-cli + php-xml are PTS runtime deps (needed when PTS is
                 # installed from the upstream .deb rather than the distro repo,

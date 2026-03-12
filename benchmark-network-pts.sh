@@ -22,9 +22,14 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.0
+# Version: 2.1
 #
 # Changelog:
+#   - 2026-03-11: v2.1 - Extract PTS installation into shared install-pts.sh
+#                        library.  Fixes: openSUSE repo idempotency, zypper
+#                        exit code 106 handling, python_pkg detection for
+#                        Leap 16+/Tumbleweed, VERSION_ID-based gcc12 guard.
+#                        Add result file listing at end of run.
 #   - 2026-03-09: v2.0 - Add unzip to Ubuntu/Debian and openSUSE deps; PTS
 #                        needs it to extract test archives (.zip). Rocky Linux
 #                        ships unzip in the base install so no change needed
@@ -171,15 +176,11 @@ set -e
 set -o pipefail
 
 # === Configuration ===
-# Prevent interactive prompts from dpkg config dialogs and the needrestart
-# service-restart checker that ships on Ubuntu 22.04+.  Without these,
-# apt-get/dpkg can hang indefinitely when run non-interactively (e.g. via
-# nohup or SSH without a TTY).  Set at the top level so they apply to both
-# install_packages() and PTS's own internal apt-get calls when it installs
-# external test dependencies (e.g. during phoronix-test-suite install).
-# Harmless on non-Debian systems where these variables are simply ignored.
-export DEBIAN_FRONTEND=noninteractive
-export NEEDRESTART_MODE=a
+
+# Resolve the directory containing this script so co-located libraries can be
+# sourced regardless of the caller's working directory.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "${SCRIPT_DIR}/install-pts.sh"
 
 # Standalone tests run on a single host with no remote peer required.
 STANDALONE_TESTS=("pts/network-loopback" "pts/sockperf")
@@ -209,93 +210,6 @@ NETPERF_DURATION=360
 usage() {
     # Skip the shebang line by matching only lines starting with '# ' or bare '#'
     grep '^#[^!]' "$0" | cut -c3-
-}
-
-# Function to install Phoronix Test Suite and build dependencies
-install_packages() {
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        case "$ID" in
-            rocky|rhel|centos)
-                echo "Detected Rocky Linux or RHEL-based system"
-                sudo dnf install -y epel-release
-                sudo dnf install -y phoronix-test-suite gcc gcc-c++ make \
-                    autoconf automake libtool nmap-ncat ethtool
-                ;;
-            ubuntu|debian)
-                echo "Detected Ubuntu or Debian-based system"
-                sudo apt-get update
-                # php-cli + php-xml are PTS runtime deps (needed when PTS is
-                # installed from the upstream .deb rather than the distro repo,
-                # which may not pull them automatically).
-                # unzip is needed by PTS to extract test archives (.zip).
-                sudo apt-get install -y build-essential autoconf automake \
-                    libtool netcat-openbsd ethtool php-cli php-xml unzip
-                sudo apt-get install -y phoronix-test-suite || {
-                    echo "Phoronix Test Suite not found in repo, attempting fallback install..."
-                    wget -O /tmp/phoronix.deb https://phoronix-test-suite.com/releases/repo/pts.debian/files/phoronix-test-suite_10.8.4_all.deb
-                    # dpkg -i may exit non-zero when optional deps are absent;
-                    # apt-get install -f resolves them, so suppress the dpkg error.
-                    sudo dpkg -i /tmp/phoronix.deb || true
-                    sudo apt-get install -f -y
-                }
-                ;;
-            opensuse*|suse)
-                echo "Detected openSUSE system"
-                setup_opensuse_repo
-                ;;
-            *)
-                echo "Unsupported OS: $ID"
-                exit 1
-                ;;
-        esac
-    else
-        echo "Cannot detect OS. /etc/os-release not found."
-        exit 1
-    fi
-
-    if ! command -v phoronix-test-suite &> /dev/null; then
-        echo "Installation failed. Please try installing Phoronix Test Suite manually."
-        exit 1
-    fi
-    echo "Phoronix Test Suite installed successfully."
-}
-
-# === openSUSE Repository Setup ===
-setup_opensuse_repo() {
-    local repo_url
-    # Match on $ID (e.g. opensuse-tumbleweed, opensuse-slowroll, opensuse-leap)
-    # because $VERSION_ID is a snapshot date on Tumbleweed/Slowroll, not the OS name.
-    case "$ID" in
-        opensuse-tumbleweed)
-            echo "Adding benchmark repo for Tumbleweed..."
-            repo_url="https://download.opensuse.org/repositories/benchmark/openSUSE_Tumbleweed"
-            ;;
-        opensuse-slowroll)
-            echo "Adding benchmark repo for Slowroll..."
-            repo_url="https://download.opensuse.org/repositories/benchmark/openSUSE_Slowroll"
-            ;;
-        opensuse-leap)
-            echo "Adding benchmark repo for Leap $VERSION_ID..."
-            repo_url="https://download.opensuse.org/repositories/benchmark/${VERSION_ID}/"
-            # Leap 15.6 ships an old GCC; install gcc12 and set it as the default.
-            if [[ "$VERSION_ID" == "15.6" ]]; then
-                gcc_extra="gcc12 gcc12-c++"
-            fi
-            ;;
-        *)
-            echo "Unsupported openSUSE variant: $ID"
-            exit 1
-            ;;
-    esac
-    sudo zypper ar -f -p 90 "$repo_url" benchmark
-    sudo zypper --gpg-auto-import-keys refresh
-    sudo zypper install -y phoronix-test-suite gcc gcc-c++ ${gcc_extra} make \
-        autoconf automake libtool netcat-openbsd ethtool unzip
-    if [[ "$ID" == "opensuse-leap" ]]; then
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
-        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
-    fi
 }
 
 # === Pre-run Check Functions ===
@@ -756,11 +670,7 @@ run_server_mode() {
     fi
 
     # Install PTS and build dependencies if not already present.
-    # Check both PTS and PHP: a prior failed install may leave the PTS binary
-    # in place (dpkg iU state) while PHP is still absent.
-    if ! command -v phoronix-test-suite &>/dev/null || ! command -v php &>/dev/null; then
-        install_packages
-    fi
+    ensure_pts_installed
 
     # Install pts/iperf and pts/netperf to obtain compiled server binaries.
     echo "--- Installing test binaries ---"
@@ -919,18 +829,19 @@ if [[ "$SERVER_MODE" -eq 1 ]] && [[ -n "$SERVER_ADDRESS" ]]; then
     exit 1
 fi
 
+# === Install PTS and dependencies ===
+# Set extra packages once; both server mode and client mode use the same deps.
+EXTRA_PKGS_APT=(autoconf automake libtool netcat-openbsd ethtool)
+EXTRA_PKGS_DNF=(autoconf automake libtool nmap-ncat ethtool)
+EXTRA_PKGS_ZYPPER=(autoconf automake libtool netcat-openbsd ethtool)
+
 # === Server Mode ===
 if [[ "$SERVER_MODE" -eq 1 ]]; then
     run_server_mode
     exit 0
 fi
 
-# === Install packages if not already present ===
-# Check both PTS and PHP: a prior failed install may leave the PTS binary
-# in place (dpkg iU state) while PHP is still absent.
-if ! command -v phoronix-test-suite &>/dev/null || ! command -v php &>/dev/null; then
-    install_packages
-fi
+ensure_pts_installed
 
 # === Pre-run System Checks ===
 echo "--- Pre-run System Checks ---"
@@ -1106,6 +1017,13 @@ unset TEST_RESULTS_DESCRIPTION
 
 # === Collect Results to ./benchmark-results/ ===
 collect_results
+
+# === Result Files ===
+echo ""
+echo "=== Result Files ==="
+find "${SCRIPT_INVOCATION_DIR}/benchmark-results/${RUN_ID}" -type f 2>/dev/null | sort | while read -r f; do
+    echo "  $f"
+done
 
 # === Results Summary ===
 if [[ "${#FAILED_INSTALLS[@]}" -gt 0 ]]; then

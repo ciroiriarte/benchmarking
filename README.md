@@ -33,6 +33,7 @@ Runs on physical machines and virtual machines (vSphere, OpenStack).
 | `benchmark-memory-pts.sh` | Memory | `pts/stream`, `pts/ramspeed`, `pts/tinymembench`, `pts/cachebench` |
 | `benchmark-network-pts.sh` | Network | `pts/network-loopback`, `pts/sockperf`, `pts/iperf`, `pts/netperf` |
 | `benchmark-storage-pts.sh` | Disk I/O | `pts/fio`, `pts/dbench`, `pts/fs-mark`, `pts/compilebench` |
+| `install-pts.sh` | *(shared library)* | Sourced by all benchmark scripts to install PTS and system-level build dependencies |
 
 `create-report-pts.sh` consumes the `benchmark-results/` directories produced by any of the
 above scripts and generates reports in all supported PTS formats (text, CSV, JSON, HTML, PDF),
@@ -59,8 +60,8 @@ sudo ./benchmark-storage-pts.sh --disk "/dev/vdb;nvme-test" --result-id "my-serv
 ./create-report-pts.sh ./benchmark-results/my-server-baseline/
 ```
 
-PTS and all test dependencies are installed automatically on first run.
-Results are saved to `./benchmark-results/<result-id>/`.
+PTS and all test dependencies are installed automatically on first run via the
+shared `install-pts.sh` library. Results are saved to `./benchmark-results/<result-id>/`.
 
 ---
 
@@ -401,7 +402,9 @@ differentiator within a run — not `--result-id`.
 - For `benchmark-storage-pts.sh`: raw block devices (not mounted, not in use)
 
 All other dependencies (PTS, test binaries, compilers) are installed automatically
-on first run.
+on first run. `install-pts.sh` must be co-located with the benchmark scripts
+(same directory). If scripts are deployed to `/usr/local/bin/`, copy
+`install-pts.sh` there as well.
 
 ---
 

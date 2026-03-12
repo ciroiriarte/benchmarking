@@ -1,0 +1,191 @@
+#!/bin/bash
+
+# Script Name: install-pts.sh
+# Version: 1.0
+#
+# Shared library for installing the Phoronix Test Suite and system-level
+# build dependencies.  Sourced (not executed) by the benchmark-*-pts.sh
+# scripts.  Consolidates distro detection, PTS installation, openSUSE repo
+# management, and the install gate into a single location to eliminate
+# drift across scripts.
+#
+# Author: Ciro Iriarte <ciro.iriarte@gmail.com>
+#
+# Changelog:
+#   - 2026-03-11: v1.0 - Initial release.  Extracted from benchmark-storage-pts.sh
+#                        (v3.6) and benchmark-memory-pts.sh (v1.6) as the most
+#                        complete copies.  Adds consolidated bugfixes:
+#                        repo idempotency, zypper 106 handling, python_pkg
+#                        detection, VERSION_ID-based gcc12 guard.
+#
+# Usage:
+#   This file must be sourced, not executed directly:
+#
+#     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+#     . "${SCRIPT_DIR}/install-pts.sh"
+#
+#   Callers may set EXTRA_PKGS_APT, EXTRA_PKGS_DNF, EXTRA_PKGS_ZYPPER arrays
+#   before calling ensure_pts_installed to pull in script-specific packages:
+#
+#     EXTRA_PKGS_APT=(xfsprogs fio)
+#     EXTRA_PKGS_DNF=(xfsprogs fio)
+#     EXTRA_PKGS_ZYPPER=(xfsprogs fio libaio-devel)
+#     ensure_pts_installed
+
+# Guard against direct execution.
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    echo "ERROR: install-pts.sh is a library and must be sourced, not executed."
+    echo "       Usage: . /path/to/install-pts.sh"
+    exit 1
+fi
+
+# === Environment Exports ===
+# Prevent interactive prompts from dpkg config dialogs and the needrestart
+# service-restart checker that ships on Ubuntu 22.04+.  Without these,
+# apt-get/dpkg can hang indefinitely when run non-interactively (e.g. via
+# nohup or SSH without a TTY).  Set at the top level so they apply to both
+# install_pts_packages() and PTS's own internal apt-get calls when it installs
+# external test dependencies (e.g. during phoronix-test-suite install).
+# Harmless on non-Debian systems where these variables are simply ignored.
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+
+# === Internal: openSUSE Repository Setup ===
+# Handles benchmark repo addition, python_pkg detection, Leap 15.6 gcc12
+# management, zypper exit code 106, and repo idempotency.
+_setup_opensuse_repo() {
+    local repo_url
+    local gcc_extra=""
+
+    # python_pkg: Leap 15.x ships 'python' (Python 2) as a PTS build dependency.
+    # Leap 16+ dropped Python 2; the interpreter is a versioned package (e.g.
+    # python313). Detect the actual provider of the 'python3' capability so the
+    # correct package name is used regardless of the Python version bundled with
+    # the release. Tumbleweed/Slowroll also no longer ship plain 'python'.
+    local python_pkg
+    python_pkg=$(zypper -q search --provides --match-exact python3 2>/dev/null \
+        | awk -F'|' '/\| python3[0-9]+/{gsub(/ /,"",$2); print $2; exit}')
+    : "${python_pkg:=python}"   # fall back to 'python' if detection fails
+
+    # Match on $ID (e.g. opensuse-tumbleweed, opensuse-slowroll, opensuse-leap)
+    # because $VERSION_ID is a snapshot date on Tumbleweed/Slowroll, not the OS name.
+    case "$ID" in
+        opensuse-tumbleweed)
+            echo "Adding benchmark repo for Tumbleweed..."
+            repo_url="https://download.opensuse.org/repositories/benchmark/openSUSE_Tumbleweed"
+            ;;
+        opensuse-slowroll)
+            echo "Adding benchmark repo for Slowroll..."
+            repo_url="https://download.opensuse.org/repositories/benchmark/openSUSE_Slowroll"
+            ;;
+        opensuse-leap)
+            echo "Adding benchmark repo for Leap $VERSION_ID..."
+            repo_url="https://download.opensuse.org/repositories/benchmark/${VERSION_ID}/"
+            # Leap 15.6 ships an old GCC; install gcc12 and set it as the default.
+            if [[ "$VERSION_ID" == "15.6" ]]; then
+                gcc_extra="gcc12 gcc12-c++"
+            fi
+            ;;
+        *)
+            echo "Unsupported openSUSE variant: $ID"
+            exit 1
+            ;;
+    esac
+    echo "  Python package: ${python_pkg}"
+
+    # Add benchmark repo only if the alias does not already exist (idempotent).
+    if sudo zypper lr benchmark &>/dev/null; then
+        echo "  Benchmark repo already present; skipping add."
+    else
+        sudo zypper ar -f -p 90 "$repo_url" benchmark
+    fi
+
+    # Refresh may fail transiently (CDN timeouts); do not let set -e abort
+    # the script — the subsequent zypper install will fail clearly if the
+    # repo is truly unreachable.
+    sudo zypper --gpg-auto-import-keys refresh || true
+
+    # zypper returns 106 (ZYPPER_EXIT_INF_REPOS_SKIPPED) when any repo was
+    # unreachable during refresh.  This is informational, not a real failure,
+    # but set -e would abort the script.  Accept 0 and 106 as success.
+    local rc=0
+    sudo zypper install -y phoronix-test-suite gcc gcc-c++ ${gcc_extra} make \
+        unzip bzip2 "${python_pkg}" "${EXTRA_PKGS_ZYPPER[@]}" || rc=$?
+    if [[ "$rc" -ne 0 && "$rc" -ne 106 ]]; then
+        echo "ERROR: zypper install failed with exit code $rc"
+        return "$rc"
+    fi
+
+    # Leap 15.6 ships an old GCC as the system default; point alternatives at
+    # the gcc12 package that was added to gcc_extra above.  Leap 16+ ships a
+    # current GCC as the default so no alternatives change is needed.
+    if [[ "$VERSION_ID" == "15.6" ]]; then
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
+        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
+    fi
+}
+
+# === Install PTS and Build Dependencies ===
+# Detects the distro and installs PTS plus common build tools.
+# Callers may set EXTRA_PKGS_APT, EXTRA_PKGS_DNF, EXTRA_PKGS_ZYPPER arrays
+# before calling to pull in script-specific packages.
+install_pts_packages() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        case "$ID" in
+            rocky|rhel|centos)
+                echo "Detected Rocky Linux or RHEL-based system"
+                sudo dnf install -y epel-release
+                sudo dnf install -y phoronix-test-suite gcc gcc-c++ make unzip \
+                    "${EXTRA_PKGS_DNF[@]}"
+                ;;
+            ubuntu|debian)
+                echo "Detected Ubuntu or Debian-based system"
+                sudo apt-get update
+                # php-cli + php-xml are PTS runtime deps (needed when PTS is
+                # installed from the upstream .deb rather than the distro repo,
+                # which may not pull them automatically).
+                # unzip is needed by PTS to extract test archives (.zip).
+                sudo apt-get install -y build-essential php-cli php-xml unzip \
+                    "${EXTRA_PKGS_APT[@]}"
+                sudo apt-get install -y phoronix-test-suite || {
+                    echo "Phoronix Test Suite not found in repo, attempting fallback install..."
+                    wget -O /tmp/phoronix.deb https://phoronix-test-suite.com/releases/repo/pts.debian/files/phoronix-test-suite_10.8.4_all.deb
+                    # dpkg -i may exit non-zero when optional deps are absent;
+                    # apt-get install -f resolves them, so suppress the dpkg error.
+                    sudo dpkg -i /tmp/phoronix.deb || true
+                    sudo apt-get install -f -y
+                }
+                ;;
+            opensuse*|suse)
+                echo "Detected openSUSE system"
+                _setup_opensuse_repo
+                ;;
+            *)
+                echo "Unsupported OS: $ID"
+                exit 1
+                ;;
+        esac
+    else
+        echo "Cannot detect OS. /etc/os-release not found."
+        exit 1
+    fi
+
+    if ! command -v phoronix-test-suite &> /dev/null; then
+        echo "Installation failed. Please try installing Phoronix Test Suite manually."
+        exit 1
+    fi
+    echo "Phoronix Test Suite installed successfully."
+}
+
+# === Install Gate ===
+# Call this from each benchmark script after setting EXTRA_PKGS_* arrays.
+# Skips installation if PTS and PHP are both already present.
+ensure_pts_installed() {
+    # Check both PTS and PHP: a prior failed install may leave the PTS binary
+    # in place (dpkg iU state) while PHP is still absent, causing PTS to fail
+    # immediately with "PHP must be installed".
+    if ! command -v phoronix-test-suite &>/dev/null || ! command -v php &>/dev/null; then
+        install_pts_packages
+    fi
+}

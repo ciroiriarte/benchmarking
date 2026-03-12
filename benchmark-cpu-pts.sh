@@ -13,9 +13,14 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.1
+# Version: 2.2
 #
 # Changelog:
+#   - 2026-03-11: v2.2 - Extract PTS installation into shared install-pts.sh
+#                        library.  Fixes: openSUSE repo idempotency, zypper
+#                        exit code 106 handling, python_pkg detection for
+#                        Leap 16+/Tumbleweed, VERSION_ID-based gcc12 guard.
+#                        Add result file listing at end of run.
 #   - 2026-03-09: v2.1 - Add unzip to Ubuntu/Debian and openSUSE deps; PTS
 #                        needs it to extract test archives (.zip). Rocky Linux
 #                        ships unzip in the base install so no change needed
@@ -99,15 +104,11 @@ set -e
 set -o pipefail
 
 # === Configuration ===
-# Prevent interactive prompts from dpkg config dialogs and the needrestart
-# service-restart checker that ships on Ubuntu 22.04+.  Without these,
-# apt-get/dpkg can hang indefinitely when run non-interactively (e.g. via
-# nohup or SSH without a TTY).  Set at the top level so they apply to both
-# install_packages() and PTS's own internal apt-get calls when it installs
-# external test dependencies (e.g. during phoronix-test-suite install).
-# Harmless on non-Debian systems where these variables are simply ignored.
-export DEBIAN_FRONTEND=noninteractive
-export NEEDRESTART_MODE=a
+
+# Resolve the directory containing this script so co-located libraries can be
+# sourced regardless of the caller's working directory.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "${SCRIPT_DIR}/install-pts.sh"
 
 # Default set of PTS CPU test profiles.  Each profile targets a distinct workload
 # class so that results characterise the CPU across multiple stress patterns.
@@ -142,94 +143,6 @@ STEAL_TIME_WARN_THRESHOLD=5
 usage() {
   # Skip the shebang line by matching only lines starting with '# ' or bare '#'
   grep '^#[^!]' "$0" | cut -c3-
-}
-
-# Function to install Phoronix Test Suite on supported distributions
-install_packages() {
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        case "$ID" in
-            rocky|rhel|centos)
-                echo "Detected Rocky Linux or RHEL-based system"
-                sudo dnf install -y epel-release
-                sudo dnf install -y phoronix-test-suite
-		sudo dnf install -y xfsprogs util-linux gcc gcc-c++ make autoconf bison flex openssl-devel mesa-demos
-                ;;
-            ubuntu|debian)
-                echo "Detected Ubuntu or Debian-based system"
-                sudo apt-get update
-                # php-cli + php-xml are PTS runtime deps (needed when PTS is
-                # installed from the upstream .deb rather than the distro repo,
-                # which may not pull them automatically).
-                # util-linux provides wipefs.
-                # unzip is needed by PTS to extract test archives (.zip).
-                sudo apt-get install -y xfsprogs util-linux build-essential \
-                    autoconf bison flex libssl-dev mesa-utils php-cli php-xml unzip
-                sudo apt-get install -y phoronix-test-suite || {
-                    echo "Phoronix Test Suite not found in repo, attempting fallback install..."
-                    wget -O /tmp/phoronix.deb https://phoronix-test-suite.com/releases/repo/pts.debian/files/phoronix-test-suite_10.8.4_all.deb
-                    # dpkg -i may exit non-zero when optional deps are absent;
-                    # apt-get install -f resolves them, so suppress the dpkg error.
-                    sudo dpkg -i /tmp/phoronix.deb || true
-                    sudo apt-get install -f -y
-                }
-                ;;
-            opensuse*|suse)
-                echo "Detected openSUSE system"
-                setup_opensuse_repo
-                ;;
-            *)
-                echo "Unsupported OS: $ID"
-                exit 1
-                ;;
-        esac
-    else
-        echo "Cannot detect OS. /etc/os-release not found."
-        exit 1
-    fi
-
-  if ! command -v phoronix-test-suite &> /dev/null; then
-    echo "Installation failed. Please try installing Phoronix Test Suite manually."
-    exit 1
-  fi
-  echo "Phoronix Test Suite installed successfully."
-}
-
-# === openSUSE Repository Setup ===
-setup_opensuse_repo() {
-    local repo_url
-    # Match on $ID (e.g. opensuse-tumbleweed, opensuse-slowroll, opensuse-leap)
-    # because $VERSION_ID is a snapshot date on Tumbleweed/Slowroll, not the OS name.
-    case "$ID" in
-        opensuse-tumbleweed)
-            echo "Adding benchmark repo for Tumbleweed..."
-            repo_url="https://download.opensuse.org/repositories/benchmark/openSUSE_Tumbleweed"
-            ;;
-        opensuse-slowroll)
-            echo "Adding benchmark repo for Slowroll..."
-            repo_url="https://download.opensuse.org/repositories/benchmark/openSUSE_Slowroll"
-            ;;
-        opensuse-leap)
-            echo "Adding benchmark repo for Leap $VERSION_ID..."
-            repo_url="https://download.opensuse.org/repositories/benchmark/${VERSION_ID}/"
-            # Leap 15.6 ships an old GCC; install gcc12 and set it as the default.
-            if [[ "$VERSION_ID" == "15.6" ]]; then
-                gcc_extra="gcc12 gcc12-c++"
-            fi
-            ;;
-        *)
-            echo "Unsupported openSUSE variant: $ID"
-            exit 1
-            ;;
-    esac
-    sudo zypper ar -f -p 90 "$repo_url" benchmark
-    sudo zypper --gpg-auto-import-keys refresh
-    sudo zypper install -y phoronix-test-suite
-    sudo zypper install -y xfsprogs util-linux gcc gcc-c++ ${gcc_extra} make autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel unzip
-    if [[ "$ID" == "opensuse-leap" ]]; then
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
-        sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
-    fi
 }
 
 # === Pre-run Check Functions ===
@@ -508,13 +421,11 @@ INVOKING_GROUP=$(id -gn "$INVOKING_USER" 2>/dev/null || echo "$INVOKING_USER")
 RUN_ID="${UPLOAD_ID}"
 SNAPSHOT_FILE="${RUN_ID}-system-snapshot.txt"
 
-# === Check for PTS and install if it's missing ===
-# Check both PTS and PHP: a prior failed install may leave the PTS binary
-# in place (dpkg iU state) while PHP is still absent, causing PTS to fail
-# immediately with "PHP must be installed".
-if ! command -v phoronix-test-suite &>/dev/null || ! command -v php &>/dev/null; then
-    install_packages
-fi
+# === Install PTS and dependencies ===
+EXTRA_PKGS_APT=(xfsprogs util-linux autoconf bison flex libssl-dev mesa-utils)
+EXTRA_PKGS_DNF=(xfsprogs util-linux autoconf bison flex openssl-devel mesa-demos)
+EXTRA_PKGS_ZYPPER=(xfsprogs util-linux autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel)
+ensure_pts_installed
 
 # === Pre-run System Checks ===
 echo "--- Pre-run System Checks ---"
@@ -650,6 +561,12 @@ if [[ "$UPLOAD_RESULTS" -eq 1 ]]; then
 fi
 
 # === Results Summary ===
+echo ""
+echo "=== Result Files ==="
+find "${SCRIPT_INVOCATION_DIR}/benchmark-results/${RUN_ID}" -type f 2>/dev/null | sort | while read -r f; do
+    echo "  $f"
+done
+
 echo -e "\n=== Benchmark Complete ==="
 if [[ "${#FAILED_TESTS[@]}" -gt 0 ]]; then
     echo "WARNING: ${#FAILED_TESTS[@]} test(s) failed:"

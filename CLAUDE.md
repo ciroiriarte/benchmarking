@@ -48,3 +48,13 @@
 * authentication will be solved for you via SSH public/private keys
 * sudo is passwordless
 * don't ask for confirmation of connection or command execution to/at the test machine
+
+## Git Commit Guidelines
+
+- Follow conventional commit format (feat:, fix:, docs:, etc.)
+- Keep the subject line under 72 characters
+- Use the `Assisted-By:` trailer (not `Generated-By:`) — this repo contains
+  human-originated code with AI-assisted improvements
+- Do NOT remove the Co-Authored-By trailer; it is required for transparency
+- Always include: Signed-off-by: Ciro Iriarte <ciro.iriarte+software@gmail.com>
+

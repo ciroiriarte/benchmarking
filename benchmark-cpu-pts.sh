@@ -13,9 +13,26 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.2
+# Version: 2.4
 #
 # Changelog:
+#   - 2026-03-12: v2.4 - Extract pre-run checks (detect_privileges, confirm_change,
+#                        check_cpu_governor, check_thermal, check_system_load,
+#                        check_steal_time), collect_results, upload, result file
+#                        listing, and invocation context into shared libraries
+#                        (common-checks.sh, install-pts.sh configure_pts_batch).
+#   - 2026-03-12: v2.3 - Fix batch-setup: expand from 5 to 7 answers; add
+#                        missing PromptSaveName=N (caused batch-run to hang
+#                        in non-interactive mode) and RunAllTestCombinations=N;
+#                        fix OpenBrowser=Y→N for headless servers.
+#                        Fix upload-result: pipe "n" to suppress interactive
+#                        "attach system logs?" prompt that loops infinitely
+#                        without a TTY; add PTS result name resolution with
+#                        underscore-stripping (PTS strips underscores from
+#                        directory names).
+#                        Fix collect_results(): add /var/lib/ fallback for
+#                        system-wide PTS installs; add underscore-stripped
+#                        name resolution matching the memory/storage scripts.
 #   - 2026-03-11: v2.2 - Extract PTS installation into shared install-pts.sh
 #                        library.  Fixes: openSUSE repo idempotency, zypper
 #                        exit code 106 handling, python_pkg detection for
@@ -109,6 +126,7 @@ set -o pipefail
 # sourced regardless of the caller's working directory.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "${SCRIPT_DIR}/install-pts.sh"
+. "${SCRIPT_DIR}/common-checks.sh"
 
 # Default set of PTS CPU test profiles.  Each profile targets a distinct workload
 # class so that results characterise the CPU across multiple stress patterns.
@@ -127,15 +145,10 @@ REQUIRED_TESTS=(
 # Minimum number of timed runs required for statistical confidence.
 # A single run cannot reveal variance; 3 runs provide a baseline mean ± range.
 DEFAULT_RUNS=3
-# Recommended CPU frequency governor for benchmarking; minimises frequency-scaling variance.
-RECOMMENDED_GOVERNOR="performance"
-# CPU temperature threshold above which results may be affected by thermal throttling (millidegrees Celsius).
-CPU_TEMP_WARN_THRESHOLD_MC=80000
-# Warn if the 1-minute load average exceeds (available CPU count × this multiplier).
-LOAD_WARN_MULTIPLIER=1
-# VM CPU steal time percentage above which hypervisor contention may distort results.
-STEAL_TIME_WARN_THRESHOLD=5
 # === End Configuration ===
+# Pre-run check thresholds use defaults from common-checks.sh:
+#   RECOMMENDED_GOVERNOR=performance, CPU_TEMP_WARN_THRESHOLD_MC=80000,
+#   LOAD_WARN_MULTIPLIER=1, STEAL_TIME_WARN_THRESHOLD=5
 
 # === Helper Functions ===
 
@@ -145,180 +158,11 @@ usage() {
   grep '^#[^!]' "$0" | cut -c3-
 }
 
-# === Pre-run Check Functions ===
+# === Pre-run checks: detect_privileges, confirm_change, check_cpu_governor,
+# check_thermal, check_system_load, check_steal_time are provided by
+# common-checks.sh (sourced above).
 
-# Detect whether the script has privileges to make system configuration changes.
-# Sets HAS_PRIVILEGE=1 and SUDO_CMD if running as root or passwordless sudo is available.
-SUDO_CMD=""
-HAS_PRIVILEGE=0
-detect_privileges() {
-    if [[ "$EUID" -eq 0 ]]; then
-        HAS_PRIVILEGE=1
-    elif sudo -n true 2>/dev/null; then
-        HAS_PRIVILEGE=1
-        SUDO_CMD="sudo"
-    else
-        HAS_PRIVILEGE=0
-        echo "INFO: Not running as root and no passwordless sudo available."
-        echo "      Pre-run checks will warn only; no system changes will be made."
-    fi
-}
-
-# Prompt the user for confirmation before applying a system change.
-# Automatically declines in non-interactive (piped/redirected) mode.
-confirm_change() {
-    local prompt="$1"
-    if [[ ! -t 0 ]]; then
-        echo "INFO: Non-interactive mode; skipping change."
-        return 1
-    fi
-    local response
-    read -r -p "$prompt [y/N]: " response
-    [[ "$response" =~ ^[Yy]$ ]]
-}
-
-# Check the CPU frequency governor on all CPUs and offer to set it to the recommended value.
-check_cpu_governor() {
-    if [[ ! -d "/sys/devices/system/cpu/cpu0/cpufreq" ]]; then
-        echo "INFO: cpufreq interface not available (VM or container); skipping governor check."
-        return
-    fi
-
-    local suboptimal_count=0
-    local gov_file gov
-    for gov_file in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
-        gov=$(< "$gov_file")
-        if [[ "$gov" != "$RECOMMENDED_GOVERNOR" ]]; then
-            suboptimal_count=$(( suboptimal_count + 1 ))
-        fi
-    done
-
-    if [[ "$suboptimal_count" -eq 0 ]]; then
-        echo "OK: CPU governor is '$RECOMMENDED_GOVERNOR' on all CPUs."
-        return
-    fi
-
-    local current_govs
-    current_govs=$(sort -u /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor 2>/dev/null | tr '\n' ' ')
-    echo "WARNING: $suboptimal_count CPU(s) are not using the '$RECOMMENDED_GOVERNOR' governor."
-    echo "         Current governor(s): ${current_govs% }."
-    echo "         Frequency scaling may introduce variance in benchmark results."
-
-    if [[ "$HAS_PRIVILEGE" -eq 0 ]]; then
-        echo "         Insufficient privileges to change governor; proceeding with current settings."
-        return
-    fi
-
-    if confirm_change "Set CPU governor to '$RECOMMENDED_GOVERNOR' on all CPUs?"; then
-        for gov_file in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do
-            echo "$RECOMMENDED_GOVERNOR" | ${SUDO_CMD} tee "$gov_file" > /dev/null
-        done
-        echo "OK: CPU governor set to '$RECOMMENDED_GOVERNOR'."
-    else
-        echo "INFO: Keeping current governor; proceeding."
-    fi
-}
-
-# Warn if any thermal zone reports a temperature above the configured threshold.
-check_thermal() {
-    local temp_files=(/sys/class/thermal/thermal_zone*/temp)
-    if [[ ! -f "${temp_files[0]}" ]]; then
-        echo "INFO: Thermal sensors not available; skipping temperature check."
-        return
-    fi
-
-    local hot_zones=()
-    local temp_file temp
-    for temp_file in "${temp_files[@]}"; do
-        temp=$(< "$temp_file")
-        if [[ "$temp" -ge "$CPU_TEMP_WARN_THRESHOLD_MC" ]]; then
-            hot_zones+=("$(basename "$(dirname "$temp_file")"): $((temp / 1000))°C")
-        fi
-    done
-
-    if [[ "${#hot_zones[@]}" -eq 0 ]]; then
-        echo "OK: All thermal zones are below $((CPU_TEMP_WARN_THRESHOLD_MC / 1000))°C."
-    else
-        echo "WARNING: High temperatures detected; results may be affected by thermal throttling."
-        local zone
-        for zone in "${hot_zones[@]}"; do
-            echo "         $zone"
-        done
-    fi
-}
-
-# Warn if the 1-minute load average exceeds the available CPU count.
-check_system_load() {
-    local load_1min cpu_count
-    load_1min=$(cut -d' ' -f1 /proc/loadavg)
-    cpu_count=$(nproc)
-    if awk "BEGIN { exit !($load_1min > $cpu_count * $LOAD_WARN_MULTIPLIER) }"; then
-        echo "WARNING: 1-minute load average ($load_1min) exceeds CPU count ($cpu_count)."
-        echo "         Background activity may distort benchmark results."
-    else
-        echo "OK: System load ($load_1min) is within normal range for $cpu_count CPUs."
-    fi
-}
-
-# Warn if CPU steal time (sampled over 1 second) exceeds the configured threshold.
-# Steal time indicates the hypervisor is withholding CPU cycles from this VM.
-# On physical machines the value is expected to be 0.
-check_steal_time() {
-    local s1 s2
-    s1=$(grep '^cpu ' /proc/stat)
-    sleep 1
-    s2=$(grep '^cpu ' /proc/stat)
-    # /proc/stat cpu line fields: user nice system idle iowait irq softirq steal ...
-    # steal is field 9 (field 1 is the 'cpu' label).
-    local steal_pct
-    steal_pct=$(awk -v s1="$s1" -v s2="$s2" '
-        BEGIN {
-            split(s1, a); split(s2, b)
-            delta_total = 0
-            for (i = 2; i <= length(a); i++) delta_total += b[i] - a[i]
-            delta_steal = b[9] - a[9]
-            printf "%.1f", (delta_total > 0) ? (delta_steal / delta_total) * 100 : 0
-        }')
-    if awk "BEGIN { exit !($steal_pct >= $STEAL_TIME_WARN_THRESHOLD) }"; then
-        echo "WARNING: CPU steal time is ${steal_pct}% (threshold: ${STEAL_TIME_WARN_THRESHOLD}%)."
-        echo "         The hypervisor may be withholding CPU time; results may be unreliable."
-    else
-        echo "OK: CPU steal time is ${steal_pct}% (below ${STEAL_TIME_WARN_THRESHOLD}% threshold)."
-    fi
-}
-
-# Capture system metadata to a file tied to the result identifier.
-# Provides an auditable environment record independent of PTS's own metadata,
-# covering kernel, OS, CPU topology, frequency scaling state, memory, and hardware info.
-collect_results() {
-    local output_dir="${SCRIPT_INVOCATION_DIR}/benchmark-results/${RUN_ID}"
-    echo "--- Collecting results to ${output_dir} ---"
-    mkdir -p "$output_dir"
-
-    if [[ -f "$SNAPSHOT_FILE" ]]; then
-        cp "$SNAPSHOT_FILE" "$output_dir/"
-        echo "  Copied snapshot: $SNAPSHOT_FILE"
-    fi
-
-    local copied=0
-    for result_name in "${RESULT_NAMES[@]}"; do
-        local pts_result_dir="$HOME/.phoronix-test-suite/test-results/${result_name}"
-        if [[ -d "$pts_result_dir" ]]; then
-            cp -r "$pts_result_dir" "$output_dir/"
-            echo "  Copied result: $result_name"
-            (( copied++ )) || true
-        else
-            echo "  WARNING: PTS result directory not found for $result_name"
-        fi
-    done
-
-    if [[ "$INVOKING_USER" != "root" ]]; then
-        chown -R "${INVOKING_USER}:${INVOKING_GROUP}" "$output_dir" 2>/dev/null || true
-    fi
-
-    echo "Results collected: ${copied} PTS result(s) + snapshot → ${output_dir}"
-    echo "  Owner: ${INVOKING_USER}:${INVOKING_GROUP}"
-}
+# collect_results is provided by common-checks.sh (sourced above).
 
 capture_system_snapshot() {
     local snapshot_file="$SNAPSHOT_FILE"
@@ -415,16 +259,17 @@ done
 
 # Capture invocation context after arg parsing so --result-id is reflected in
 # RUN_ID before SNAPSHOT_FILE and the output directory are derived from it.
-SCRIPT_INVOCATION_DIR=$(pwd)
-INVOKING_USER="${SUDO_USER:-$(whoami)}"
-INVOKING_GROUP=$(id -gn "$INVOKING_USER" 2>/dev/null || echo "$INVOKING_USER")
-RUN_ID="${UPLOAD_ID}"
-SNAPSHOT_FILE="${RUN_ID}-system-snapshot.txt"
+setup_invocation_context
 
 # === Install PTS and dependencies ===
 EXTRA_PKGS_APT=(xfsprogs util-linux autoconf bison flex libssl-dev mesa-utils)
-EXTRA_PKGS_DNF=(xfsprogs util-linux autoconf bison flex openssl-devel mesa-demos)
-EXTRA_PKGS_ZYPPER=(xfsprogs util-linux autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel)
+# perl-core provides the full set of Perl core modules (FindBin, lib, IPC::Cmd,
+# File::Compare, File::Copy, etc.) needed to build openssl from source (PTS
+# test pts/openssl).  RHEL 9 minimal installs split these out of perl-core.
+EXTRA_PKGS_DNF=(xfsprogs util-linux autoconf bison flex openssl-devel mesa-demos perl-core)
+# Full perl interpreter is needed on openSUSE Leap 16+ to build openssl from
+# source; the minimal perl shipped in the base image omits FindBin.pm et al.
+EXTRA_PKGS_ZYPPER=(xfsprogs util-linux autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel perl)
 ensure_pts_installed
 
 # === Pre-run System Checks ===
@@ -437,14 +282,8 @@ check_steal_time
 echo "------------------------------"
 
 # === Configure Phoronix Test Suite for Batch Mode ===
-echo "Setting up Phoronix Test Suite in batch mode..."
-phoronix-test-suite batch-setup <<EOF
-Y
-Y
-N
-N
-N
-EOF
+# RunAllTestCombinations=N: use PRESET_OPTIONS for thread count.
+configure_pts_batch "N"
 
 # === Install Required Phoronix Tests ===
 for test_name in "${REQUIRED_TESTS[@]}"; do
@@ -555,17 +394,10 @@ collect_results
 # === Upload Results if Requested ===
 # Runs regardless of individual test failures to preserve results from
 # tests that completed successfully.
-if [[ "$UPLOAD_RESULTS" -eq 1 ]]; then
-  echo "--- Uploading results to OpenBenchmarking.org ---"
-  phoronix-test-suite upload-result "$UPLOAD_ID"
-fi
+upload_pts_results
 
 # === Results Summary ===
-echo ""
-echo "=== Result Files ==="
-find "${SCRIPT_INVOCATION_DIR}/benchmark-results/${RUN_ID}" -type f 2>/dev/null | sort | while read -r f; do
-    echo "  $f"
-done
+list_result_files
 
 echo -e "\n=== Benchmark Complete ==="
 if [[ "${#FAILED_TESTS[@]}" -gt 0 ]]; then

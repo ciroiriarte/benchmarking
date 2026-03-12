@@ -147,6 +147,116 @@ OPTIONS:
   --result-name "DC1 Node3 - DDR5 6400 MT/s"
 ```
 
+### Sample report
+
+The following was collected from 8-vCPU / 16 GB KVM virtual machines (Intel Xeon
+E5-2680 v2) across three distributions. Tests were run with `--upload` to publish
+results to OpenBenchmarking.org.
+
+**Command:**
+
+```bash
+sudo ./benchmark-memory-pts.sh --upload \
+  --result-id mem-test-opensuse \
+  --result-name "openSUSE Leap 16.0 - 8vCPU 16GB KVM"
+```
+
+**Run summary (abbreviated):**
+
+```
+--- Pre-run System Checks ---
+INFO: cpufreq interface not available (VM or container); skipping governor check.
+INFO: Thermal sensors not available; skipping temperature check.
+OK: System load (0.01) is within normal range for 8 CPUs.
+OK: CPU steal time is 0.0% (below 5% threshold).
+------------------------------
+=== Running memory benchmark: pts/stream ===
+Result saved as: mem-test-opensuse_stream
+=== Running memory benchmark: pts/ramspeed ===
+Result saved as: mem-test-opensuse_ramspeed
+=== Running memory benchmark: pts/tinymembench ===
+Result saved as: mem-test-opensuse_tinymembench
+=== Running memory benchmark: pts/cachebench ===
+Result saved as: mem-test-opensuse_cachebench
+--- Collecting results to /home/cloudadmin/benchmark-results/mem-test-opensuse ---
+--- Uploading results to OpenBenchmarking.org ---
+
+=== Memory Benchmark Summary ===
+Completed results: 4
+  [OK] mem-test-opensuse_stream
+  [OK] mem-test-opensuse_ramspeed
+  [OK] mem-test-opensuse_tinymembench
+  [OK] mem-test-opensuse_cachebench
+
+All tests completed successfully.
+```
+
+**System snapshot excerpt** (`mem-test-opensuse-system-snapshot.txt`):
+
+```
+=== Benchmark Configuration ===
+Date:        2026-03-12 01:36:11 UTC
+Result ID:   mem-test-opensuse
+Result Name: openSUSE Leap 16.0 - 8vCPU 16GB KVM
+Tests:       pts/stream pts/ramspeed pts/tinymembench pts/cachebench
+
+=== CPU Topology ===
+Model name:          Intel(R) Xeon(R) CPU E5-2680 v2 @ 2.80GHz
+CPU(s):              8
+Thread(s) per core:  1
+Core(s) per socket:  8
+Socket(s):           1
+Hypervisor vendor:   KVM
+L1d cache:           256 KiB (8 instances)
+L2 cache:            32 MiB (8 instances)
+L3 cache:            16 MiB (1 instance)
+
+=== Memory ===
+MemTotal:   16371064 kB
+```
+
+**OpenBenchmarking.org results (openSUSE Leap 16.0):**
+
+| Test | URL |
+|---|---|
+| stream | https://openbenchmarking.org/result/2603124-NE-MEMTESTOP85 |
+| ramspeed | https://openbenchmarking.org/result/2603126-NE-MEMTESTOP06 |
+| tinymembench | https://openbenchmarking.org/result/2603129-NE-MEMTESTOP26 |
+| cachebench | https://openbenchmarking.org/result/2603124-NE-MEMTESTOP46 |
+
+**OpenBenchmarking.org results (Rocky Linux 9.7):**
+
+| Test | URL |
+|---|---|
+| stream | https://openbenchmarking.org/result/2603120-NE-MEMTESTRO17 |
+| ramspeed | https://openbenchmarking.org/result/2603129-NE-MEMTESTRO47 |
+| tinymembench | https://openbenchmarking.org/result/2603121-NE-MEMTESTRO67 |
+| cachebench | https://openbenchmarking.org/result/2603127-NE-MEMTESTRO87 |
+
+**Output structure:**
+
+```
+benchmark-results/
+└── mem-test-opensuse/
+    ├── mem-test-opensuse-system-snapshot.txt
+    ├── mem-test-opensusestream/
+    │   ├── composite.xml
+    │   ├── system-logs/
+    │   └── test-logs/
+    ├── mem-test-opensuseramspeed/
+    │   ├── composite.xml
+    │   ├── system-logs/
+    │   └── test-logs/
+    ├── mem-test-opensusetinymembench/
+    │   └── ...
+    └── mem-test-opensusecachebench/
+        └── ...
+```
+
+> **Note:** PTS strips underscores from result directory names (e.g.
+> `mem-test-opensuse_stream` → `mem-test-opensusestream`). The script handles
+> this transparently when collecting results and uploading.
+
 ---
 
 ## benchmark-network-pts.sh
@@ -392,6 +502,89 @@ differentiator within a run — not `--result-id`.
   ./benchmark-results/ceph-dc1-before/ \
   ./benchmark-results/ceph-dc1-after/
 ```
+
+### Sample: cross-distribution memory comparison
+
+The example below runs `benchmark-memory-pts.sh` on three KVM virtual machines
+(identical hardware: 8 vCPU / 16 GB, Intel Xeon E5-2680 v2) running different
+distributions, then uses `create-report-pts.sh` to produce a combined comparison
+report.
+
+**Step 1 — Run benchmarks on each machine:**
+
+```bash
+# openSUSE Leap 16.0 (x.x.x.101)
+ssh cloudadmin@x.x.x.101 'sudo ./benchmark-memory-pts.sh --upload \
+  --result-id mem-test-opensuse \
+  --result-name "openSUSE Leap 16.0 - 8vCPU 16GB KVM"'
+
+# Rocky Linux 9.7 (x.x.x.102)
+ssh cloudadmin@x.x.x.102 'sudo ./benchmark-memory-pts.sh --upload \
+  --result-id mem-test-rocky \
+  --result-name "Rocky Linux 9.7 - 8vCPU 16GB KVM"'
+
+# Ubuntu 24.04 (x.x.x.103)
+ssh cloudadmin@x.x.x.103 'sudo ./benchmark-memory-pts.sh --upload \
+  --result-id mem-test-ubuntu \
+  --result-name "Ubuntu 24.04 - 8vCPU 16GB KVM"'
+```
+
+**Step 2 — Collect results locally:**
+
+```bash
+mkdir -p results/
+for pair in "opensuse:x.x.x.101" "rocky:x.x.x.102" "ubuntu:x.x.x.103"; do
+  name="${pair%%:*}"; ip="${pair##*:}"
+  scp -r "cloudadmin@${ip}:~/benchmark-results/mem-test-${name}" results/
+done
+```
+
+**Step 3 — Generate combined report:**
+
+```bash
+./create-report-pts.sh \
+  results/mem-test-opensuse/ \
+  results/mem-test-rocky/ \
+  results/mem-test-ubuntu/
+```
+
+**Resulting directory structure:**
+
+```
+results/
+├── mem-test-opensuse/
+│   ├── mem-test-opensuse-system-snapshot.txt
+│   ├── mem-test-opensusestream/
+│   │   ├── composite.xml
+│   │   ├── system-logs/
+│   │   └── test-logs/
+│   ├── mem-test-opensuseramspeed/
+│   ├── mem-test-opensusetinymembench/
+│   └── mem-test-opensusecachebench/
+├── mem-test-rocky/
+│   ├── mem-test-rocky-system-snapshot.txt
+│   ├── mem-test-rockystream/
+│   ├── mem-test-rockyramspeed/
+│   ├── mem-test-rockytinymembench/
+│   └── mem-test-rockycachebench/
+└── mem-test-ubuntu/
+    ├── mem-test-ubuntu-system-snapshot.txt
+    ├── mem-test-ubuntustream/
+    ├── mem-test-ubunturamspeed/
+    ├── mem-test-ubuntutinymembench/
+    └── mem-test-ubuntucachebench/
+```
+
+`create-report-pts.sh` merges same-test results (e.g. all three `*stream/composite.xml`
+files) into a single comparison, making it easy to see how memory bandwidth and latency
+differ across distributions and kernel versions on identical hardware.
+
+**OpenBenchmarking.org results:**
+
+| Distro | stream | ramspeed | tinymembench | cachebench |
+|---|---|---|---|---|
+| openSUSE Leap 16.0 | [2603124-NE-MEMTESTOP85](https://openbenchmarking.org/result/2603124-NE-MEMTESTOP85) | [2603126-NE-MEMTESTOP06](https://openbenchmarking.org/result/2603126-NE-MEMTESTOP06) | [2603129-NE-MEMTESTOP26](https://openbenchmarking.org/result/2603129-NE-MEMTESTOP26) | [2603124-NE-MEMTESTOP46](https://openbenchmarking.org/result/2603124-NE-MEMTESTOP46) |
+| Rocky Linux 9.7 | [2603120-NE-MEMTESTRO17](https://openbenchmarking.org/result/2603120-NE-MEMTESTRO17) | [2603129-NE-MEMTESTRO47](https://openbenchmarking.org/result/2603129-NE-MEMTESTRO47) | [2603121-NE-MEMTESTRO67](https://openbenchmarking.org/result/2603121-NE-MEMTESTRO67) | [2603127-NE-MEMTESTRO87](https://openbenchmarking.org/result/2603127-NE-MEMTESTRO87) |
 
 ---
 

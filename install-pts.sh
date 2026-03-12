@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script Name: install-pts.sh
-# Version: 1.0
+# Version: 1.2
 #
 # Shared library for installing the Phoronix Test Suite and system-level
 # build dependencies.  Sourced (not executed) by the benchmark-*-pts.sh
@@ -12,6 +12,12 @@
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
 #
 # Changelog:
+#   - 2026-03-12: v1.2 - Add configure_pts_batch() to centralise PTS batch-setup
+#                        with the correct 7 answers.  Parameterised by
+#                        RunAllTestCombinations (Y/N) since that is the only
+#                        answer that varies across benchmark scripts.
+#   - 2026-03-12: v1.1 - Add bzip2 to Rocky/RHEL dnf install; needed by PTS
+#                        to extract .tar.bz2 test archives (e.g. stream).
 #   - 2026-03-11: v1.0 - Initial release.  Extracted from benchmark-storage-pts.sh
 #                        (v3.6) and benchmark-memory-pts.sh (v1.6) as the most
 #                        complete copies.  Adds consolidated bugfixes:
@@ -63,7 +69,9 @@ _setup_opensuse_repo() {
     # correct package name is used regardless of the Python version bundled with
     # the release. Tumbleweed/Slowroll also no longer ship plain 'python'.
     local python_pkg
-    python_pkg=$(zypper -q search --provides --match-exact python3 2>/dev/null \
+    # --no-refresh: python3 is in the base repos; avoids triggering a refresh
+    # of the benchmark repo (which may not yet have its GPG key imported).
+    python_pkg=$(zypper --no-refresh -q search --provides --match-exact python3 2>/dev/null \
         | awk -F'|' '/\| python3[0-9]+/{gsub(/ /,"",$2); print $2; exit}')
     : "${python_pkg:=python}"   # fall back to 'python' if detection fails
 
@@ -137,7 +145,7 @@ install_pts_packages() {
                 echo "Detected Rocky Linux or RHEL-based system"
                 sudo dnf install -y epel-release
                 sudo dnf install -y phoronix-test-suite gcc gcc-c++ make unzip \
-                    "${EXTRA_PKGS_DNF[@]}"
+                    bzip2 "${EXTRA_PKGS_DNF[@]}"
                 ;;
             ubuntu|debian)
                 echo "Detected Ubuntu or Debian-based system"
@@ -188,4 +196,31 @@ ensure_pts_installed() {
     if ! command -v phoronix-test-suite &>/dev/null || ! command -v php &>/dev/null; then
         install_pts_packages
     fi
+}
+
+# === PTS Batch Mode Configuration ===
+# Configures PTS for non-interactive batch operation.
+#   $1 - RunAllTestCombinations: Y to exercise every sub-option permutation,
+#        N to use PRESET_OPTIONS for selective test invocation.
+#
+# PTS batch-setup prompts (7 total):
+#   1. SaveResults                 = Y  (persist results to disk)
+#   2. OpenBrowser                 = N  (no GUI in headless mode)
+#   3. UploadResults               = N  (manual upload via --upload flag)
+#   4. PromptForTestIdentifier     = N  (use TEST_RESULTS_NAME env var)
+#   5. PromptForTestDescription    = N  (use TEST_RESULTS_DESCRIPTION env var)
+#   6. PromptSaveName              = N  (auto-save; prompting hangs non-interactive runs)
+#   7. RunAllTestCombinations      = $1
+configure_pts_batch() {
+    local run_all="${1:-N}"
+    echo "Setting up Phoronix Test Suite in batch mode (RunAllTestCombinations=${run_all})..."
+    phoronix-test-suite batch-setup <<EOF
+Y
+N
+N
+N
+N
+N
+${run_all}
+EOF
 }

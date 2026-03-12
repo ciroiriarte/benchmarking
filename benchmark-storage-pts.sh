@@ -8,9 +8,17 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 3.7
+# Version: 3.8
 #
 # Changelog:
+#   - 2026-03-12: v3.8 - Extract detect_privileges, collect_results, upload,
+#                        result file listing, and invocation context into
+#                        shared libraries (common-checks.sh, install-pts.sh
+#                        configure_pts_batch).
+#                        Fix upload-result: pipe 'n' to suppress interactive
+#                        "attach system logs?" prompt; add PTS result name
+#                        resolution with underscore-stripping and /var/lib/
+#                        fallback.
 #   - 2026-03-11: v3.7 - Extract PTS installation into shared install-pts.sh
 #                        library.  Add build-essential to apt deps (was missing).
 #                        Add result file listing at end of run.
@@ -170,6 +178,7 @@ set -o pipefail
 # sourced regardless of the caller's working directory.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "${SCRIPT_DIR}/install-pts.sh"
+. "${SCRIPT_DIR}/common-checks.sh"
 
 # WARNING: ALL DATA ON THE TARGET DISKS WILL BE PERMANENTLY ERASED.
 # Target disks are supplied at runtime via --disk or --disk-file (see usage).
@@ -284,43 +293,13 @@ if [[ "$UPLOAD_RESULTS" -eq 1 ]] && ([[ -z "$UPLOAD_NAME" ]] || [[ -z "$UPLOAD_I
     exit 1
 fi
 
-# Capture the directory from which the operator invoked the script.
-# Used at the end to copy results into ./benchmark-results/<run-id>/ relative
-# to that location (CLAUDE.md requirement).  Must be captured before any
-# subshell or cd changes the working directory.
-SCRIPT_INVOCATION_DIR=$(pwd)
-
-# The user who actually invoked the script.  When run via sudo, SUDO_USER
-# holds the original login name; otherwise fall back to whoami.
-# Output files in benchmark-results/ are chowned to this user so root does
-# not end up owning results the operator needs to read.
-INVOKING_USER="${SUDO_USER:-$(whoami)}"
-INVOKING_GROUP=$(id -gn "$INVOKING_USER" 2>/dev/null || echo "$INVOKING_USER")
-
-# Run identifier used for the snapshot filename and the output directory.
-RUN_ID="${UPLOAD_ID:-storage-benchmark-$(date +%Y-%m-%d_%H%M%S)}"
-
-# Snapshot file is named after the result identifier when provided, or a timestamp otherwise.
-SNAPSHOT_FILE="${RUN_ID}-system-snapshot.txt"
+# Set up invocation context (SCRIPT_INVOCATION_DIR, INVOKING_USER/GROUP,
+# RUN_ID, SNAPSHOT_FILE).  The default prefix is used when --result-id is
+# not provided.
+setup_invocation_context "storage-benchmark"
 
 # === Device Detection and I/O Scheduler Configuration ===
-
-# Detect whether the script can make privileged system changes.
-# Sets HAS_PRIVILEGE=1 and SUDO_CMD if running as root or passwordless sudo is available.
-SUDO_CMD=""
-HAS_PRIVILEGE=0
-detect_privileges() {
-    if [[ "$EUID" -eq 0 ]]; then
-        HAS_PRIVILEGE=1
-    elif sudo -n true 2>/dev/null; then
-        HAS_PRIVILEGE=1
-        SUDO_CMD="sudo"
-    else
-        HAS_PRIVILEGE=0
-        echo "INFO: Not running as root and no passwordless sudo available."
-        echo "      I/O schedulers will not be configured automatically."
-    fi
-}
+# detect_privileges is provided by common-checks.sh (sourced above).
 
 # Resolve the kernel driver handling a block device from sysfs.
 # For simple devices (NVMe, virtio-blk) this is the direct device driver.
@@ -625,47 +604,9 @@ save_results_from_disk() {
     echo "  Artifacts saved to: ${backup_dir}"
 }
 
-# === Collect Final Results ===
-# Copy PTS result XML directories and the system snapshot into
-# ./benchmark-results/<run-id>/ relative to the directory from which the
-# operator invoked the script.  This satisfies the project requirement that
-# results land in a predictable, versioned location next to the calling CWD.
-#
-# PTS always writes its result XML to ~/.phoronix-test-suite/test-results/,
-# so they are safe even if the benchmark disk has already been wiped.
-collect_results() {
-    local output_dir="${SCRIPT_INVOCATION_DIR}/benchmark-results/${RUN_ID}"
-    echo "--- Collecting results to ${output_dir} ---"
-    mkdir -p "$output_dir"
-
-    # System snapshot
-    if [[ -f "$SNAPSHOT_FILE" ]]; then
-        cp "$SNAPSHOT_FILE" "$output_dir/"
-        echo "  Copied snapshot: $SNAPSHOT_FILE"
-    fi
-
-    # PTS result directories (one XML dir per test/disk combination)
-    local copied=0
-    for result_name in "${RESULT_NAMES[@]}"; do
-        local pts_result_dir="$HOME/.phoronix-test-suite/test-results/${result_name}"
-        if [[ -d "$pts_result_dir" ]]; then
-            cp -r "$pts_result_dir" "$output_dir/"
-            echo "  Copied result: $result_name"
-            (( copied++ )) || true
-        else
-            echo "  WARNING: PTS result directory not found for $result_name"
-        fi
-    done
-
-    # Transfer ownership from root to the invoking user so the operator can
-    # read and manage results without needing sudo.
-    if [[ "$INVOKING_USER" != "root" ]]; then
-        chown -R "${INVOKING_USER}:${INVOKING_GROUP}" "$output_dir" 2>/dev/null || true
-    fi
-
-    echo "Results collected: ${copied} PTS result(s) + snapshot → ${output_dir}"
-    echo "  Owner: ${INVOKING_USER}:${INVOKING_GROUP}"
-}
+# collect_results is provided by common-checks.sh (sourced above).
+# It handles both /var/lib/ (system-wide PTS) and $HOME/ result directories,
+# plus PTS underscore-stripping of directory names.
 
 # === Release and Clean Up Disks ===
 # Defined here, before main execution, so the EXIT trap can always call it
@@ -740,27 +681,8 @@ EXTRA_PKGS_ZYPPER=(xfsprogs util-linux fio autoconf bison flex libopenssl-devel 
 ensure_pts_installed
 
 # === Configure Phoronix Test Suite for Batch Mode ===
-# batch-setup asks exactly 7 yes/no questions (when SaveResults=Y):
-#   1. Save test results when in batch mode?          → Y
-#   2. Open the web browser automatically?            → N  (headless server)
-#   3. Auto upload results to OpenBenchmarking.org?   → N
-#   4. Prompt for test identifier?                    → N
-#   5. Prompt for test description?                   → N
-#   6. Prompt for saved results file-name?            → N  (was missing; left
-#                                                          PromptSaveName=TRUE
-#                                                          which caused batch-run
-#                                                          to hang for user input)
-#   7. Run all test options?                          → Y  (all permutations)
-echo "Setting up Phoronix Test Suite in batch mode..."
-phoronix-test-suite batch-setup <<EOF
-Y
-N
-N
-N
-N
-N
-Y
-EOF
+# RunAllTestCombinations=Y: exercise every sub-option permutation.
+configure_pts_batch "Y"
 
 # === Pre-run Device Configuration ===
 echo "--- Detecting device types and configuring I/O schedulers ---"
@@ -1120,20 +1042,7 @@ for disk in "${DISKS[@]}"; do
 done
 
 # === Upload Results if Requested ===
-if [[ "$UPLOAD_RESULTS" -eq 1 ]]; then
-    echo "--- Starting result upload to OpenBenchmarking.org ---"
-    export PTS_UPLOAD_NAME="$UPLOAD_NAME"
-    export PTS_UPLOAD_IDENTIFIER="$UPLOAD_ID"
-    
-    for result in "${RESULT_NAMES[@]}"; do
-        echo "Uploading result: $result"
-        phoronix-test-suite upload-result "$result"
-    done
-    
-    unset PTS_UPLOAD_NAME
-    unset PTS_UPLOAD_IDENTIFIER
-    echo "All uploads complete."
-fi
+upload_pts_results
 
 # === Collect Results to ./benchmark-results/ ===
 collect_results
@@ -1161,11 +1070,7 @@ for test_name in "${REQUIRED_TESTS[@]}"; do
 done
 
 # === Result Files ===
-echo ""
-echo "=== Result Files ==="
-find "${SCRIPT_INVOCATION_DIR}/benchmark-results/${RUN_ID}" -type f 2>/dev/null | sort | while read -r f; do
-    echo "  $f"
-done
+list_result_files
 
 # === Results Summary ===
 echo ""

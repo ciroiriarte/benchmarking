@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script Name: install-pts.sh
-# Version: 1.2
+# Version: 1.4
 #
 # Shared library for installing the Phoronix Test Suite and system-level
 # build dependencies.  Sourced (not executed) by the benchmark-*-pts.sh
@@ -12,6 +12,16 @@
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
 #
 # Changelog:
+#   - 2026-03-12: v1.4 - Refactor openSUSE PTS install: install build tools and
+#                        PHP deps from standard repos first, then attempt PTS from
+#                        the benchmark repo.  When the benchmark repo is unreachable
+#                        (CDN timeouts on Leap 16.0) or PTS not available, fall
+#                        back to upstream tarball install.  Detect php_pkg prefix
+#                        (php8 on Leap 16.0+, php on older Leap).
+#   - 2026-03-12: v1.3 - Add autoconf to Ubuntu/Debian base packages; PTS maps
+#                        build-utilities to build-essential + autoconf and prompts
+#                        interactively when autoconf is absent.  Under nohup
+#                        (stdin=/dev/null) the prompt loops infinitely.
 #   - 2026-03-12: v1.2 - Add configure_pts_batch() to centralise PTS batch-setup
 #                        with the correct 7 answers.  Parameterised by
 #                        RunAllTestCombinations (Y/N) since that is the only
@@ -56,9 +66,25 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 export NEEDRESTART_MODE=a
 
-# === Internal: openSUSE Repository Setup ===
-# Handles benchmark repo addition, python_pkg detection, Leap 15.6 gcc12
-# management, zypper exit code 106, and repo idempotency.
+# === Internal: Upstream PTS Tarball Install ===
+# Fallback when PTS is not available from distro/benchmark repos.
+# Downloads and installs the upstream Phoronix Test Suite release.
+_PTS_UPSTREAM_VERSION="10.8.4"
+_PTS_UPSTREAM_URL="https://github.com/phoronix-test-suite/phoronix-test-suite/archive/refs/tags/v${_PTS_UPSTREAM_VERSION}.tar.gz"
+
+_install_pts_from_tarball() {
+    echo "Installing PTS ${_PTS_UPSTREAM_VERSION} from upstream tarball..."
+    local tarball="/tmp/pts-${_PTS_UPSTREAM_VERSION}.tar.gz"
+    wget -q -O "$tarball" "$_PTS_UPSTREAM_URL"
+    tar xzf "$tarball" -C /tmp
+    (cd "/tmp/phoronix-test-suite-${_PTS_UPSTREAM_VERSION}" && sudo ./install-sh)
+    rm -rf "$tarball" "/tmp/phoronix-test-suite-${_PTS_UPSTREAM_VERSION}"
+}
+
+# === Internal: openSUSE Package Installation ===
+# Handles benchmark repo addition, python/PHP detection, Leap 15.6 gcc12
+# management, zypper exit code 106, repo idempotency, and upstream PTS
+# fallback when the benchmark repo is unreachable.
 _setup_opensuse_repo() {
     local repo_url
     local gcc_extra=""
@@ -74,6 +100,25 @@ _setup_opensuse_repo() {
     python_pkg=$(zypper --no-refresh -q search --provides --match-exact python3 2>/dev/null \
         | awk -F'|' '/\| python3[0-9]+/{gsub(/ /,"",$2); print $2; exit}')
     : "${python_pkg:=python}"   # fall back to 'python' if detection fails
+
+    # php_pkg: PTS needs php-cli, php-xml (dom + xmlreader + xmlwriter), php-zip,
+    # php-openssl, php-zlib, php-bz2, and php-pcntl at runtime.
+    # Leap 16.0+ ships php8-* packages; older Leap and Tumbleweed use php*.
+    local php_pkg_prefix="php"
+    if zypper --no-refresh -q search --match-exact php8-cli &>/dev/null; then
+        php_pkg_prefix="php8"
+    fi
+    local php_pkgs=(
+        "${php_pkg_prefix}-cli"
+        "${php_pkg_prefix}-dom"
+        "${php_pkg_prefix}-xmlreader"
+        "${php_pkg_prefix}-xmlwriter"
+        "${php_pkg_prefix}-zip"
+        "${php_pkg_prefix}-openssl"
+        "${php_pkg_prefix}-zlib"
+        "${php_pkg_prefix}-bz2"
+        "${php_pkg_prefix}-pcntl"
+    )
 
     # Match on $ID (e.g. opensuse-tumbleweed, opensuse-slowroll, opensuse-leap)
     # because $VERSION_ID is a snapshot date on Tumbleweed/Slowroll, not the OS name.
@@ -100,27 +145,16 @@ _setup_opensuse_repo() {
             ;;
     esac
     echo "  Python package: ${python_pkg}"
+    echo "  PHP packages:   ${php_pkgs[*]}"
 
-    # Add benchmark repo only if the alias does not already exist (idempotent).
-    if sudo zypper lr benchmark &>/dev/null; then
-        echo "  Benchmark repo already present; skipping add."
-    else
-        sudo zypper ar -f -p 90 "$repo_url" benchmark
-    fi
-
-    # Refresh may fail transiently (CDN timeouts); do not let set -e abort
-    # the script — the subsequent zypper install will fail clearly if the
-    # repo is truly unreachable.
-    sudo zypper --gpg-auto-import-keys refresh || true
-
-    # zypper returns 106 (ZYPPER_EXIT_INF_REPOS_SKIPPED) when any repo was
-    # unreachable during refresh.  This is informational, not a real failure,
-    # but set -e would abort the script.  Accept 0 and 106 as success.
+    # --- Step 1: Install build tools and PHP from standard repos ---
+    # These packages are always available from the base repos and must be
+    # installed before PTS (which needs PHP to run).
     local rc=0
-    sudo zypper install -y phoronix-test-suite gcc gcc-c++ ${gcc_extra} make \
-        unzip bzip2 "${python_pkg}" "${EXTRA_PKGS_ZYPPER[@]}" || rc=$?
+    sudo zypper install -y gcc gcc-c++ ${gcc_extra} make unzip bzip2 \
+        "${python_pkg}" "${php_pkgs[@]}" "${EXTRA_PKGS_ZYPPER[@]}" || rc=$?
     if [[ "$rc" -ne 0 && "$rc" -ne 106 ]]; then
-        echo "ERROR: zypper install failed with exit code $rc"
+        echo "ERROR: zypper install (build tools) failed with exit code $rc"
         return "$rc"
     fi
 
@@ -130,6 +164,26 @@ _setup_opensuse_repo() {
     if [[ "$VERSION_ID" == "15.6" ]]; then
         sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
         sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 100
+    fi
+
+    # --- Step 2: Install PTS from benchmark repo, with upstream fallback ---
+    # Add benchmark repo only if the alias does not already exist (idempotent).
+    if sudo zypper lr benchmark &>/dev/null; then
+        echo "  Benchmark repo already present; skipping add."
+    else
+        sudo zypper ar -f -p 90 "$repo_url" benchmark
+    fi
+
+    # Refresh may fail transiently (CDN timeouts); do not abort.
+    sudo zypper --gpg-auto-import-keys refresh || true
+
+    # Try to install PTS from the benchmark repo.  If the repo is unreachable
+    # or PTS is not packaged for this version, fall back to upstream tarball.
+    rc=0
+    sudo zypper install -y phoronix-test-suite || rc=$?
+    if [[ "$rc" -ne 0 && "$rc" -ne 106 ]]; then
+        echo "WARNING: PTS not available from benchmark repo (rc=$rc); using upstream tarball."
+        _install_pts_from_tarball
     fi
 }
 
@@ -154,8 +208,10 @@ install_pts_packages() {
                 # installed from the upstream .deb rather than the distro repo,
                 # which may not pull them automatically).
                 # unzip is needed by PTS to extract test archives (.zip).
-                sudo apt-get install -y build-essential php-cli php-xml unzip \
-                    "${EXTRA_PKGS_APT[@]}"
+                # autoconf is part of PTS's build-utilities FileCheck on Ubuntu;
+                # without it PTS install prompts interactively — fatal under nohup.
+                sudo apt-get install -y build-essential autoconf php-cli php-xml \
+                    unzip "${EXTRA_PKGS_APT[@]}"
                 sudo apt-get install -y phoronix-test-suite || {
                     echo "Phoronix Test Suite not found in repo, attempting fallback install..."
                     wget -O /tmp/phoronix.deb https://phoronix-test-suite.com/releases/repo/pts.debian/files/phoronix-test-suite_10.8.4_all.deb

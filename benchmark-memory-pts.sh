@@ -13,9 +13,14 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.9
+# Version: 1.10
 #
 # Changelog:
+#   - 2026-03-12: v1.10 - Use batch-install instead of install for PTS test
+#                         installation.  The install command prompts interactively
+#                         for missing external dependencies; under nohup
+#                         (stdin=/dev/null) this loops infinitely.  batch-install
+#                         passes no_prompts=true, skipping all interactive prompts.
 #   - 2026-03-12: v1.9 - Extract pre-run checks, collect_results, upload,
 #                        result file listing, and invocation context into
 #                        shared libraries (common-checks.sh, install-pts.sh
@@ -289,7 +294,7 @@ fi
 
 for test_name in "${REQUIRED_TESTS[@]}"; do
     echo "Installing test: $test_name"
-    if ! phoronix-test-suite install "$test_name"; then
+    if ! phoronix-test-suite batch-install "$test_name"; then
         echo "WARNING: Failed to install $test_name; skipping."
         FAILED_TESTS+=("$test_name (install)")
         continue

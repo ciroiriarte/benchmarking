@@ -8,9 +8,12 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 3.8
+# Version: 3.9
 #
 # Changelog:
+#   - 2026-03-12: v3.9 - Use batch-install instead of install for PTS test
+#                        installation to prevent interactive dependency prompts
+#                        that hang under nohup (stdin=/dev/null).
 #   - 2026-03-12: v3.8 - Extract detect_privileges, collect_results, upload,
 #                        result file listing, and invocation context into
 #                        shared libraries (common-checks.sh, install-pts.sh
@@ -923,7 +926,7 @@ run_tests_on_disk() {
             export PRESET_OPTIONS="pts/fio.auto-disk-mount-points=${mount_point}"
         fi
 
-        if phoronix-test-suite install "$test_name"; then
+        if phoronix-test-suite batch-install "$test_name"; then
             # PTS exits 0 even when a test fails to compile; detect a build
             # failure by looking for install-failed.log in the test's directory.
             # PTS installs directly under ${mount_point}/pts/<test>-<ver>/ (no

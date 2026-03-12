@@ -13,9 +13,19 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.4
+# Version: 2.6
 #
 # Changelog:
+#   - 2026-03-12: v2.6 - Switch RunAllTestCombinations from N to Y to work
+#                        around PTS v10.8.4 PHP Fatal error (array_keys() on
+#                        null $option_names) that crashes tests with multiple
+#                        options (build-linux-kernel, c-ray, openssl).  Remove
+#                        -t/--threads option and PRESET_OPTIONS since PTS
+#                        ignores them when RunAllTestCombinations=Y; all thread
+#                        counts are now exercised automatically.
+#   - 2026-03-12: v2.5 - Use batch-install instead of install for PTS test
+#                        installation to prevent interactive dependency prompts
+#                        that hang under nohup (stdin=/dev/null).
 #   - 2026-03-12: v2.4 - Extract pre-run checks (detect_privileges, confirm_change,
 #                        check_cpu_governor, check_thermal, check_system_load,
 #                        check_steal_time), collect_results, upload, result file
@@ -89,7 +99,6 @@
 #   ./quick-benchmark-cpu.sh [OPTIONS]
 #
 # OPTIONS:
-#   -t, --threads <N>            Manually specify the number of threads to use (default: all available).
 #   -r, --runs <N>               Number of timed runs per test (default: 3). More runs improve statistical confidence.
 #   -T, --tests <t1,t2,...>      Comma-separated list of PTS test profiles to run.
 #                                Overrides the built-in default test suite.
@@ -100,14 +109,11 @@
 #   -h, --help                   Display this help message and exit.
 #
 # EXAMPLES:
-#   # Run the full default test suite using all available CPU threads.
+#   # Run the full default test suite with all sub-option permutations.
 #   ./benchmark-cpu-pts.sh
 #
 #   # Run only two specific tests.
 #   ./benchmark-cpu-pts.sh --tests pts/compress-7zip,pts/openssl
-#
-#   # Run a benchmark using only 4 threads.
-#   ./benchmark-cpu-pts.sh -t 4
 #
 #   # Run a benchmark and upload the results with a custom name and description.
 #   ./benchmark-cpu-pts.sh --upload --result-id "XCloud-cpuN-20250917" --result-name "CPU type N on X Cloud provider"
@@ -213,7 +219,6 @@ capture_system_snapshot() {
 
 # Default values
 UPLOAD_RESULTS=0
-MANUAL_THREADS=0
 TIMES_TO_RUN="$DEFAULT_RUNS"
 UPLOAD_ID="quick-benchmark-cpu-$(date +%Y-%m-%d-%H%M%S)"
 UPLOAD_NAME="Automated CPU benchmark run with quick-benchmark-cpu.sh"
@@ -221,10 +226,6 @@ UPLOAD_NAME="Automated CPU benchmark run with quick-benchmark-cpu.sh"
 # === Argument Parsing ===
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        -t|--threads)
-          MANUAL_THREADS="$2"
-          shift
-          ;;
         -T|--tests)
           IFS=',' read -ra REQUIRED_TESTS <<< "$2"
           shift
@@ -282,29 +283,27 @@ check_steal_time
 echo "------------------------------"
 
 # === Configure Phoronix Test Suite for Batch Mode ===
-# RunAllTestCombinations=N: use PRESET_OPTIONS for thread count.
-configure_pts_batch "N"
+# RunAllTestCombinations=Y: exercise every sub-option permutation.  PTS v10.8.4
+# crashes (PHP Fatal: array_keys() on null $option_names) when set to N for any
+# test profile with multiple options (build-linux-kernel, c-ray, openssl).
+# With Y, PTS ignores PRESET_OPTIONS and tests all thread counts, algorithms,
+# and resolutions — providing a more comprehensive CPU characterisation.
+configure_pts_batch "Y"
 
 # === Install Required Phoronix Tests ===
 for test_name in "${REQUIRED_TESTS[@]}"; do
     echo "Installing test: $test_name"
-    phoronix-test-suite install "$test_name"
+    phoronix-test-suite batch-install "$test_name"
 done
 
-# Autodetect CPU resources
+# Autodetect CPU resources (for snapshot and informational output).
 echo "--- Detecting CPU Resources ---"
 CPU_INFO=$(lscpu)
 SOCKETS=$(echo "$CPU_INFO" | grep -i "^socket(s):" | awk '{print $2}')
 CORES_PER_SOCKET=$(echo "$CPU_INFO" | grep -i "^core(s) per socket:" | awk '{print $4}')
 THREADS_PER_CORE=$(echo "$CPU_INFO" | grep -i "^thread(s) per core:" | awk '{print $4}')
 TOTAL_THREADS=$((SOCKETS * CORES_PER_SOCKET * THREADS_PER_CORE))
-
-if [[ "$TOTAL_THREADS" -le 0 ]]; then
-    echo "Error: Could not detect CPU topology from lscpu."
-    echo "       Detected: SOCKETS='$SOCKETS', CORES_PER_SOCKET='$CORES_PER_SOCKET', THREADS_PER_CORE='$THREADS_PER_CORE'"
-    echo "       Use -t <N> to specify the thread count manually."
-    exit 1
-fi
+THREADS_TO_USE="$TOTAL_THREADS"
 
 echo "Sockets:          $SOCKETS"
 echo "Cores per socket: $CORES_PER_SOCKET"
@@ -312,28 +311,9 @@ echo "Threads per core: $THREADS_PER_CORE"
 echo "Total threads:    $TOTAL_THREADS"
 echo "--------------------------------"
 
-# Determine the number of threads to use
-if [[ "$MANUAL_THREADS" -gt 0 ]]; then
-  if [[ "$MANUAL_THREADS" -le "$TOTAL_THREADS" ]]; then
-    THREADS_TO_USE="$MANUAL_THREADS"
-    echo "Using manually specified thread count: $THREADS_TO_USE"
-  else
-    echo "Error: The specified number of threads ($MANUAL_THREADS) is greater than the available threads ($TOTAL_THREADS)."
-    exit 1
-  fi
-else
-  THREADS_TO_USE="$TOTAL_THREADS"
-  echo "Using all available threads: $THREADS_TO_USE"
-fi
-
 # Set up PTS environment variables for automated runs.
 export FORCE_TIMES_TO_RUN="$TIMES_TO_RUN"
 echo "Runs per test: $FORCE_TIMES_TO_RUN"
-# PRESET_OPTIONS pre-answers the test profile's thread-count option, which
-# controls the -j N passed to make inside build-linux-kernel.
-# PTS_CONCURRENT_TEST_RUNS would only run N parallel test *instances*, which
-# is not the same thing and is not what we want here.
-export PRESET_OPTIONS="pts/build-linux-kernel.threads-to-use=${THREADS_TO_USE}"
 
 # Always name the result so it can be referenced for upload later.
 export TEST_RESULTS_NAME="$UPLOAD_ID"

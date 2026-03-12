@@ -22,9 +22,26 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.2
+# Version: 2.4.0
 #
 # Changelog:
+#   - 2026-03-12: v2.4.0 - Fix find_binary(): search /var/lib/phoronix-test-suite/
+#                          in addition to ~/.phoronix-test-suite/ so server mode
+#                          finds iperf3/netserver on system-wide PTS installs.
+#                          Fix netperf 2.7.0 build: pass -fcommon (duplicate
+#                          globals, GCC 10+), -Wno-error=implicit-function-
+#                          declaration, and -std=gnu17 (GCC 15 defaults to C23
+#                          where () means (void), breaking K&R prototypes) via
+#                          CFLAGS to unblock the build on modern toolchains.
+#                          Fix detect_nic_speed(): return 0 explicitly when
+#                          speed is unavailable (virtio-net returns -1) so
+#                          set -e does not abort the script during peer tests.
+#                          Add psmisc (killall) to openSUSE dependencies; the
+#                          pts/sockperf test wrapper uses killall to stop the
+#                          server process between runs.
+#   - 2026-03-12: v2.3 - Use batch-install instead of install for PTS test
+#                        installation to prevent interactive dependency prompts
+#                        that hang under nohup (stdin=/dev/null).
 #   - 2026-03-12: v2.2 - Extract pre-run checks, collect_results, upload,
 #                        result file listing, and invocation context into
 #                        shared libraries (common-checks.sh, install-pts.sh
@@ -338,11 +355,15 @@ capture_system_snapshot() {
 detect_nic_speed() {
     local iface="$1"
     local speed_file="/sys/class/net/${iface}/speed"
-    [[ ! -r "$speed_file" ]] && return
+    [[ ! -r "$speed_file" ]] && return 0
     local speed
     speed=$(< "$speed_file")
     # sysfs reports -1 when speed is unknown or there is no carrier.
-    [[ "$speed" =~ ^[0-9]+$ ]] && [[ "$speed" -gt 0 ]] && echo "$speed"
+    # Always return 0 so set -e does not abort when speed is unavailable.
+    if [[ "$speed" =~ ^[0-9]+$ ]] && [[ "$speed" -gt 0 ]]; then
+        echo "$speed"
+    fi
+    return 0
 }
 
 # Calculate the number of parallel streams for multi-stream tests (TCP and UDP).
@@ -467,17 +488,19 @@ check_tcp_buffers() {
 }
 
 # Locate a binary by name: prefer the system PATH, then fall back to any binary
-# compiled by PTS under ~/.phoronix-test-suite/installed-tests/pts/.
+# compiled by PTS under ~/.phoronix-test-suite/ or /var/lib/phoronix-test-suite/.
 find_binary() {
     local name="$1"
     if command -v "$name" &>/dev/null; then
         command -v "$name"
         return 0
     fi
-    local pts_bin
-    pts_bin=$(find "${HOME}/.phoronix-test-suite/installed-tests/pts/" \
-        -name "$name" -type f 2>/dev/null | head -1)
-    [[ -n "$pts_bin" ]] && echo "$pts_bin" && return 0
+    local pts_bin dir
+    for dir in "${HOME}/.phoronix-test-suite/installed-tests/pts/" \
+               "/var/lib/phoronix-test-suite/installed-tests/pts/"; do
+        pts_bin=$(find "$dir" -name "$name" -type f 2>/dev/null | head -1)
+        [[ -n "$pts_bin" ]] && echo "$pts_bin" && return 0
+    done
     return 1
 }
 
@@ -512,9 +535,13 @@ run_server_mode() {
     ensure_pts_installed
 
     # Install pts/iperf and pts/netperf to obtain compiled server binaries.
+    # netperf 2.7.0 has duplicate global definitions in nettest_omni.c and
+    # nettest_bsd.c which cause linker errors on GCC 10+ where -fno-common
+    # is the default. Export CFLAGS=-fcommon to restore the legacy behaviour.
     echo "--- Installing test binaries ---"
-    phoronix-test-suite install pts/iperf
-    phoronix-test-suite install pts/netperf
+    phoronix-test-suite batch-install pts/iperf
+    CFLAGS="${CFLAGS:+$CFLAGS }-fcommon -Wno-error=implicit-function-declaration -std=gnu17" \
+        phoronix-test-suite batch-install pts/netperf
 
     # Locate binaries (system PATH or PTS-compiled).
     local iperf3_bin netserver_bin
@@ -668,7 +695,7 @@ fi
 # Set extra packages once; both server mode and client mode use the same deps.
 EXTRA_PKGS_APT=(autoconf automake libtool netcat-openbsd ethtool)
 EXTRA_PKGS_DNF=(autoconf automake libtool nmap-ncat ethtool)
-EXTRA_PKGS_ZYPPER=(autoconf automake libtool netcat-openbsd ethtool)
+EXTRA_PKGS_ZYPPER=(autoconf automake libtool netcat-openbsd ethtool psmisc)
 
 # === Server Mode ===
 if [[ "$SERVER_MODE" -eq 1 ]]; then
@@ -702,7 +729,7 @@ FAILED_INSTALLS=()
 
 echo "--- Installing standalone tests ---"
 for test_name in "${STANDALONE_TESTS[@]}"; do
-    if phoronix-test-suite install "$test_name"; then
+    if phoronix-test-suite batch-install "$test_name"; then
         INSTALLED_TESTS+=("$test_name")
     else
         echo "WARNING: Failed to install ${test_name}; dependent tests will be skipped."
@@ -713,7 +740,12 @@ done
 if [[ -n "$SERVER_ADDRESS" ]]; then
     echo "--- Installing peer tests ---"
     for test_name in "${PEER_TESTS[@]}"; do
-        if phoronix-test-suite install "$test_name"; then
+        # netperf 2.7.0 has duplicate global definitions that cause linker
+        # errors on GCC 10+ where -fno-common is the default. The PTS install
+        # script appends to $CFLAGS, so exporting -fcommon restores the legacy
+        # behaviour without affecting other test builds.
+        if CFLAGS="${CFLAGS:+$CFLAGS }-fcommon -Wno-error=implicit-function-declaration -std=gnu17" \
+            phoronix-test-suite batch-install "$test_name"; then
             INSTALLED_TESTS+=("$test_name")
         else
             echo "WARNING: Failed to install ${test_name}; dependent tests will be skipped."

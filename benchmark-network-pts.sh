@@ -22,9 +22,13 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.4.0
+# Version: 2.5.0
 #
 # Changelog:
+#   - 2026-03-13: v2.5.0 - Add --identifier flag to control TEST_RESULTS_IDENTIFIER.
+#                          Accepts "upload-id" (uses --result-id value),
+#                          "upload-name" (uses --result-name, the default),
+#                          or a custom literal string.
 #   - 2026-03-12: v2.4.0 - Fix find_binary(): search /var/lib/phoronix-test-suite/
 #                          in addition to ~/.phoronix-test-suite/ so server mode
 #                          finds iperf3/netserver on system-wide PTS installs.
@@ -159,6 +163,10 @@
 #   -i, --result-id <id>         Test identifier (e.g. 'dc1-vm1-to-vm2'). Client mode only.
 #   -n, --result-name <name>     Display name (e.g. 'VM1 to VM2 - 100GbE vSwitch').
 #                                Client mode only.
+#   --identifier <value>         Set the system identifier for PTS comparison columns.
+#                                "upload-id" = use --result-id value,
+#                                "upload-name" = use --result-name value (default),
+#                                or any custom string. Client mode only.
 #   -h, --help                   Display this help message and exit.
 #
 # NOTES:
@@ -635,6 +643,7 @@ NIC_SPEED_MBPS=""     # empty = auto-detect; override with --nic-speed for virtu
 OVERRIDE_STREAMS=""   # empty = auto-scale from NIC speed; override with --streams
 UPLOAD_ID="benchmark-network-$(date +%Y-%m-%d-%H%M%S)"
 UPLOAD_NAME="Automated network benchmark run with benchmark-network-pts.sh"
+IDENTIFIER_SOURCE="upload-name"
 
 # === Argument Parsing ===
 while [[ "$#" -gt 0 ]]; do
@@ -667,6 +676,10 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         -i|--result-id)
             UPLOAD_ID="$2"
+            shift
+            ;;
+        --identifier)
+            IDENTIFIER_SOURCE="$2"
             shift
             ;;
         -h|--help)
@@ -765,7 +778,12 @@ RESULT_NAMES=()
 # pts/network-loopback: 3). None of these profiles support DynamicRunCount, so
 # the profile TimesToRun values are the correct mechanism for statistical validity.
 export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
-export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME"
+# Resolve TEST_RESULTS_IDENTIFIER based on --identifier flag.
+case "$IDENTIFIER_SOURCE" in
+    upload-id)   export TEST_RESULTS_IDENTIFIER="$UPLOAD_ID" ;;
+    upload-name) export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME" ;;
+    *)           export TEST_RESULTS_IDENTIFIER="$IDENTIFIER_SOURCE" ;;
+esac
 
 # --- Standalone tests (no remote peer required) ---
 

@@ -8,9 +8,13 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 3.10.0
+# Version: 3.11.0
 #
 # Changelog:
+#   - 2026-03-13: v3.11.0 - Add --identifier flag to control TEST_RESULTS_IDENTIFIER.
+#                            Accepts "upload-id" (uses --result-id value),
+#                            "upload-name" (uses --result-name, the default),
+#                            or a custom literal string.
 #   - 2026-03-12: v3.10.0 - Export TEST_RESULTS_IDENTIFIER=$UPLOAD_NAME so PTS
 #                            comparison columns show --result-name instead of
 #                            auto-generated hardware/date labels.
@@ -212,6 +216,7 @@ TESTUSER=$(whoami)
 # to steady state so that results are reproducible across repeated runs.
 # Set to 0 or pass --skip-preconditioning to disable.
 PRECONDITIONING_ENABLED=1
+IDENTIFIER_SOURCE="upload-name"
 
 # === Function to Display Usage ===
 usage() {
@@ -234,6 +239,10 @@ usage() {
     echo "  --upload                   Upload results to OpenBenchmarking.org."
     echo "  --result-name <name>       Set the 'Saved Test Name' for the upload (e.g., 'My Server NVMe vs HDD')."
     echo "  --result-id <identifier>   Set the 'Test Identifier' for the upload (e.g., 'Q3-2025-Storage-Test')."
+    echo "  --identifier <value>       Set the system identifier for PTS comparison columns."
+    echo "                             \"upload-id\" = use --result-id value,"
+    echo "                             \"upload-name\" = use --result-name value (default),"
+    echo "                             or any custom string."
     echo "  --skip-preconditioning     Skip the SSD steady-state preconditioning passes."
     echo "                             Preconditioning is on by default: it writes across"
     echo "                             the full device twice to move SSDs/NVMe from a rested"
@@ -277,6 +286,7 @@ while [[ "$#" -gt 0 ]]; do
         --upload) UPLOAD_RESULTS=1 ;;
         --result-name) UPLOAD_NAME="$2"; shift ;;
         --result-id) UPLOAD_ID="$2"; shift ;;
+        --identifier) IDENTIFIER_SOURCE="$2"; shift ;;
         --skip-preconditioning) PRECONDITIONING_ENABLED=0 ;;
         --help) usage; exit 0 ;;
         *) echo "Unknown parameter passed: $1"; usage; exit 1 ;;
@@ -1046,7 +1056,12 @@ run_tests_on_disk() {
 # Set PTS result metadata so the identifier column in comparisons shows the
 # --result-name value rather than auto-generated hardware/date labels.
 [[ -n "$UPLOAD_NAME" ]] && export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
-[[ -n "$UPLOAD_NAME" ]] && export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME"
+# Resolve TEST_RESULTS_IDENTIFIER based on --identifier flag.
+case "$IDENTIFIER_SOURCE" in
+    upload-id)   [[ -n "$UPLOAD_ID" ]]   && export TEST_RESULTS_IDENTIFIER="$UPLOAD_ID" ;;
+    upload-name) [[ -n "$UPLOAD_NAME" ]] && export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME" ;;
+    *)           export TEST_RESULTS_IDENTIFIER="$IDENTIFIER_SOURCE" ;;
+esac
 
 for disk in "${DISKS[@]}"; do
     run_tests_on_disk "$disk"

@@ -13,9 +13,13 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.11.0
+# Version: 1.12.0
 #
 # Changelog:
+#   - 2026-03-13: v1.12.0 - Add --identifier flag to control TEST_RESULTS_IDENTIFIER.
+#                            Accepts "upload-id" (uses --result-id value),
+#                            "upload-name" (uses --result-name, the default),
+#                            or a custom literal string.
 #   - 2026-03-12: v1.11.0 - Export TEST_RESULTS_IDENTIFIER=$UPLOAD_NAME so PTS
 #                            comparison columns show --result-name instead of
 #                            auto-generated hardware/date labels.
@@ -77,6 +81,10 @@
 #   -u, --upload                 Upload results to OpenBenchmarking.org.
 #   -i, --result-id <id>         Test identifier for the result (e.g. 'dc1-node3-ddr5').
 #   -n, --result-name <name>     Display name for the result (e.g. 'DC1 Node3 - DDR5 6400').
+#   --identifier <value>         Set the system identifier for PTS comparison columns.
+#                                "upload-id" = use --result-id value,
+#                                "upload-name" = use --result-name value (default),
+#                                or any custom string.
 #   -h, --help                   Display this help message and exit.
 #
 # EXAMPLES:
@@ -233,6 +241,7 @@ capture_system_snapshot() {
 UPLOAD_RESULTS=0
 UPLOAD_ID="benchmark-memory-$(date +%Y-%m-%d-%H%M%S)"
 UPLOAD_NAME="Automated memory benchmark run with benchmark-memory-pts.sh"
+IDENTIFIER_SOURCE="upload-name"
 
 # === Argument Parsing ===
 while [[ "$#" -gt 0 ]]; do
@@ -246,6 +255,10 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         -i|--result-id)
             UPLOAD_ID="$2"
+            shift
+            ;;
+        --identifier)
+            IDENTIFIER_SOURCE="$2"
             shift
             ;;
         -h|--help)
@@ -327,7 +340,12 @@ RESULT_NAMES=()
 # providing both statistical validity and implicit warmup: if the first run
 # is an outlier it raises variance and triggers additional runs.
 export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
-export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME"
+# Resolve TEST_RESULTS_IDENTIFIER based on --identifier flag.
+case "$IDENTIFIER_SOURCE" in
+    upload-id)   export TEST_RESULTS_IDENTIFIER="$UPLOAD_ID" ;;
+    upload-name) export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME" ;;
+    *)           export TEST_RESULTS_IDENTIFIER="$IDENTIFIER_SOURCE" ;;
+esac
 
 for test_name in "${INSTALLED_TESTS[@]}"; do
     echo -e "\n=== Running memory benchmark: $test_name ==="

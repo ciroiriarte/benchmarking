@@ -86,6 +86,8 @@ OPTIONS:
   -u, --upload                 Upload results to OpenBenchmarking.org
   -i, --result-id <id>         Run identifier, e.g. "dc1-node3-baseline"
   -n, --result-name <name>     Display name, e.g. "DC1 Node3 - AMD EPYC 9354"
+  --identifier <value>         System identifier for PTS comparison columns.
+                               "upload-id", "upload-name" (default), or custom string.
   -h, --help                   Show help
 ```
 
@@ -270,6 +272,8 @@ OPTIONS:
   -u, --upload                 Upload results to OpenBenchmarking.org
   -i, --result-id <id>         Run identifier, e.g. "dc1-node3-ddr5"
   -n, --result-name <name>     Display name, e.g. "DC1 Node3 - DDR5 6400 MT/s"
+  --identifier <value>         System identifier for PTS comparison columns.
+                               "upload-id", "upload-name" (default), or custom string.
   -h, --help                   Show help
 ```
 
@@ -447,6 +451,8 @@ OPTIONS:
   -u, --upload                 Upload results to OpenBenchmarking.org
   -i, --result-id <id>         Run identifier, e.g. "dc1-vm1-to-vm2"
   -n, --result-name <name>     Display name, e.g. "VM1 to VM2 - 100GbE vSwitch"
+  --identifier <value>         System identifier for PTS comparison columns.
+                               "upload-id", "upload-name" (default), or custom string.
   -h, --help                   Show help
 ```
 
@@ -547,6 +553,8 @@ OPTIONS:
   --upload                     Upload results to OpenBenchmarking.org
   --result-id <id>             Run identifier, e.g. "ceph-dc1-q1-2026"
   --result-name <name>         Display name, e.g. "Ceph NVMe vs HDD - Q1 2026"
+  --identifier <value>         System identifier for PTS comparison columns.
+                               "upload-id", "upload-name" (default), or custom string.
   --skip-preconditioning       Skip SSD steady-state preconditioning (see above)
   --help                       Show help
 ```
@@ -599,6 +607,8 @@ OPTIONS:
   -o, --output-dir <path>  Directory to write reports (default: ./pts-reports/<timestamp>/)
   -l, --label <dir>=<label>  Assign a friendly label to a run directory.
                              May be repeated. Overrides auto-detection.
+  --identifier <value>     Custom system identifier for all runs without --label.
+                           Overrides OS auto-detection.
   -h, --help               Show help
 ```
 
@@ -620,6 +630,25 @@ differentiator within a run — not `--result-id`.
 | `benchmark-memory-pts.sh` | `<result-id>_<test>` | `--result-id` |
 | `benchmark-network-pts.sh` | `<result-id>_<test-variant>` | `--result-id` |
 | `benchmark-storage-pts.sh` | `<disk-label>_<test>_result` | disk label in `--disk` |
+
+### System identifier
+
+The PTS comparison column label (what appears in chart legends and tables) is
+controlled by `--identifier`:
+
+| Value | Resolves to | Example |
+|---|---|---|
+| `upload-name` (default) | `--result-name` value | "Rocky Linux 9 - 8 vCPU benchmark" |
+| `upload-id` | `--result-id` value | "cpu-rocky9-8vcpu" |
+| Any other string | Literal value | "DC1 Node3" |
+
+When `--identifier` is not specified, the system identifier defaults to the
+`--result-name` value. This is the string PTS writes into the
+`<System><Identifier>` element in `composite.xml`.
+
+For `create-report-pts.sh`, `--identifier` sets a custom default label for all
+run directories that lack an explicit `--label` override. It takes priority over
+OS auto-detection from `composite.xml`.
 
 ### Examples
 

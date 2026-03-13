@@ -13,9 +13,13 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.7.0
+# Version: 2.8.0
 #
 # Changelog:
+#   - 2026-03-13: v2.8.0 - Add --identifier flag to control TEST_RESULTS_IDENTIFIER.
+#                           Accepts "upload-id" (uses --result-id value),
+#                           "upload-name" (uses --result-name, the default),
+#                           or a custom literal string.
 #   - 2026-03-12: v2.7.0 - Export TEST_RESULTS_IDENTIFIER=$UPLOAD_NAME so PTS
 #                           comparison columns show --result-name instead of
 #                           auto-generated hardware/date labels.
@@ -109,6 +113,10 @@
 #   -u, --upload                 Upload the benchmark results to OpenBenchmarking.org.
 #   -i, --result-id <identifier> Set the 'Test Identifier' for the upload (e.g., 'XCloud-cpuN-20250917')."
 #   -n, --result-name <name>     Set the 'Saved Test Name' for the upload (e.g., 'CPU type N on X Cloud provider')."
+#   --identifier <value>         Set the system identifier for PTS comparison columns.
+#                                "upload-id" = use --result-id value,
+#                                "upload-name" = use --result-name value (default),
+#                                or any custom string.
 #   -h, --help                   Display this help message and exit.
 #
 # EXAMPLES:
@@ -225,6 +233,7 @@ UPLOAD_RESULTS=0
 TIMES_TO_RUN="$DEFAULT_RUNS"
 UPLOAD_ID="quick-benchmark-cpu-$(date +%Y-%m-%d-%H%M%S)"
 UPLOAD_NAME="Automated CPU benchmark run with quick-benchmark-cpu.sh"
+IDENTIFIER_SOURCE="upload-name"
 
 # === Argument Parsing ===
 while [[ "$#" -gt 0 ]]; do
@@ -246,6 +255,10 @@ while [[ "$#" -gt 0 ]]; do
 	  ;;
         -i|--result-id)
 	  UPLOAD_ID="$2"
+	  shift
+	  ;;
+        --identifier)
+	  IDENTIFIER_SOURCE="$2"
 	  shift
 	  ;;
         -h|--help)
@@ -321,7 +334,12 @@ echo "Runs per test: $FORCE_TIMES_TO_RUN"
 # Always name the result so it can be referenced for upload later.
 export TEST_RESULTS_NAME="$UPLOAD_ID"
 export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
-export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME"
+# Resolve TEST_RESULTS_IDENTIFIER based on --identifier flag.
+case "$IDENTIFIER_SOURCE" in
+    upload-id)   export TEST_RESULTS_IDENTIFIER="$UPLOAD_ID" ;;
+    upload-name) export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME" ;;
+    *)           export TEST_RESULTS_IDENTIFIER="$IDENTIFIER_SOURCE" ;;
+esac
 
 if [[ "$UPLOAD_RESULTS" -eq 1 ]]; then
   echo "Results will be uploaded with the following details:"

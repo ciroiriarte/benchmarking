@@ -11,9 +11,12 @@
 #              that PTS comparison charts show distinguishable bars per system.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.1
+# Version: 1.2.0
 #
 # Changelog:
+#   - 2026-03-13: v1.2.0 - Add --identifier flag: sets a custom system identifier
+#                           applied to all run directories that lack an explicit
+#                           --label override. Takes priority over OS auto-detection.
 #   - 2026-03-13: v1.1 - Add --label for friendly system identifiers,
 #                         auto-detect OS label from XML, rewrite identifiers
 #                         in imported copies, skip results with no data
@@ -24,7 +27,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-readonly SCRIPT_VERSION="1.1"
+readonly SCRIPT_VERSION="1.2.0"
 readonly SCRIPT_NAME=$(basename "$0")
 readonly TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
@@ -53,6 +56,7 @@ MERGED_RESULT_NAMES=() # Merged result entries created by merge-results
 OUTPUT_DIR=""
 RUN_DIRS=()
 declare -A LABEL_MAP  # run_dir (stripped of trailing /) → friendly label
+CUSTOM_IDENTIFIER=""  # --identifier value; overrides OS auto-detection
 
 # ---------------------------------------------------------------------------
 # Usage
@@ -79,6 +83,9 @@ OPTIONS:
                             Default: ./pts-reports/<timestamp>/
   -l, --label <dir>=<label> Assign a friendly label to a run directory.
                             May be repeated. Overrides auto-detection.
+  --identifier <value>      Set a custom system identifier for all run
+                            directories. Overrides OS auto-detection but
+                            yields to per-directory --label overrides.
   -h, --help                Show this help message
 
 EXAMPLES:
@@ -133,6 +140,11 @@ parse_args() {
                 LABEL_MAP["${label_key%/}"]="$label_val"
                 shift 2
                 ;;
+            --identifier)
+                [[ $# -lt 2 ]] && die "--identifier requires an argument"
+                CUSTOM_IDENTIFIER="$2"
+                shift 2
+                ;;
             -h|--help)
                 usage
                 exit 0
@@ -185,13 +197,19 @@ extract_os_label() {
 get_label_for_dir() {
     local run_dir="${1%/}"
 
-    # 1. Explicit --label mapping
+    # 1. Explicit --label mapping (per-directory override)
     if [[ -n "${LABEL_MAP[$run_dir]+x}" ]]; then
         echo "${LABEL_MAP[$run_dir]}"
         return
     fi
 
-    # 2. Auto-detect from the first composite.xml's Software/OS field
+    # 2. --identifier global override (takes priority over OS auto-detection)
+    if [[ -n "$CUSTOM_IDENTIFIER" ]]; then
+        echo "$CUSTOM_IDENTIFIER"
+        return
+    fi
+
+    # 3. Auto-detect from the first composite.xml's Software/OS field
     local first_xml
     first_xml=$(find "$run_dir" -name composite.xml -type f 2>/dev/null | head -1)
     if [[ -n "$first_xml" ]]; then
@@ -203,7 +221,7 @@ get_label_for_dir() {
         fi
     fi
 
-    # 3. Fallback to directory name
+    # 4. Fallback to directory name
     basename "$run_dir"
 }
 

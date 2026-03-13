@@ -11,9 +11,12 @@
 #              that PTS comparison charts show distinguishable bars per system.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.2.0
+# Version: 1.2.1
 #
 # Changelog:
+#   - 2026-03-13: v1.2.1 - Fix HTML/PDF export: capture stdout for formats that
+#                           print content instead of writing files, and broaden
+#                           file search to cover PTS version-dependent locations
 #   - 2026-03-13: v1.2.0 - Add --identifier flag: sets a custom system identifier
 #                           applied to all run directories that lack an explicit
 #                           --label override. Takes priority over OS auto-detection.
@@ -27,7 +30,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-readonly SCRIPT_VERSION="1.2.0"
+readonly SCRIPT_VERSION="1.2.1"
 readonly SCRIPT_NAME=$(basename "$0")
 readonly TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
@@ -38,9 +41,9 @@ readonly TEMP_PREFIX="pts_report_${TIMESTAMP}"
 # Default output directory
 readonly DEFAULT_OUTPUT_DIR="./pts-reports/${TIMESTAMP}"
 
-# PTS export formats and how each delivers its output:
-#   stdout  — result-file-to-text, result-file-to-csv, result-file-to-json
-#   file    — result-file-to-html, result-file-to-pdf  (writes to CWD)
+# PTS export formats:
+#   stdout-only — result-file-to-text, result-file-to-csv, result-file-to-json
+#   file/mixed  — result-file-to-html, result-file-to-pdf  (may use stdout or file)
 readonly FORMAT_STDOUT_FORMATS=("text" "csv" "json")
 readonly FORMAT_FILE_FORMATS=("html" "pdf")
 
@@ -447,8 +450,10 @@ export_formats() {
             || warn "result-file-to-${format} returned non-zero for ${result_name}"
     done
 
-    # File-based formats — PTS respects OUTPUT_FILE (absolute path) to
-    # control where it writes html/pdf output.
+    # File-based formats — PTS may write to a file at various locations OR
+    # print content to stdout, depending on the PTS version and format.
+    # Strategy: capture stdout to the target file; if it produces real
+    # content we're done, otherwise search common PTS output locations.
     local abs_output_dir
     abs_output_dir=$(cd "$output_dir" && pwd)
 
@@ -457,22 +462,45 @@ export_formats() {
         local abs_out_file="${abs_output_dir}/${label}.${format}"
         log "  Exporting ${format} → ${out_file}"
 
-        OUTPUT_FILE="$abs_out_file" \
-            phoronix-test-suite "result-file-to-${format}" "$result_name" \
-                > /dev/null 2>&1 \
-                || true
+        # Capture stdout → output file (covers formats that print to stdout)
+        phoronix-test-suite "result-file-to-${format}" "$result_name" \
+            > "$abs_out_file" 2>/dev/null \
+            || true
 
-        if [[ -f "$out_file" ]]; then
+        # If stdout produced a non-trivial file (> 100 bytes), accept it
+        if [[ -f "$abs_out_file" ]] && [[ $(wc -c < "$abs_out_file") -gt 100 ]]; then
             log "    Saved: ${out_file}"
-        else
-            # Fallback: check home dir for <result-name>.<format>
-            local home_out="${HOME}/${result_name}.${format}"
-            if [[ -f "$home_out" ]]; then
-                mv "$home_out" "$out_file"
-                log "    Moved from home: ${out_file}"
-            else
-                warn "result-file-to-${format}: output not found for ${result_name}"
+            continue
+        fi
+
+        # stdout was empty/trivial — remove placeholder and search elsewhere
+        rm -f "$abs_out_file"
+
+        local found=""
+        local candidate
+        local pts_results_base="${HOME}/.phoronix-test-suite/test-results"
+        for candidate in \
+            "${HOME}/${result_name}.${format}" \
+            "$(pwd)/${result_name}.${format}" \
+            "${pts_results_base}/${result_name}/${result_name}.${format}" \
+            ; do
+            if [[ -f "$candidate" ]]; then
+                found="$candidate"
+                break
             fi
+        done
+
+        # Last resort: any matching file inside the PTS result directory
+        if [[ -z "$found" ]]; then
+            found=$(find "${pts_results_base}/${result_name}" -maxdepth 1 \
+                -name "*.${format}" -type f 2>/dev/null | head -1)
+        fi
+
+        if [[ -n "$found" ]]; then
+            mv "$found" "$out_file"
+            log "    Moved: ${found} → ${out_file}"
+        else
+            warn "result-file-to-${format}: output not found for ${result_name}"
         fi
     done
 }

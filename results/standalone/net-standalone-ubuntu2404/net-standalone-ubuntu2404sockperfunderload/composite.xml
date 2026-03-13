@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.4-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>net-standalone-ubuntu2404_sockperf_underload</Title>
+    <LastModified>2026-03-12 11:56:59</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.4</TestClient>
+    <Description>KVM testing on Ubuntu 24.04 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>Ubuntu 24.04</Identifier>
+    <Hardware>Processor: Intel Xeon E5-2680 v2 (4 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Chipset: Intel 82G33/G31/P35/P31 + ICH9, Memory: 1 x 4 GB RAM QEMU, Disk: 21GB QEMU HDD, Audio: Intel 82801I, Network: Red Hat Virtio device</Hardware>
+    <Software>OS: Ubuntu 24.04, Kernel: 6.8.0-101-generic (x86_64), Compiler: GCC 13.3.0, File-System: ext4, System Layer: KVM</Software>
+    <User>root</User>
+    <TimeStamp>2026-03-12 11:51:51</TimeStamp>
+    <TestClientVersion>10.8.4</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-linux-gnu --disable-vtable-verify --disable-werror --enable-bootstrap --enable-cet --enable-checking=release --enable-clocale=gnu --enable-default-pie --enable-gnu-unique-object --enable-languages=c,ada,c++,go,d,fortran,objc,obj-c++,m2 --enable-libphobos-checking=release --enable-libstdcxx-backtrace --enable-libstdcxx-debug --enable-libstdcxx-time=yes --enable-link-serialization=2 --enable-multiarch --enable-multilib --enable-nls --enable-objc-gc=auto --enable-offload-defaulted --enable-offload-targets=nvptx-none=\/build\/gcc-13-EldibY\/gcc-13-13.3.0\/debian\/tmp-nvptx\/usr,amdgcn-amdhsa=\/build\/gcc-13-EldibY\/gcc-13-13.3.0\/debian\/tmp-gcn\/usr --enable-plugin --enable-shared --enable-threads=posix --host=x86_64-linux-gnu --program-prefix=x86_64-linux-gnu- --target=x86_64-linux-gnu --with-abi=m64 --with-arch-32=i686 --with-build-config=bootstrap-lto-lean --with-default-libstdcxx-abi=new --with-gcc-major-version-only --with-multilib-list=m32,m64,mx32 --with-target-system-zlib=auto --with-tune=generic --without-cuda-driver -v","cpu-microcode":"0x42d","kernel-extra-details":"Transparent Huge Pages: madvise","security":"gather_data_sampling: Not affected + indirect_target_selection: Not affected + itlb_multihit: Not affected + l1tf: Mitigation of PTE Inversion; VMX: flush not necessary SMT disabled + mds: Vulnerable: Clear buffers attempted no microcode; SMT Host state unknown + meltdown: Mitigation of PTI + mmio_stale_data: Unknown: No mitigations + reg_file_data_sampling: Not affected + retbleed: Not affected + spec_rstack_overflow: Not affected + spec_store_bypass: Mitigation of SSB disabled via prctl + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Retpolines; IBPB: conditional; IBRS_FW; STIBP: disabled; RSB filling; PBRSB-eIBRS: Not affected; BHI: Retpoline + srbds: Not affected + tsa: Not affected + tsx_async_abort: Not affected + vmscape: Not affected"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/sockperf-1.1.0</Identifier>
+    <Title>Sockperf</Title>
+    <AppVersion>3.7</AppVersion>
+    <Arguments>under-load</Arguments>
+    <Description>Test: Latency Under Load</Description>
+    <Scale>usec</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Ubuntu 24.04</Identifier>
+        <Value>108.555</Value>
+        <RawString>107.175:130.303:124.632:91.914:81.539:141.333:137.073:110.562:106.317:94.688:141.869:74.096:119.76:110.749:85.549:112.326:90.185:90.488:96.676:111.481:98.999:116.806:108.695:129.399:101.25</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"--param -O3 -rdynamic"},"test-run-times":"9.89:8.27:8.25:8.25:8.25:8.25:8.26:8.25:8.25:8.25:8.26:8.25:8.26:8.26:8.25:8.25:8.25:8.25:8.24:8.25:8.25:8.25:8.25:8.25:8.25"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>

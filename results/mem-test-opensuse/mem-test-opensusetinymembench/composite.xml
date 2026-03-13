@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.4-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>mem-test-opensuse_tinymembench</Title>
+    <LastModified>2026-03-12 04:14:38</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.4</TestClient>
+    <Description>KVM testing on openSUSE Leap 16.0 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>1 x 16 GB RAM QEMU</Identifier>
+    <Hardware>Processor: Intel Xeon E5-2680 v2 (8 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Memory: 1 x 16 GB RAM QEMU, Disk: 21GB QEMU HDD</Hardware>
+    <Software>OS: openSUSE Leap 16.0, Kernel: 6.12.0-160000.5-default (x86_64), Compiler: GCC 15.2.0, File-System: xfs, System Layer: KVM</Software>
+    <User>root</User>
+    <TimeStamp>2026-03-12 03:34:14</TimeStamp>
+    <TestClientVersion>10.8.4</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-suse-linux --disable-libcc1 --disable-libssp --disable-libstdcxx-pch --disable-libvtv --disable-plugin --disable-werror --enable-cet=auto --enable-checking=release --enable-gnu-indirect-function --enable-host-pie --enable-host-shared --enable-languages=c,c++,objc,fortran,obj-c++,ada,go,d,jit,m2 --enable-libphobos --enable-libstdcxx-allocator=new --enable-link-serialization --enable-linux-futex --enable-multilib --enable-offload-defaulted --enable-offload-targets=nvptx-none,amdgcn-amdhsa, --enable-ssp --enable-version-specific-runtime-libs --host=x86_64-suse-linux --mandir=\/usr\/share\/man --with-arch-32=x86-64-v2 --with-arch=x86-64-v2 --with-build-config=bootstrap-lto-lean --with-gcc-major-version-only --with-libstdcxx-zoneinfo=\/usr\/share\/zoneinfo --with-slibdir=\/lib64 --with-tune=generic --without-cuda-driver --without-system-libunwind -O2 -O2 -O2 -O2 -O2 -Werror=return-type -Werror=return-type -Werror=return-type -Werror=return-type -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -funwind-tables -funwind-tables -funwind-tables -funwind-tables -funwind-tables -g' -g' -g' -g' -g'","cpu-microcode":"0x42d","kernel-extra-details":"Transparent Huge Pages: always","security":"SELinux + gather_data_sampling: Not affected + indirect_target_selection: Not affected + itlb_multihit: Not affected + l1tf: Mitigation of PTE Inversion + mds: Vulnerable: Clear buffers attempted no microcode; SMT Host state unknown + meltdown: Mitigation of PTI + mmio_stale_data: Unknown: No mitigations + reg_file_data_sampling: Not affected + retbleed: Not affected + spec_rstack_overflow: Not affected + spec_store_bypass: Mitigation of SSB disabled via prctl + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Retpolines; IBPB: conditional; IBRS_FW; STIBP: disabled; RSB filling; PBRSB-eIBRS: Not affected; BHI: Retpoline + srbds: Not affected + tsa: Not affected + tsx_async_abort: Not affected"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/tinymembench-1.0.2</Identifier>
+    <Title>Tinymembench</Title>
+    <AppVersion>2018-05-28</AppVersion>
+    <Arguments></Arguments>
+    <Description>Standard Memcpy</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>3977.6</Value>
+        <RawString>3897.1:3791.9:4016.2:4034:4031.7:4074.8:3997.6</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -lm"},"test-run-times":"358.21:348.15:334.76:350.00:341.39:328.52:334.98"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/tinymembench-1.0.2</Identifier>
+    <Title>Tinymembench</Title>
+    <AppVersion>2018-05-28</AppVersion>
+    <Arguments></Arguments>
+    <Description>Standard Memset</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>5967.7</Value>
+        <RawString>5921.9:5855.4:6138.8:6140.5:6134.7:6175.5:5406.9</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -lm"},"test-run-times":"358.21:348.15:334.76:350.00:341.39:328.52:334.98"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>

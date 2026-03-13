@@ -33,6 +33,9 @@
 #                          declaration, and -std=gnu17 (GCC 15 defaults to C23
 #                          where () means (void), breaking K&R prototypes) via
 #                          CFLAGS to unblock the build on modern toolchains.
+#                          Export TEST_RESULTS_IDENTIFIER=$UPLOAD_NAME so PTS
+#                          comparison columns show --result-name instead of
+#                          auto-generated hardware/date labels.
 #                          Fix detect_nic_speed(): return 0 explicitly when
 #                          speed is unavailable (virtio-net returns -1) so
 #                          set -e does not abort the script during peer tests.
@@ -762,6 +765,7 @@ RESULT_NAMES=()
 # pts/network-loopback: 3). None of these profiles support DynamicRunCount, so
 # the profile TimesToRun values are the correct mechanism for statistical validity.
 export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
+export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME"
 
 # --- Standalone tests (no remote peer required) ---
 
@@ -874,6 +878,7 @@ else
 fi
 
 unset TEST_RESULTS_DESCRIPTION
+unset TEST_RESULTS_IDENTIFIER
 
 # === Collect Results to ./benchmark-results/ ===
 collect_results

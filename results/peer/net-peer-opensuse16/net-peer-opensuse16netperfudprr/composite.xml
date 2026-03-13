@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.4-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>net-peer-opensuse16_netperf_udp_rr</Title>
+    <LastModified>2026-03-12 19:46:08</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.4</TestClient>
+    <Description>KVM testing on openSUSE Leap 16.0 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>Network peer - openSUSE Leap 16</Identifier>
+    <Hardware>Processor: Intel Xeon E5-2680 v2 (4 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Memory: 1 x 4 GB RAM QEMU, Disk: 21GB QEMU HDD</Hardware>
+    <Software>OS: openSUSE Leap 16.0, Kernel: 6.12.0-160000.5-default (x86_64), Compiler: GCC 15.1.1 20250714, File-System: xfs, System Layer: KVM</Software>
+    <User>root</User>
+    <TimeStamp>2026-03-12 19:42:35</TimeStamp>
+    <TestClientVersion>10.8.4</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-suse-linux --disable-libcc1 --disable-libssp --disable-libstdcxx-pch --disable-libvtv --disable-plugin --disable-werror --enable-cet=auto --enable-checking=release --enable-gnu-indirect-function --enable-host-pie --enable-host-shared --enable-languages=c,c++,objc,fortran,obj-c++,ada,go,d,jit,m2 --enable-libphobos --enable-libstdcxx-allocator=new --enable-link-serialization --enable-linux-futex --enable-multilib --enable-offload-defaulted --enable-offload-targets=nvptx-none,amdgcn-amdhsa, --enable-ssp --enable-version-specific-runtime-libs --host=x86_64-suse-linux --mandir=\/usr\/share\/man --with-arch-32=x86-64-v2 --with-arch=x86-64-v2 --with-build-config=bootstrap-lto-lean --with-gcc-major-version-only --with-libstdcxx-zoneinfo=\/usr\/share\/zoneinfo --with-slibdir=\/lib64 --with-tune=generic --without-cuda-driver --without-system-libunwind -O2 -O2 -O2 -O2 -O2 -Werror=return-type -Werror=return-type -Werror=return-type -Werror=return-type -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -funwind-tables -funwind-tables -funwind-tables -funwind-tables -funwind-tables -g' -g' -g' -g' -g'","cpu-microcode":"0x42d","kernel-extra-details":"Transparent Huge Pages: always","security":"SELinux + gather_data_sampling: Not affected + indirect_target_selection: Not affected + itlb_multihit: Not affected + l1tf: Mitigation of PTE Inversion + mds: Vulnerable: Clear buffers attempted no microcode; SMT Host state unknown + meltdown: Mitigation of PTI + mmio_stale_data: Unknown: No mitigations + reg_file_data_sampling: Not affected + retbleed: Not affected + spec_rstack_overflow: Not affected + spec_store_bypass: Mitigation of SSB disabled via prctl + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Retpolines; IBPB: conditional; IBRS_FW; STIBP: disabled; RSB filling; PBRSB-eIBRS: Not affected; BHI: Retpoline + srbds: Not affected + tsa: Not affected + tsx_async_abort: Not affected"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/netperf-1.0.4</Identifier>
+    <Title>Netperf</Title>
+    <AppVersion>2.7.0</AppVersion>
+    <Arguments>-H 10.2.0.44 -t TCP_STREAM -l 10</Arguments>
+    <Description>Server: 10.2.0.44 - Test: TCP Stream - Server To Client - Duration: 10 Seconds</Description>
+    <Scale>Megabits/sec Throughput</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Network peer - openSUSE Leap 16</Identifier>
+        <Value>7886.46</Value>
+        <RawString>8036:7140.28:7259.59:6631.35:7740.56:7488.53:8401.31:7092.41:7348.18:9095.05:8371.16:8245.15:8657.32:8202.78:8587.29</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-fcommon -std=gnu17 -O3 -march=native -lm"},"test-run-times":"11.45:10.03:10.03:10.04:10.04:10.04:10.03:10.05:10.04:10.02:10.02:10.04:10.03:10.03:10.02"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>

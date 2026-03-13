@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.4-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>mem-test-rocky_tinymembench</Title>
+    <LastModified>2026-03-12 03:25:03</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.4</TestClient>
+    <Description>KVM testing on Rocky Linux 9.7 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>1 x 16 GB RAM QEMU</Identifier>
+    <Hardware>Processor: Intel Xeon E5-2680 v2 (8 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Memory: 1 x 16 GB RAM QEMU, Disk: 21GB QEMU HDD</Hardware>
+    <Software>OS: Rocky Linux 9.7, Kernel: 5.14.0-611.5.1.el9_7.x86_64 (x86_64), Compiler: GCC 11.5.0 20240719, File-System: xfs, System Layer: KVM</Software>
+    <User>root</User>
+    <TimeStamp>2026-03-12 02:22:30</TimeStamp>
+    <TestClientVersion>10.8.4</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-redhat-linux --disable-libunwind-exceptions --enable-__cxa_atexit --enable-bootstrap --enable-cet --enable-checking=release --enable-gnu-indirect-function --enable-gnu-unique-object --enable-host-bind-now --enable-host-pie --enable-initfini-array --enable-languages=c,c++,fortran,lto --enable-link-serialization=1 --enable-multilib --enable-offload-targets=nvptx-none --enable-plugin --enable-shared --enable-threads=posix --mandir=\/usr\/share\/man --with-arch_32=x86-64 --with-arch_64=x86-64-v2 --with-build-config=bootstrap-lto --with-gcc-major-version-only --with-linker-hash-style=gnu --with-tune=generic --without-cuda-driver --without-isl","cpu-microcode":"0x42d","kernel-extra-details":"Transparent Huge Pages: always","security":"SELinux + gather_data_sampling: Not affected + indirect_target_selection: Not affected + itlb_multihit: Not affected + l1tf: Mitigation of PTE Inversion; VMX: flush not necessary SMT disabled + mds: Vulnerable: Clear buffers attempted no microcode; SMT Host state unknown + meltdown: Mitigation of PTI + mmio_stale_data: Unknown: No mitigations + reg_file_data_sampling: Not affected + retbleed: Not affected + spec_rstack_overflow: Not affected + spec_store_bypass: Mitigation of SSB disabled via prctl + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Retpolines; IBPB: conditional; IBRS_FW; STIBP: disabled; RSB filling; PBRSB-eIBRS: Not affected; BHI: Retpoline + srbds: Not affected + tsa: Not affected + tsx_async_abort: Not affected"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/tinymembench-1.0.2</Identifier>
+    <Title>Tinymembench</Title>
+    <AppVersion>2018-05-28</AppVersion>
+    <Arguments></Arguments>
+    <Description>Standard Memcpy</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>3635.0</Value>
+        <RawString>3229.7:3601:3747.1:3767.3:3575.7:3601.6:3871.4:3503.4:3817.7</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -lm"},"test-run-times":"378.76:361.36:377.63:413.97:416.72:433.89:439.37:423.03:471.70"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/tinymembench-1.0.2</Identifier>
+    <Title>Tinymembench</Title>
+    <AppVersion>2018-05-28</AppVersion>
+    <Arguments></Arguments>
+    <Description>Standard Memset</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>7031.8</Value>
+        <RawString>6656.4:6532.7:7499.3:7487.2:7294:7028.3:6915.6:6924.6:6947.7</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O2 -lm"},"test-run-times":"378.76:361.36:377.63:413.97:416.72:433.89:439.37:423.03:471.70"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>

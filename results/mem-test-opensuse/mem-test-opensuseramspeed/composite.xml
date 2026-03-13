@@ -1,0 +1,200 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.4-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>mem-test-opensuse_ramspeed</Title>
+    <LastModified>2026-03-12 03:34:11</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.4</TestClient>
+    <Description>KVM testing on openSUSE Leap 16.0 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>1 x 16 GB RAM QEMU</Identifier>
+    <Hardware>Processor: Intel Xeon E5-2680 v2 (8 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Memory: 1 x 16 GB RAM QEMU, Disk: 21GB QEMU HDD</Hardware>
+    <Software>OS: openSUSE Leap 16.0, Kernel: 6.12.0-160000.5-default (x86_64), Compiler: GCC 15.2.0, File-System: xfs, System Layer: KVM</Software>
+    <User>root</User>
+    <TimeStamp>2026-03-12 01:47:28</TimeStamp>
+    <TestClientVersion>10.8.4</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-suse-linux --disable-libcc1 --disable-libssp --disable-libstdcxx-pch --disable-libvtv --disable-plugin --disable-werror --enable-cet=auto --enable-checking=release --enable-gnu-indirect-function --enable-host-pie --enable-host-shared --enable-languages=c,c++,objc,fortran,obj-c++,ada,go,d,jit,m2 --enable-libphobos --enable-libstdcxx-allocator=new --enable-link-serialization --enable-linux-futex --enable-multilib --enable-offload-defaulted --enable-offload-targets=nvptx-none,amdgcn-amdhsa, --enable-ssp --enable-version-specific-runtime-libs --host=x86_64-suse-linux --mandir=\/usr\/share\/man --with-arch-32=x86-64-v2 --with-arch=x86-64-v2 --with-build-config=bootstrap-lto-lean --with-gcc-major-version-only --with-libstdcxx-zoneinfo=\/usr\/share\/zoneinfo --with-slibdir=\/lib64 --with-tune=generic --without-cuda-driver --without-system-libunwind -O2 -O2 -O2 -O2 -O2 -Werror=return-type -Werror=return-type -Werror=return-type -Werror=return-type -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -funwind-tables -funwind-tables -funwind-tables -funwind-tables -funwind-tables -g' -g' -g' -g' -g'","cpu-microcode":"0x42d","kernel-extra-details":"Transparent Huge Pages: always","security":"SELinux + gather_data_sampling: Not affected + indirect_target_selection: Not affected + itlb_multihit: Not affected + l1tf: Mitigation of PTE Inversion + mds: Vulnerable: Clear buffers attempted no microcode; SMT Host state unknown + meltdown: Mitigation of PTI + mmio_stale_data: Unknown: No mitigations + reg_file_data_sampling: Not affected + retbleed: Not affected + spec_rstack_overflow: Not affected + spec_store_bypass: Mitigation of SSB disabled via prctl + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Retpolines; IBPB: conditional; IBRS_FW; STIBP: disabled; RSB filling; PBRSB-eIBRS: Not affected; BHI: Retpoline + srbds: Not affected + tsa: Not affected + tsx_async_abort: Not affected"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/ramspeed-1.4.3</Identifier>
+    <Title>RAMspeed SMP</Title>
+    <AppVersion>3.5.0</AppVersion>
+    <Arguments>ADD -b 3</Arguments>
+    <Description>Type: Add - Benchmark: Integer</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>13926.83</Value>
+        <RawString>13737.03:14052.14:13991.31</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"133.71:134.37:140.62"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/ramspeed-1.4.3</Identifier>
+    <Title>RAMspeed SMP</Title>
+    <AppVersion>3.5.0</AppVersion>
+    <Arguments>COPY -b 3</Arguments>
+    <Description>Type: Copy - Benchmark: Integer</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>12213.74</Value>
+        <RawString>11241.16:11256.94:12063.22:12090.9:12442.87:12530.27:12701.16:11430.87:12832.63:13547.38</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"136.26:142.99:128.67:127.39:126.76:134.13:121.74:135.81:126.52:120.34"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/ramspeed-1.4.3</Identifier>
+    <Title>RAMspeed SMP</Title>
+    <AppVersion>3.5.0</AppVersion>
+    <Arguments>SCALE -b 3</Arguments>
+    <Description>Type: Scale - Benchmark: Integer</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>17788.56</Value>
+        <RawString>14346.28:14238.36:16190.5:17442.49:17375.18:17007.64:17329.24:18008.32:18966.17:19781.48:19658.63:18771.05:18354.19:19710.34:19648.48</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"121.99:127.03:108.99:97.22:96.18:99.26:95.89:92.65:88.48:85.36:85.81:89.36:91.33:85.65:85.70"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/ramspeed-1.4.3</Identifier>
+    <Title>RAMspeed SMP</Title>
+    <AppVersion>3.5.0</AppVersion>
+    <Arguments>TRIAD -b 3</Arguments>
+    <Description>Type: Triad - Benchmark: Integer</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>20613.18</Value>
+        <RawString>21243.52:21140.3:20141.86:19546.79:20482.74:21212.11:21283.08:20378.3:19448.16:20191.09:20730.23:20645.72:20646.66:21009.3:21097.82</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"85.25:86.43:90.52:93.28:89.10:86.91:84.94:89.56:94.02:90.32:87.35:87.65:87.83:86.35:86.16"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/ramspeed-1.4.3</Identifier>
+    <Title>RAMspeed SMP</Title>
+    <AppVersion>3.5.0</AppVersion>
+    <Arguments>AVERAGE -b 3</Arguments>
+    <Description>Type: Average - Benchmark: Integer</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>20015.05</Value>
+        <RawString>19866.55:19958.03:20220.57</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"87.10:86.55:85.31"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/ramspeed-1.4.3</Identifier>
+    <Title>RAMspeed SMP</Title>
+    <AppVersion>3.5.0</AppVersion>
+    <Arguments>ADD -b 6</Arguments>
+    <Description>Type: Add - Benchmark: Floating Point</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>19405.87</Value>
+        <RawString>19427.2:19382.17:19408.25</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"90.26:90.29:90.19"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/ramspeed-1.4.3</Identifier>
+    <Title>RAMspeed SMP</Title>
+    <AppVersion>3.5.0</AppVersion>
+    <Arguments>COPY -b 6</Arguments>
+    <Description>Type: Copy - Benchmark: Floating Point</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>19238.56</Value>
+        <RawString>19253.95:19221.64:19240.1</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"90.91:90.86:90.62"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/ramspeed-1.4.3</Identifier>
+    <Title>RAMspeed SMP</Title>
+    <AppVersion>3.5.0</AppVersion>
+    <Arguments>SCALE -b 6</Arguments>
+    <Description>Type: Scale - Benchmark: Floating Point</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>18868.31</Value>
+        <RawString>18824.72:18864.33:18915.88</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"90.91:90.68:90.35"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/ramspeed-1.4.3</Identifier>
+    <Title>RAMspeed SMP</Title>
+    <AppVersion>3.5.0</AppVersion>
+    <Arguments>TRIAD -b 6</Arguments>
+    <Description>Type: Triad - Benchmark: Floating Point</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>19376.86</Value>
+        <RawString>19294.37:19266.86:19569.36</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"90.15:89.97:88.82"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/ramspeed-1.4.3</Identifier>
+    <Title>RAMspeed SMP</Title>
+    <AppVersion>3.5.0</AppVersion>
+    <Arguments>AVERAGE -b 6</Arguments>
+    <Description>Type: Average - Benchmark: Floating Point</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>1 x 16 GB RAM QEMU</Identifier>
+        <Value>19256.04</Value>
+        <RawString>19186.58:19401.38:19180.15</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native"},"test-run-times":"90.44:89.59:90.48"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>

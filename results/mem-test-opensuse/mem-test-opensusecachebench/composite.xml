@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.4-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>mem-test-opensuse_cachebench</Title>
+    <LastModified>2026-03-12 04:34:17</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.4</TestClient>
+    <Description>KVM testing on openSUSE Leap 16.0 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>Intel Xeon E5-2680 v2</Identifier>
+    <Hardware>Processor: Intel Xeon E5-2680 v2 (8 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Memory: 1 x 16 GB RAM QEMU, Disk: 21GB QEMU HDD</Hardware>
+    <Software>OS: openSUSE Leap 16.0, Kernel: 6.12.0-160000.5-default (x86_64), Compiler: GCC 15.2.0, File-System: xfs, System Layer: KVM</Software>
+    <User>root</User>
+    <TimeStamp>2026-03-12 04:14:41</TimeStamp>
+    <TestClientVersion>10.8.4</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-suse-linux --disable-libcc1 --disable-libssp --disable-libstdcxx-pch --disable-libvtv --disable-plugin --disable-werror --enable-cet=auto --enable-checking=release --enable-gnu-indirect-function --enable-host-pie --enable-host-shared --enable-languages=c,c++,objc,fortran,obj-c++,ada,go,d,jit,m2 --enable-libphobos --enable-libstdcxx-allocator=new --enable-link-serialization --enable-linux-futex --enable-multilib --enable-offload-defaulted --enable-offload-targets=nvptx-none,amdgcn-amdhsa, --enable-ssp --enable-version-specific-runtime-libs --host=x86_64-suse-linux --mandir=\/usr\/share\/man --with-arch-32=x86-64-v2 --with-arch=x86-64-v2 --with-build-config=bootstrap-lto-lean --with-gcc-major-version-only --with-libstdcxx-zoneinfo=\/usr\/share\/zoneinfo --with-slibdir=\/lib64 --with-tune=generic --without-cuda-driver --without-system-libunwind -O2 -O2 -O2 -O2 -O2 -Werror=return-type -Werror=return-type -Werror=return-type -Werror=return-type -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -funwind-tables -funwind-tables -funwind-tables -funwind-tables -funwind-tables -g' -g' -g' -g' -g'","cpu-microcode":"0x42d","kernel-extra-details":"Transparent Huge Pages: always","security":"SELinux + gather_data_sampling: Not affected + indirect_target_selection: Not affected + itlb_multihit: Not affected + l1tf: Mitigation of PTE Inversion + mds: Vulnerable: Clear buffers attempted no microcode; SMT Host state unknown + meltdown: Mitigation of PTI + mmio_stale_data: Unknown: No mitigations + reg_file_data_sampling: Not affected + retbleed: Not affected + spec_rstack_overflow: Not affected + spec_store_bypass: Mitigation of SSB disabled via prctl + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Retpolines; IBPB: conditional; IBRS_FW; STIBP: disabled; RSB filling; PBRSB-eIBRS: Not affected; BHI: Retpoline + srbds: Not affected + tsa: Not affected + tsx_async_abort: Not affected"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/cachebench-1.2.0</Identifier>
+    <Title>CacheBench</Title>
+    <AppVersion></AppVersion>
+    <Arguments>-r</Arguments>
+    <Description>Test: Read</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon E5-2680 v2</Identifier>
+        <Value>8934.786722</Value>
+        <RawString>8949.067729:8940.469925:8914.822511</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -lrt"},"min-result":8880.45,"max-result":8967.71,"test-run-times":"125.64:125.09:125.09"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cachebench-1.2.0</Identifier>
+    <Title>CacheBench</Title>
+    <AppVersion></AppVersion>
+    <Arguments>-w</Arguments>
+    <Description>Test: Write</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon E5-2680 v2</Identifier>
+        <Value>48822.466945</Value>
+        <RawString>48750.300299:48814.408581:48902.691956</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -lrt"},"min-result":33503.08,"max-result":53334.2,"test-run-times":"125.09:125.09:125.09"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+  <Result>
+    <Identifier>pts/cachebench-1.2.0</Identifier>
+    <Title>CacheBench</Title>
+    <AppVersion></AppVersion>
+    <Arguments>-b</Arguments>
+    <Description>Test: Read / Modify / Write</Description>
+    <Scale>MB/s</Scale>
+    <Proportion>HIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Intel Xeon E5-2680 v2</Identifier>
+        <Value>50995.087581</Value>
+        <RawString>51005.801357:51001.421076:50978.040309</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -lrt"},"min-result":44672.04,"max-result":53384.73,"test-run-times":"125.09:125.09:125.09"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>

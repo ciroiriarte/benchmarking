@@ -1040,9 +1040,16 @@ run_tests_on_disk() {
     unset PTS_TEST_INSTALL_ROOT_PATH
 }
 
+# Set PTS result metadata so the identifier column in comparisons shows the
+# --result-name value rather than auto-generated hardware/date labels.
+[[ -n "$UPLOAD_NAME" ]] && export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
+[[ -n "$UPLOAD_NAME" ]] && export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME"
+
 for disk in "${DISKS[@]}"; do
     run_tests_on_disk "$disk"
 done
+
+unset TEST_RESULTS_DESCRIPTION TEST_RESULTS_IDENTIFIER
 
 # === Upload Results if Requested ===
 upload_pts_results

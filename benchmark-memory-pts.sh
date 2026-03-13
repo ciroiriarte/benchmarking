@@ -324,6 +324,7 @@ RESULT_NAMES=()
 # providing both statistical validity and implicit warmup: if the first run
 # is an outlier it raises variance and triggers additional runs.
 export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
+export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME"
 
 for test_name in "${INSTALLED_TESTS[@]}"; do
     echo -e "\n=== Running memory benchmark: $test_name ==="
@@ -345,6 +346,7 @@ done
 
 unset TEST_RESULTS_NAME
 unset TEST_RESULTS_DESCRIPTION
+unset TEST_RESULTS_IDENTIFIER
 
 # === Collect Results to ./benchmark-results/ ===
 collect_results

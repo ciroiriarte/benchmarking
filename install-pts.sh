@@ -263,7 +263,7 @@ ensure_pts_installed() {
 #   1. SaveResults                 = Y  (persist results to disk)
 #   2. OpenBrowser                 = N  (no GUI in headless mode)
 #   3. UploadResults               = N  (manual upload via --upload flag)
-#   4. PromptForTestIdentifier     = N  (use TEST_RESULTS_NAME env var)
+#   4. PromptForTestIdentifier     = N  (use TEST_RESULTS_IDENTIFIER env var)
 #   5. PromptForTestDescription    = N  (use TEST_RESULTS_DESCRIPTION env var)
 #   6. PromptSaveName              = N  (auto-save; prompting hangs non-interactive runs)
 #   7. RunAllTestCombinations      = $1

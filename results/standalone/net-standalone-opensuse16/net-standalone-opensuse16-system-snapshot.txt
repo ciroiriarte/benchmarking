@@ -1,0 +1,168 @@
+=== Benchmark Configuration ===
+Date:        2026-03-12 14:48:49 UTC
+Result ID:   net-standalone-opensuse16
+Result Name: Network standalone - openSUSE Leap 16
+Server:      (standalone only)
+
+=== Kernel ===
+Linux net-opensuse-cl 6.12.0-160000.5-default #1 SMP PREEMPT_DYNAMIC Wed Sep 10 15:26:25 UTC 2025 (3545bbd) x86_64 x86_64 x86_64 GNU/Linux
+
+=== OS Release ===
+NAME="openSUSE Leap"
+VERSION="16.0"
+ID="opensuse-leap"
+ID_LIKE="suse opensuse"
+VERSION_ID="16.0"
+PRETTY_NAME="openSUSE Leap 16.0"
+ANSI_COLOR="0;32"
+CPE_NAME="cpe:/o:opensuse:leap:16.0"
+BUG_REPORT_URL="https://bugs.opensuse.org"
+HOME_URL="https://www.opensuse.org/"
+DOCUMENTATION_URL="https://en.opensuse.org/Portal:Leap"
+LOGO="distributor-logo-Leap"
+
+=== CPU Topology ===
+Architecture:                            x86_64
+CPU op-mode(s):                          32-bit, 64-bit
+Address sizes:                           46 bits physical, 48 bits virtual
+Byte Order:                              Little Endian
+CPU(s):                                  4
+On-line CPU(s) list:                     0-3
+Vendor ID:                               GenuineIntel
+Model name:                              Intel(R) Xeon(R) CPU E5-2680 v2 @ 2.80GHz
+CPU family:                              6
+Model:                                   62
+Thread(s) per core:                      1
+Core(s) per socket:                      4
+Socket(s):                               1
+Stepping:                                4
+BogoMIPS:                                5586.53
+Flags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 cx16 pdcm pcid sse4_1 sse4_2 x2apic popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm cpuid_fault pti ssbd ibrs ibpb stibp tpr_shadow flexpriority ept vpid fsgsbase tsc_adjust smep erms xsaveopt arat vnmi umip flush_l1d arch_capabilities
+Virtualization:                          VT-x
+Hypervisor vendor:                       KVM
+Virtualization type:                     full
+L1d cache:                               128 KiB (4 instances)
+L1i cache:                               128 KiB (4 instances)
+L2 cache:                                16 MiB (4 instances)
+L3 cache:                                16 MiB (1 instance)
+NUMA node(s):                            1
+NUMA node0 CPU(s):                       0-3
+Vulnerability Gather data sampling:      Not affected
+Vulnerability Indirect target selection: Not affected
+Vulnerability Itlb multihit:             Not affected
+Vulnerability L1tf:                      Mitigation; PTE Inversion
+Vulnerability Mds:                       Vulnerable: Clear CPU buffers attempted, no microcode; SMT Host state unknown
+Vulnerability Meltdown:                  Mitigation; PTI
+Vulnerability Mmio stale data:           Unknown: No mitigations
+Vulnerability Reg file data sampling:    Not affected
+Vulnerability Retbleed:                  Not affected
+Vulnerability Spec rstack overflow:      Not affected
+Vulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl
+Vulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:                Mitigation; Retpolines; IBPB conditional; IBRS_FW; STIBP disabled; RSB filling; PBRSB-eIBRS Not affected; BHI Retpoline
+Vulnerability Srbds:                     Not affected
+Vulnerability Tsa:                       Not affected
+Vulnerability Tsx async abort:           Not affected
+
+=== CPU Frequency Scaling ===
+cpufreq interface not available
+
+=== Network Interfaces ===
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    RX:    bytes packets errors dropped  missed   mcast           
+    157739909883 8704078      0       0       0       0 
+    TX:    bytes packets errors dropped carrier collsns           
+    157739909883 8704078      0       0       0       0 
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9216 qdisc pfifo_fast state UP mode DEFAULT group default qlen 1000
+    link/ether bc:24:11:94:7c:c1 brd ff:ff:ff:ff:ff:ff
+    RX:  bytes packets errors dropped  missed   mcast           
+     438560915 3194274      0     431       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+       1978163   27786      0       0       0       0 
+    altname enp6s18
+    altname enxbc2411947cc1
+
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9216 qdisc pfifo_fast state UP group default qlen 1000
+    link/ether bc:24:11:94:7c:c1 brd ff:ff:ff:ff:ff:ff
+    altname enp6s18
+    altname enxbc2411947cc1
+    inet 10.2.0.41/24 brd 10.2.0.255 scope global noprefixroute eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::be24:11ff:fe94:7cc1/64 scope link noprefixroute 
+       valid_lft forever preferred_lft forever
+
+=== Per-interface NIC Detail ===
+--- eth0 ---
+  MTU:   9216
+  Speed: -1 Mbps
+  Driver / firmware:
+    driver: virtio_net
+    version: 1.0.0
+    firmware-version: 
+    expansion-rom-version: 
+    bus-info: 0000:06:12.0
+    supports-statistics: yes
+    supports-test: no
+    supports-eeprom-access: no
+    supports-register-dump: no
+    supports-priv-flags: no
+  Offload flags (selected):
+    rx-checksumming: on [fixed]
+    tx-checksumming: on
+    scatter-gather: on
+    	tx-scatter-gather: on
+    	tx-scatter-gather-fraglist: off [fixed]
+    tcp-segmentation-offload: on
+    	tx-tcp-segmentation: on
+    generic-segmentation-offload: on
+    generic-receive-offload: on
+    large-receive-offload: off [fixed]
+  Ring buffers:
+    Ring parameters for eth0:
+    Pre-set maximums:
+    RX:			1024
+    RX Mini:		n/a
+    RX Jumbo:		n/a
+    TX:			256
+    TX push buff len:	n/a
+    Current hardware settings:
+    RX:			1024
+    RX Mini:		n/a
+    RX Jumbo:		n/a
+    TX:			256
+    RX Buf Len:		n/a
+    CQE Size:		n/a
+    TX Push:		off
+    RX Push:		off
+    TX push buff len:	n/a
+    TCP data split:		n/a
+
+=== TCP/IP Settings ===
+congestion_control:  cubic
+moderate_rcvbuf:     1
+tcp_rmem:            4096	131072	6291456
+tcp_wmem:            4096	16384	4194304
+rmem_max:            212992
+wmem_max:            212992
+netdev_max_backlog:  1000
+
+=== Memory ===
+               total        used        free      shared  buff/cache   available
+Mem:           3.8Gi       513Mi       2.6Gi       936Ki       999Mi       3.3Gi
+Swap:             0B          0B          0B
+
+=== Load Average ===
+0.00 0.00 0.00 1/134 5333
+
+=== Network Adapters (dmidecode) ===
+# dmidecode 3.6
+Getting SMBIOS data from sysfs.
+SMBIOS 2.8 present.
+

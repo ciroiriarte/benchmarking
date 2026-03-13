@@ -1,0 +1,322 @@
+++ pwd
++ oldpwd=/var/lib/phoronix-test-suite/installed-tests/pts/sockperf-1.1.0/sockperf-3.7
+++ dirname ./autogen.sh
++ topdir=.
++ cd .
++ CURRENT_VERSION_FILE=./build/current-version
++ . ./build/versioning.sh
++++ cat version
++++ tr -d '\n'
+++ VERSION=3.7
++++ git rev-parse HEAD
++++ echo no.git
+++ GIT_REF=no.git
++++ git describe --long --abbrev=12 --dirty
++++ echo ''
+++ x=
+++ '[' -n '' ']'
+++ x=no.git
+++ RELEASE=no.git
++ echo 3.7-no.git
++ echo no.git
++ rm -rf autom4te.cache
++ mkdir -p config/m4 config/aux
++ autoreconf -v --install
+autoreconf: Entering directory `.'
+autoreconf: configure.ac: not using Gettext
+autoreconf: running: aclocal -I config/m4
+autoreconf: configure.ac: tracing
+autoreconf: configure.ac: not using Libtool
+autoreconf: running: /usr/bin/autoconf
+autoreconf: running: /usr/bin/autoheader
+autoreconf: running: automake --add-missing --copy --no-force
+configure.ac:9: installing 'config/aux/config.guess'
+configure.ac:9: installing 'config/aux/config.sub'
+configure.ac:60: installing 'config/aux/install-sh'
+configure.ac:60: installing 'config/aux/missing'
+Makefile.am: installing 'config/aux/depcomp'
+autoreconf: Leaving directory `.'
++ rm -rf autom4te.cache
++ cd /var/lib/phoronix-test-suite/installed-tests/pts/sockperf-1.1.0/sockperf-3.7
++ '[' x = xc ']'
++ printf '\nNow run '\''./configure'\'' and '\''make'\''.\n\n'
+
+Now run './configure' and 'make'.
+
++ rm -f ./build/current-version
++ exit 0
+checking build system type... x86_64-pc-linux-gnu
+checking host system type... x86_64-pc-linux-gnu
+checking target system type... x86_64-pc-linux-gnu
+checking for a BSD-compatible install... /bin/install -c
+checking whether build environment is sane... yes
+checking for a thread-safe mkdir -p... /bin/mkdir -p
+checking for gawk... gawk
+checking whether make sets $(MAKE)... yes
+checking whether make supports nested variables... yes
+checking whether to enable maintainer-specific portions of Makefiles... no
+checking for g++... g++
+checking whether the C++ compiler works... yes
+checking for C++ compiler default output file name... a.out
+checking for suffix of executables... 
+checking whether we are cross compiling... no
+checking for suffix of object files... o
+checking whether we are using the GNU C++ compiler... yes
+checking whether g++ accepts -g... yes
+checking whether make supports the include directive... yes (GNU style)
+checking dependency style of g++... gcc3
+checking whether g++ supports -Wall in CXXFLAGS... yes
+checking whether g++ supports --param inline-unit-growth=200 in CXXFLAGS... yes
+checking how to run the C++ preprocessor... g++ -E
+checking for grep that handles long lines and -e... /bin/grep
+checking for egrep... /bin/grep -E
+checking for ANSI C header files... yes
+checking for sys/types.h... yes
+checking for sys/stat.h... yes
+checking for stdlib.h... yes
+checking for string.h... yes
+checking for memory.h... yes
+checking for strings.h... yes
+checking for inttypes.h... yes
+checking for stdint.h... yes
+checking for unistd.h... yes
+checking for vma extra api... no
+checking for ANSI C header files... (cached) yes
+checking arpa/inet.h usability... yes
+checking arpa/inet.h presence... yes
+checking for arpa/inet.h... yes
+checking fcntl.h usability... yes
+checking fcntl.h presence... yes
+checking for fcntl.h... yes
+checking netinet/in.h usability... yes
+checking netinet/in.h presence... yes
+checking for netinet/in.h... yes
+checking for stdint.h... (cached) yes
+checking for stdlib.h... (cached) yes
+checking for string.h... (cached) yes
+checking sys/ioctl.h usability... yes
+checking sys/ioctl.h presence... yes
+checking for sys/ioctl.h... yes
+checking sys/socket.h usability... yes
+checking sys/socket.h presence... yes
+checking for sys/socket.h... yes
+checking sys/time.h usability... yes
+checking sys/time.h presence... yes
+checking for sys/time.h... yes
+checking syslog.h usability... yes
+checking syslog.h presence... yes
+checking for syslog.h... yes
+checking termios.h usability... yes
+checking termios.h presence... yes
+checking for termios.h... yes
+checking for unistd.h... (cached) yes
+checking for ANSI C header files... (cached) yes
+checking for library containing clock_gettime... none required
+checking for library containing pthread_create... none required
+checking for library containing backtrace... none required
+checking for library containing dlsym... none required
+checking that generated files are newer than configure... done
+configure: creating ./config.status
+config.status: creating Makefile
+config.status: creating tools/Makefile
+config.status: creating tests/Makefile
+config.status: creating doc/Doxyfile
+config.status: creating build/sockperf.spec
+config.status: creating config.h
+config.status: executing depfiles commands
+
+	sockperf 3.7-no.git
+
+	prefix:		/usr/local
+
+	compiler:	g++
+	cppflags:	
+	cxxflags:	 -Wall --param inline-unit-growth=200 -O3 -g
+	ldflags:	
+
+	doc:		no
+	test:		no
+	tool:		no
+	vma_api:	no
+	debug:		no
+
+make  all-recursive
+make[1]: Entering directory '/var/lib/phoronix-test-suite/installed-tests/pts/sockperf-1.1.0/sockperf-3.7'
+make[2]: Entering directory '/var/lib/phoronix-test-suite/installed-tests/pts/sockperf-1.1.0/sockperf-3.7'
+depbase=`echo src/aopt.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H -I.  -imacros ./config.h  -Wall --param inline-unit-growth=200 -O3 -g -MT src/aopt.o -MD -MP -MF $depbase.Tpo -c -o src/aopt.o src/aopt.cpp &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo src/client.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H -I.  -imacros ./config.h  -Wall --param inline-unit-growth=200 -O3 -g -MT src/client.o -MD -MP -MF $depbase.Tpo -c -o src/client.o src/client.cpp &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo src/common.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H -I.  -imacros ./config.h  -Wall --param inline-unit-growth=200 -O3 -g -MT src/common.o -MD -MP -MF $depbase.Tpo -c -o src/common.o src/common.cpp &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo src/defs.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H -I.  -imacros ./config.h  -Wall --param inline-unit-growth=200 -O3 -g -MT src/defs.o -MD -MP -MF $depbase.Tpo -c -o src/defs.o src/defs.cpp &&\
+mv -f $depbase.Tpo $depbase.Po
+In file included from src/os_abstract.h:43,
+                 from src/aopt.cpp:33:
+src/ticks_os.h: In function ‘ticks_t os_gettimeoftsc()’:
+src/ticks_os.h:92:23: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                       ^~~~~~~~
+src/ticks_os.h:92:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                                 ^~~~~~~~
+In file included from src/ticks.h:105,
+                 from src/defs.h:99,
+                 from src/client.cpp:29:
+src/ticks_os.h: In function ‘ticks_t os_gettimeoftsc()’:
+src/ticks_os.h:92:23: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                       ^~~~~~~~
+src/ticks_os.h:92:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                                 ^~~~~~~~
+In file included from src/ticks.h:105,
+                 from src/defs.h:99,
+                 from src/common.h:32,
+                 from src/common.cpp:29:
+src/ticks_os.h: In function ‘ticks_t os_gettimeoftsc()’:
+src/ticks_os.h:92:23: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                       ^~~~~~~~
+src/ticks_os.h:92:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                                 ^~~~~~~~
+In file included from src/ticks.h:105,
+                 from src/defs.h:99,
+                 from src/defs.cpp:29:
+src/ticks_os.h: In function ‘ticks_t os_gettimeoftsc()’:
+src/ticks_os.h:92:23: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                       ^~~~~~~~
+src/ticks_os.h:92:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                                 ^~~~~~~~
+depbase=`echo src/iohandlers.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H -I.  -imacros ./config.h  -Wall --param inline-unit-growth=200 -O3 -g -MT src/iohandlers.o -MD -MP -MF $depbase.Tpo -c -o src/iohandlers.o src/iohandlers.cpp &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo src/message.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H -I.  -imacros ./config.h  -Wall --param inline-unit-growth=200 -O3 -g -MT src/message.o -MD -MP -MF $depbase.Tpo -c -o src/message.o src/message.cpp &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo src/os_abstract.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H -I.  -imacros ./config.h  -Wall --param inline-unit-growth=200 -O3 -g -MT src/os_abstract.o -MD -MP -MF $depbase.Tpo -c -o src/os_abstract.o src/os_abstract.cpp &&\
+mv -f $depbase.Tpo $depbase.Po
+In file included from src/os_abstract.h:43,
+                 from src/os_abstract.cpp:29:
+src/ticks_os.h: In function ‘ticks_t os_gettimeoftsc()’:
+src/ticks_os.h:92:23: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                       ^~~~~~~~
+src/ticks_os.h:92:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                                 ^~~~~~~~
+depbase=`echo src/packet.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H -I.  -imacros ./config.h  -Wall --param inline-unit-growth=200 -O3 -g -MT src/packet.o -MD -MP -MF $depbase.Tpo -c -o src/packet.o src/packet.cpp &&\
+mv -f $depbase.Tpo $depbase.Po
+In file included from src/os_abstract.h:43,
+                 from src/message.h:36,
+                 from src/message.cpp:29:
+src/ticks_os.h: In function ‘ticks_t os_gettimeoftsc()’:
+src/ticks_os.h:92:23: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                       ^~~~~~~~
+src/ticks_os.h:92:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                                 ^~~~~~~~
+In file included from src/ticks.h:105,
+                 from src/defs.h:99,
+                 from src/common.h:32,
+                 from src/iohandlers.h:31,
+                 from src/iohandlers.cpp:29:
+src/ticks_os.h: In function ‘ticks_t os_gettimeoftsc()’:
+src/ticks_os.h:92:23: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                       ^~~~~~~~
+src/ticks_os.h:92:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                                 ^~~~~~~~
+In file included from src/ticks.h:105,
+                 from src/defs.h:99,
+                 from src/packet.cpp:30:
+src/ticks_os.h: In function ‘ticks_t os_gettimeoftsc()’:
+src/ticks_os.h:92:23: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                       ^~~~~~~~
+src/ticks_os.h:92:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                                 ^~~~~~~~
+depbase=`echo src/playback.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H -I.  -imacros ./config.h  -Wall --param inline-unit-growth=200 -O3 -g -MT src/playback.o -MD -MP -MF $depbase.Tpo -c -o src/playback.o src/playback.cpp &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo src/server.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H -I.  -imacros ./config.h  -Wall --param inline-unit-growth=200 -O3 -g -MT src/server.o -MD -MP -MF $depbase.Tpo -c -o src/server.o src/server.cpp &&\
+mv -f $depbase.Tpo $depbase.Po
+depbase=`echo src/sockperf.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H -I.  -imacros ./config.h  -Wall --param inline-unit-growth=200 -O3 -g -MT src/sockperf.o -MD -MP -MF $depbase.Tpo -c -o src/sockperf.o src/sockperf.cpp &&\
+mv -f $depbase.Tpo $depbase.Po
+In file included from src/ticks.h:105,
+                 from src/defs.h:99,
+                 from src/common.h:32,
+                 from src/server.h:32,
+                 from src/server.cpp:29:
+src/ticks_os.h: In function ‘ticks_t os_gettimeoftsc()’:
+src/ticks_os.h:92:23: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                       ^~~~~~~~
+src/ticks_os.h:92:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                                 ^~~~~~~~
+In file included from src/ticks.h:105,
+                 from src/defs.h:99,
+                 from src/common.h:32,
+                 from src/sockperf.cpp:82:
+src/ticks_os.h: In function ‘ticks_t os_gettimeoftsc()’:
+src/ticks_os.h:92:23: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                       ^~~~~~~~
+src/ticks_os.h:92:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                                 ^~~~~~~~
+In file included from src/ticks.h:105,
+                 from src/defs.h:99,
+                 from src/playback.cpp:33:
+src/ticks_os.h: In function ‘ticks_t os_gettimeoftsc()’:
+src/ticks_os.h:92:23: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                       ^~~~~~~~
+src/ticks_os.h:92:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                                 ^~~~~~~~
+In file included from src/common.h:32,
+                 from src/sockperf.cpp:82:
+src/sockperf.cpp: In function ‘int _ZL16parse_common_optPK12_AOPT_OBJECT.part.0(const AOPT_OBJECT*)’:
+src/defs.h:233:37: warning: ‘%s’ directive argument is null [-Wformat-overflow=]
+  233 | #define log_msg(log_fmt, ...) printf(MODULE_NAME ": " log_fmt "\n", ##__VA_ARGS__)
+      |                               ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+src/sockperf.cpp:1699:17: note: in expansion of macro ‘log_msg’
+ 1699 |                 log_msg("'-%d' Invalid address: %s", OPT_MC_SOURCE_IP, optarg);
+      |                 ^~~~~~~
+src/sockperf.cpp:3453:54: note: format string is defined here
+ 3453 |         printf(MODULE_NAME ": test failed because of an unknown exception \n");
+      |                                                      ^~
+depbase=`echo src/ticks.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H -I.  -imacros ./config.h  -Wall --param inline-unit-growth=200 -O3 -g -MT src/ticks.o -MD -MP -MF $depbase.Tpo -c -o src/ticks.o src/ticks.cpp &&\
+mv -f $depbase.Tpo $depbase.Po
+In file included from src/ticks.h:105,
+                 from src/ticks.cpp:31:
+src/ticks_os.h: In function ‘ticks_t os_gettimeoftsc()’:
+src/ticks_os.h:92:23: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                       ^~~~~~~~
+src/ticks_os.h:92:33: warning: ISO C++17 does not allow ‘register’ storage class specifier [-Wregister]
+   92 |     register uint32_t upper_32, lower_32;
+      |                                 ^~~~~~~~
+depbase=`echo src/vma-redirect.o | sed 's|[^/]*$|.deps/&|;s|\.o$||'`;\
+g++ -DHAVE_CONFIG_H -I.  -imacros ./config.h  -Wall --param inline-unit-growth=200 -O3 -g -MT src/vma-redirect.o -MD -MP -MF $depbase.Tpo -c -o src/vma-redirect.o src/vma-redirect.cpp &&\
+mv -f $depbase.Tpo $depbase.Po
+g++ -Wall --param inline-unit-growth=200 -O3 -g -rdynamic  -o sockperf src/aopt.o src/client.o src/common.o src/defs.o src/iohandlers.o src/message.o src/os_abstract.o src/packet.o src/playback.o src/server.o src/sockperf.o src/ticks.o src/vma-redirect.o  
+make[2]: Leaving directory '/var/lib/phoronix-test-suite/installed-tests/pts/sockperf-1.1.0/sockperf-3.7'
+make[1]: Leaving directory '/var/lib/phoronix-test-suite/installed-tests/pts/sockperf-1.1.0/sockperf-3.7'

@@ -318,10 +318,12 @@ echo "Runs per test: $FORCE_TIMES_TO_RUN"
 # Always name the result so it can be referenced for upload later.
 export TEST_RESULTS_NAME="$UPLOAD_ID"
 export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
+export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME"
 
 if [[ "$UPLOAD_RESULTS" -eq 1 ]]; then
   echo "Results will be uploaded with the following details:"
   echo "  Name: $TEST_RESULTS_NAME"
+  echo "  Identifier: $TEST_RESULTS_IDENTIFIER"
   echo "  Description: $TEST_RESULTS_DESCRIPTION"
 fi
 

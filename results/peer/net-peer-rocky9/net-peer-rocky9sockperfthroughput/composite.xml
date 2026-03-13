@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.4-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>net-peer-rocky9_sockperf_throughput</Title>
+    <LastModified>2026-03-12 19:30:43</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.4</TestClient>
+    <Description>KVM testing on Rocky Linux 9.7 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>Network peer - Rocky Linux 9</Identifier>
+    <Hardware>Processor: Intel Xeon E5-2680 v2 (4 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Memory: 1 x 4 GB RAM QEMU, Disk: 21GB QEMU HDD</Hardware>
+    <Software>OS: Rocky Linux 9.7, Kernel: 5.14.0-611.5.1.el9_7.x86_64 (x86_64), Compiler: GCC 11.5.0 20240719, File-System: xfs, System Layer: KVM</Software>
+    <User>root</User>
+    <TimeStamp>2026-03-12 19:25:34</TimeStamp>
+    <TestClientVersion>10.8.4</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-redhat-linux --disable-libunwind-exceptions --enable-__cxa_atexit --enable-bootstrap --enable-cet --enable-checking=release --enable-gnu-indirect-function --enable-gnu-unique-object --enable-host-bind-now --enable-host-pie --enable-initfini-array --enable-languages=c,c++,fortran,lto --enable-link-serialization=1 --enable-multilib --enable-offload-targets=nvptx-none --enable-plugin --enable-shared --enable-threads=posix --mandir=\/usr\/share\/man --with-arch_32=x86-64 --with-arch_64=x86-64-v2 --with-build-config=bootstrap-lto --with-gcc-major-version-only --with-linker-hash-style=gnu --with-tune=generic --without-cuda-driver --without-isl","cpu-microcode":"0x42d","kernel-extra-details":"Transparent Huge Pages: always","security":"SELinux + gather_data_sampling: Not affected + indirect_target_selection: Not affected + itlb_multihit: Not affected + l1tf: Mitigation of PTE Inversion; VMX: flush not necessary SMT disabled + mds: Vulnerable: Clear buffers attempted no microcode; SMT Host state unknown + meltdown: Mitigation of PTI + mmio_stale_data: Unknown: No mitigations + reg_file_data_sampling: Not affected + retbleed: Not affected + spec_rstack_overflow: Not affected + spec_store_bypass: Mitigation of SSB disabled via prctl + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Retpolines; IBPB: conditional; IBRS_FW; STIBP: disabled; RSB filling; PBRSB-eIBRS: Not affected; BHI: Retpoline + srbds: Not affected + tsa: Not affected + tsx_async_abort: Not affected"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/sockperf-1.1.0</Identifier>
+    <Title>Sockperf</Title>
+    <AppVersion>3.7</AppVersion>
+    <Arguments>under-load</Arguments>
+    <Description>Test: Latency Under Load</Description>
+    <Scale>usec</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>Network peer - Rocky Linux 9</Identifier>
+        <Value>141.345</Value>
+        <RawString>129.871:419.631:184.662:136.041:116.31:85.042:195.486:112.672:102.098:87.179:96.403:167.046:102.809:102.872:108.264:136.659:142.685:108.646:134.078:118.088:140.086:167.791:175.184:113.881:150.147</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"--param -O3 -rdynamic"},"test-run-times":"9.81:8.27:8.25:8.26:8.26:8.25:8.26:8.26:8.26:8.25:8.26:8.26:8.26:8.25:8.25:8.26:8.27:8.26:8.25:8.26:8.27:8.27:8.30:8.26:8.26"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>

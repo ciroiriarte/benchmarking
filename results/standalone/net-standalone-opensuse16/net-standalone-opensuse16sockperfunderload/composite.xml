@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!--Phoronix Test Suite v10.8.4-->
+<PhoronixTestSuite>
+  <Generated>
+    <Title>net-standalone-opensuse16_sockperf_underload</Title>
+    <LastModified>2026-03-12 15:06:07</LastModified>
+    <TestClient>Phoronix Test Suite v10.8.4</TestClient>
+    <Description>KVM testing on openSUSE Leap 16.0 via the Phoronix Test Suite.</Description>
+  </Generated>
+  <System>
+    <Identifier>openSUSE Leap 16.0</Identifier>
+    <Hardware>Processor: Intel Xeon E5-2680 v2 (4 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Memory: 1 x 4 GB RAM QEMU, Disk: 21GB QEMU HDD</Hardware>
+    <Software>OS: openSUSE Leap 16.0, Kernel: 6.12.0-160000.5-default (x86_64), Compiler: GCC 15.1.1 20250714, File-System: xfs, System Layer: KVM</Software>
+    <User>root</User>
+    <TimeStamp>2026-03-12 15:01:00</TimeStamp>
+    <TestClientVersion>10.8.4</TestClientVersion>
+    <Notes></Notes>
+    <JSON>{"compiler-configuration":"--build=x86_64-suse-linux --disable-libcc1 --disable-libssp --disable-libstdcxx-pch --disable-libvtv --disable-plugin --disable-werror --enable-cet=auto --enable-checking=release --enable-gnu-indirect-function --enable-host-pie --enable-host-shared --enable-languages=c,c++,objc,fortran,obj-c++,ada,go,d,jit,m2 --enable-libphobos --enable-libstdcxx-allocator=new --enable-link-serialization --enable-linux-futex --enable-multilib --enable-offload-defaulted --enable-offload-targets=nvptx-none,amdgcn-amdhsa, --enable-ssp --enable-version-specific-runtime-libs --host=x86_64-suse-linux --mandir=\/usr\/share\/man --with-arch-32=x86-64-v2 --with-arch=x86-64-v2 --with-build-config=bootstrap-lto-lean --with-gcc-major-version-only --with-libstdcxx-zoneinfo=\/usr\/share\/zoneinfo --with-slibdir=\/lib64 --with-tune=generic --without-cuda-driver --without-system-libunwind -O2 -O2 -O2 -O2 -O2 -Werror=return-type -Werror=return-type -Werror=return-type -Werror=return-type -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fasynchronous-unwind-tables -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -fstack-clash-protection -funwind-tables -funwind-tables -funwind-tables -funwind-tables -funwind-tables -g' -g' -g' -g' -g'","cpu-microcode":"0x42d","kernel-extra-details":"Transparent Huge Pages: always","security":"SELinux + gather_data_sampling: Not affected + indirect_target_selection: Not affected + itlb_multihit: Not affected + l1tf: Mitigation of PTE Inversion + mds: Vulnerable: Clear buffers attempted no microcode; SMT Host state unknown + meltdown: Mitigation of PTI + mmio_stale_data: Unknown: No mitigations + reg_file_data_sampling: Not affected + retbleed: Not affected + spec_rstack_overflow: Not affected + spec_store_bypass: Mitigation of SSB disabled via prctl + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Retpolines; IBPB: conditional; IBRS_FW; STIBP: disabled; RSB filling; PBRSB-eIBRS: Not affected; BHI: Retpoline + srbds: Not affected + tsa: Not affected + tsx_async_abort: Not affected"}</JSON>
+  </System>
+  <Result>
+    <Identifier>pts/sockperf-1.1.0</Identifier>
+    <Title>Sockperf</Title>
+    <AppVersion>3.7</AppVersion>
+    <Arguments>under-load</Arguments>
+    <Description>Test: Latency Under Load</Description>
+    <Scale>usec</Scale>
+    <Proportion>LIB</Proportion>
+    <DisplayFormat>BAR_GRAPH</DisplayFormat>
+    <Data>
+      <Entry>
+        <Identifier>openSUSE Leap 16.0</Identifier>
+        <Value>74.526</Value>
+        <RawString>91.916:74.712:61.652:112.339:62.003:55.086:57.621:57.025:66.667:65.558:71.259:83.916:79.973:70.064:72.111:63.796:80.478:92.767:78.283:70.829:76.654:64.357:77.37:79.023:97.697</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CXX","compiler":"g++","compiler-options":"--param -O3 -rdynamic"},"test-run-times":"9.50:8.23:8.24:8.24:8.24:8.23:8.23:8.23:8.23:8.23:8.23:8.24:8.23:8.24:8.23:8.24:8.24:8.24:8.24:8.24:8.24:8.24:8.24:8.23:8.23"}</JSON>
+      </Entry>
+    </Data>
+  </Result>
+</PhoronixTestSuite>

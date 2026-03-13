@@ -13,9 +13,12 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.10
+# Version: 1.11.0
 #
 # Changelog:
+#   - 2026-03-12: v1.11.0 - Export TEST_RESULTS_IDENTIFIER=$UPLOAD_NAME so PTS
+#                            comparison columns show --result-name instead of
+#                            auto-generated hardware/date labels.
 #   - 2026-03-12: v1.10 - Use batch-install instead of install for PTS test
 #                         installation.  The install command prompts interactively
 #                         for missing external dependencies; under nohup

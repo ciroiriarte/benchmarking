@@ -13,9 +13,12 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.6
+# Version: 2.7.0
 #
 # Changelog:
+#   - 2026-03-12: v2.7.0 - Export TEST_RESULTS_IDENTIFIER=$UPLOAD_NAME so PTS
+#                           comparison columns show --result-name instead of
+#                           auto-generated hardware/date labels.
 #   - 2026-03-12: v2.6 - Switch RunAllTestCombinations from N to Y to work
 #                        around PTS v10.8.4 PHP Fatal error (array_keys() on
 #                        null $option_names) that crashes tests with multiple

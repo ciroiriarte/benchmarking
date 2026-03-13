@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script Name: install-pts.sh
-# Version: 1.4
+# Version: 1.5.0
 #
 # Shared library for installing the Phoronix Test Suite and system-level
 # build dependencies.  Sourced (not executed) by the benchmark-*-pts.sh
@@ -12,6 +12,9 @@
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
 #
 # Changelog:
+#   - 2026-03-12: v1.5.0 - Fix batch-setup comment: answer #4
+#                          (PromptForTestIdentifier) uses TEST_RESULTS_IDENTIFIER
+#                          env var, not TEST_RESULTS_NAME.
 #   - 2026-03-12: v1.4 - Refactor openSUSE PTS install: install build tools and
 #                        PHP deps from standard repos first, then attempt PTS from
 #                        the benchmark repo.  When the benchmark repo is unreachable

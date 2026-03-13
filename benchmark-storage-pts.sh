@@ -8,9 +8,12 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 3.9
+# Version: 3.10.0
 #
 # Changelog:
+#   - 2026-03-12: v3.10.0 - Export TEST_RESULTS_IDENTIFIER=$UPLOAD_NAME so PTS
+#                            comparison columns show --result-name instead of
+#                            auto-generated hardware/date labels.
 #   - 2026-03-12: v3.9 - Use batch-install instead of install for PTS test
 #                        installation to prevent interactive dependency prompts
 #                        that hang under nohup (stdin=/dev/null).

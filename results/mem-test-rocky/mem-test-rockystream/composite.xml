@@ -3,7 +3,7 @@
 <PhoronixTestSuite>
   <Generated>
     <Title>mem-test-rocky_stream</Title>
-    <LastModified>2026-03-12 05:58:34</LastModified>
+    <LastModified>2026-03-12 19:05:04</LastModified>
     <TestClient>Phoronix Test Suite v10.8.4</TestClient>
     <Description>KVM testing on Rocky Linux 9.7 via the Phoronix Test Suite.</Description>
   </Generated>
@@ -12,7 +12,7 @@
     <Hardware>Processor: Intel Xeon E5-2680 v2 (8 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Memory: 1 x 16 GB RAM QEMU, Disk: 21GB QEMU HDD</Hardware>
     <Software>OS: Rocky Linux 9.7, Kernel: 5.14.0-611.5.1.el9_7.x86_64 (x86_64), Compiler: GCC 11.5.0 20240719, File-System: xfs, System Layer: KVM</Software>
     <User>root</User>
-    <TimeStamp>2026-03-12 05:45:49</TimeStamp>
+    <TimeStamp>2026-03-12 18:29:04</TimeStamp>
     <TestClientVersion>10.8.4</TestClientVersion>
     <Notes></Notes>
     <JSON>{"compiler-configuration":"--build=x86_64-redhat-linux --disable-libunwind-exceptions --enable-__cxa_atexit --enable-bootstrap --enable-cet --enable-checking=release --enable-gnu-indirect-function --enable-gnu-unique-object --enable-host-bind-now --enable-host-pie --enable-initfini-array --enable-languages=c,c++,fortran,lto --enable-link-serialization=1 --enable-multilib --enable-offload-targets=nvptx-none --enable-plugin --enable-shared --enable-threads=posix --mandir=\/usr\/share\/man --with-arch_32=x86-64 --with-arch_64=x86-64-v2 --with-build-config=bootstrap-lto --with-gcc-major-version-only --with-linker-hash-style=gnu --with-tune=generic --without-cuda-driver --without-isl","cpu-microcode":"0x42d","kernel-extra-details":"Transparent Huge Pages: always","security":"SELinux + gather_data_sampling: Not affected + indirect_target_selection: Not affected + itlb_multihit: Not affected + l1tf: Mitigation of PTE Inversion; VMX: flush not necessary SMT disabled + mds: Vulnerable: Clear buffers attempted no microcode; SMT Host state unknown + meltdown: Mitigation of PTI + mmio_stale_data: Unknown: No mitigations + reg_file_data_sampling: Not affected + retbleed: Not affected + spec_rstack_overflow: Not affected + spec_store_bypass: Mitigation of SSB disabled via prctl + spectre_v1: Mitigation of usercopy\/swapgs barriers and __user pointer sanitization + spectre_v2: Mitigation of Retpolines; IBPB: conditional; IBRS_FW; STIBP: disabled; RSB filling; PBRSB-eIBRS: Not affected; BHI: Retpoline + srbds: Not affected + tsa: Not affected + tsx_async_abort: Not affected"}</JSON>
@@ -29,9 +29,9 @@
     <Data>
       <Entry>
         <Identifier>1 x 16 GB RAM QEMU</Identifier>
-        <Value>29968.3</Value>
-        <RawString>21558.1:36995.8:26134.9:26701.8:28430.8:28716.1:29049.2:36200.7:32941.4:34295.7:32254.7:32138.9:32795.5:28102.2:26107.5:26222.2:26048.8:25839.3:27242.5:27046.6:26352.6:27809.2:37799.9:38609.1:33813.6</RawString>
-        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native -fopenmp"},"test-run-times":"37.59:33.31:27.46:27.26:26.75:26.15:26.04:21.90:22.46:23.11:23.18:26.59:24.55:26.53:26.73:26.60:26.86:27.32:26.26:26.70:26.61:26.41:26.53:23.31:22.41"}</JSON>
+        <Value>18456.8</Value>
+        <RawString>23581.1:19268:18653.2:19992.5:12683.4:13906.9:17787.7:18695.5:13984.2:15865.3:18402.6:17801.3:17635.1:17240.1:19030.1:17718.7:19167.6:20001:20414.9:19648.6:20501.8:19904.5:18959.8:20832.3:19744.3</RawString>
+        <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native -fopenmp"},"test-run-times":"62.56:89.29:83.98:84.02:88.79:88.62:88.49:81.60:82.02:80.43:84.97:87.55:86.11:85.59:84.64:79.96:80.86:84.38:77.65:73.31:79.69:72.05:84.09:80.19:82.68"}</JSON>
       </Entry>
     </Data>
   </Result>
@@ -47,8 +47,8 @@
     <Data>
       <Entry>
         <Identifier>1 x 16 GB RAM QEMU</Identifier>
-        <Value>28654.2</Value>
-        <RawString>22832.4:30630.2:30059.8:30070.1:29678.6</RawString>
+        <Value>16462.1</Value>
+        <RawString>24198.8:14997.8:15075.2:14806.9:13231.9</RawString>
         <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native -fopenmp"}}</JSON>
       </Entry>
     </Data>
@@ -65,8 +65,8 @@
     <Data>
       <Entry>
         <Identifier>1 x 16 GB RAM QEMU</Identifier>
-        <Value>30763.2</Value>
-        <RawString>24883.4:32245.9:32122.1:32472.9:32091.5</RawString>
+        <Value>17927.3</Value>
+        <RawString>27088.1:16308.6:16510.6:16749.1:12980.1</RawString>
         <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native -fopenmp"}}</JSON>
       </Entry>
     </Data>
@@ -83,8 +83,8 @@
     <Data>
       <Entry>
         <Identifier>1 x 16 GB RAM QEMU</Identifier>
-        <Value>31684.4</Value>
-        <RawString>25206.9:33464.4:32693.5:33484.9:33572.1</RawString>
+        <Value>17783.1</Value>
+        <RawString>25539.5:16320.9:15899.5:17210.8:13944.7</RawString>
         <JSON>{"compiler-options":{"compiler-type":"CC","compiler":"gcc","compiler-options":"-O3 -march=native -fopenmp"}}</JSON>
       </Entry>
     </Data>

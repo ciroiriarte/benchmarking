@@ -1,0 +1,104 @@
+
+mem-test-opensuse_ramspeed
+KVM testing on openSUSE Leap 16.0 via the Phoronix Test Suite.
+
+
+openSUSE 16.0: 
+
+	Processor: Intel Xeon E5-2680 v2 (8 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Memory: 1 x 16 GB RAM QEMU, Disk: 21GB QEMU HDD
+
+	OS: openSUSE Leap 16.0, Kernel: 6.12.0-160000.5-default (x86_64), Compiler: GCC 15.2.0, File-System: xfs, System Layer: KVM
+
+Rocky Linux 9: 
+
+	Processor: Intel Xeon E5-2680 v2 (8 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Memory: 1 x 16 GB RAM QEMU, Disk: 21GB QEMU HDD
+
+	OS: Rocky Linux 9.7, Kernel: 5.14.0-611.5.1.el9_7.x86_64 (x86_64), Compiler: GCC 11.5.0 20240719, File-System: xfs, System Layer: KVM
+
+Ubuntu 24.04: 
+
+	Processor: Intel Xeon E5-2680 v2 (8 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Chipset: Intel 82G33/G31/P35/P31 + ICH9, Memory: 1 x 16 GB RAM QEMU, Disk: 21GB QEMU HDD, Audio: Intel 82801I, Network: Red Hat Virtio device
+
+	OS: Ubuntu 24.04, Kernel: 6.8.0-101-generic (x86_64), Compiler: GCC 13.3.0, File-System: ext4, System Layer: KVM
+
+
+RAMspeed SMP 3.5.0
+Type: Add - Benchmark: Integer
+[3mMB/s > Higher Is Better[0m
+openSUSE 16.0 . 13793.15 |======================================================
+Rocky Linux 9 . 8502.25  |=================================
+Ubuntu 24.04 .. 8453.12  |=================================
+
+
+RAMspeed SMP 3.5.0
+Type: Copy - Benchmark: Integer
+[3mMB/s > Higher Is Better[0m
+openSUSE 16.0 . 13367.36 |======================================================
+Rocky Linux 9 . 8105.11  |=================================
+Ubuntu 24.04 .. 7506.49  |==============================
+
+
+RAMspeed SMP 3.5.0
+Type: Scale - Benchmark: Integer
+[3mMB/s > Higher Is Better[0m
+openSUSE 16.0 . 13919.59 |======================================================
+Rocky Linux 9 . 8736.46  |==================================
+Ubuntu 24.04 .. 9043.33  |===================================
+
+
+RAMspeed SMP 3.5.0
+Type: Triad - Benchmark: Integer
+[3mMB/s > Higher Is Better[0m
+openSUSE 16.0 . 15228.77 |======================================================
+Rocky Linux 9 . 10620.12 |======================================
+Ubuntu 24.04 .. 10505.80 |=====================================
+
+
+RAMspeed SMP 3.5.0
+Type: Average - Benchmark: Integer
+[3mMB/s > Higher Is Better[0m
+openSUSE 16.0 . 15200.34 |======================================================
+Rocky Linux 9 . 9396.67  |=================================
+Ubuntu 24.04 .. 10230.66 |====================================
+
+
+RAMspeed SMP 3.5.0
+Type: Add - Benchmark: Floating Point
+[3mMB/s > Higher Is Better[0m
+openSUSE 16.0 . 15649.96 |======================================================
+Rocky Linux 9 . 9549.60  |=================================
+Ubuntu 24.04 .. 10140.21 |===================================
+
+
+RAMspeed SMP 3.5.0
+Type: Copy - Benchmark: Floating Point
+[3mMB/s > Higher Is Better[0m
+openSUSE 16.0 . 14267.92 |======================================================
+Rocky Linux 9 . 9512.26  |====================================
+Ubuntu 24.04 .. 9058.40  |==================================
+
+
+RAMspeed SMP 3.5.0
+Type: Scale - Benchmark: Floating Point
+[3mMB/s > Higher Is Better[0m
+openSUSE 16.0 . 14311.25 |======================================================
+Rocky Linux 9 . 9634.63  |====================================
+Ubuntu 24.04 .. 8526.23  |================================
+
+
+RAMspeed SMP 3.5.0
+Type: Triad - Benchmark: Floating Point
+[3mMB/s > Higher Is Better[0m
+openSUSE 16.0 . 16135.00 |======================================================
+Rocky Linux 9 . 10051.53 |==================================
+Ubuntu 24.04 .. 8997.43  |==============================
+
+
+RAMspeed SMP 3.5.0
+Type: Average - Benchmark: Floating Point
+[3mMB/s > Higher Is Better[0m
+openSUSE 16.0 . 14484.35 |======================================================
+Rocky Linux 9 . 9413.80  |===================================
+Ubuntu 24.04 .. 9184.08  |==================================
+
+

@@ -19,6 +19,7 @@ Runs on physical machines and virtual machines (vSphere, OpenStack).
 - [benchmark-network-pts.sh](#benchmark-network-ptssh)
 - [benchmark-storage-pts.sh](#benchmark-storage-ptssh)
 - [create-report-pts.sh](#create-report-ptssh)
+  - [Report samples](#report-samples)
 - [Prerequisites](#prerequisites)
 - [OS preparation](#os-preparation)
 - [Virtual machine setup](#virtual-machine-setup)
@@ -596,8 +597,16 @@ ARGUMENTS:
 
 OPTIONS:
   -o, --output-dir <path>  Directory to write reports (default: ./pts-reports/<timestamp>/)
+  -l, --label <dir>=<label>  Assign a friendly label to a run directory.
+                             May be repeated. Overrides auto-detection.
   -h, --help               Show help
 ```
+
+When multiple run directories are supplied, each system gets a label used in
+comparison charts. Labels are auto-detected from the OS field in
+`composite.xml` (e.g. "openSUSE Leap 16.0"), or can be overridden with
+`--label` for clarity. Results with empty values (failed tests) are
+automatically skipped.
 
 ### Result naming
 
@@ -624,6 +633,13 @@ differentiator within a run — not `--result-id`.
 ./create-report-pts.sh \
   ./benchmark-results/node3-baseline/ \
   ./benchmark-results/node3-tuned/
+
+# Cross-distro comparison with explicit labels and output directory
+./create-report-pts.sh -o ./report-samples/memory \
+  --label "results/mem-test-opensuse=openSUSE 16.0" \
+  --label "results/mem-test-rocky=Rocky Linux 9" \
+  --label "results/mem-test-ubuntu=Ubuntu 24.04" \
+  results/mem-test-opensuse results/mem-test-rocky results/mem-test-ubuntu
 
 # Storage — compare disk types within a single run (different disk labels)
 ./benchmark-storage-pts.sh \
@@ -679,11 +695,18 @@ done
 **Step 3 — Generate combined report:**
 
 ```bash
-./create-report-pts.sh \
+./create-report-pts.sh -o ./report-samples/memory \
+  --label "results/mem-test-opensuse=openSUSE 16.0" \
+  --label "results/mem-test-rocky=Rocky Linux 9" \
+  --label "results/mem-test-ubuntu=Ubuntu 24.04" \
   results/mem-test-opensuse/ \
   results/mem-test-rocky/ \
   results/mem-test-ubuntu/
 ```
+
+The `--label` flag maps each run directory to a human-readable name used in
+chart legends and system comparison tables (instead of the default hardware
+identifier like "Intel Xeon E5-2680 v2").
 
 **Resulting directory structure:**
 
@@ -715,6 +738,57 @@ results/
 `create-report-pts.sh` merges same-test results (e.g. all three `*stream/composite.xml`
 files) into a single comparison, making it easy to see how memory bandwidth and latency
 differ across distributions and kernel versions on identical hardware.
+
+### Report samples
+
+The `report-samples/` directory contains pre-generated graphical comparison
+reports (HTML with inline SVG bar charts, PDF, CSV, JSON, text) for all
+benchmark results in the `results/` directory. Each HTML file is
+self-contained and can be opened in any browser.
+
+```
+report-samples/
+├── memory/                  # 4 tests: cachebench, ramspeed, stream, tinymembench
+│   └── cachebench/
+│       ├── cachebench.html  # Bar charts comparing 3 distros
+│       ├── cachebench.pdf
+│       ├── cachebench.csv
+│       ├── cachebench.json
+│       └── cachebench.text
+├── network-peer/            # 8 tests: loopback, netperf×4, sockperf×3
+│   └── netperftcpstream/
+│       └── ...
+└── network-standalone/      # 4 tests: loopback, sockperf×3
+    └── ...
+```
+
+To regenerate all report-samples from the raw results:
+
+```bash
+# Memory benchmarks (3 distros)
+./create-report-pts.sh -o ./report-samples/memory \
+  --label "results/mem-test-opensuse=openSUSE 16.0" \
+  --label "results/mem-test-rocky=Rocky Linux 9" \
+  --label "results/mem-test-ubuntu=Ubuntu 24.04" \
+  results/mem-test-opensuse results/mem-test-rocky results/mem-test-ubuntu
+
+# Network peer benchmarks (3 distros)
+./create-report-pts.sh -o ./report-samples/network-peer \
+  --label "results/peer/net-peer-opensuse16=openSUSE 16.0" \
+  --label "results/peer/net-peer-rocky9=Rocky Linux 9" \
+  --label "results/peer/net-peer-ubuntu2404=Ubuntu 24.04" \
+  results/peer/net-peer-opensuse16 results/peer/net-peer-rocky9 \
+  results/peer/net-peer-ubuntu2404
+
+# Network standalone benchmarks (3 distros)
+./create-report-pts.sh -o ./report-samples/network-standalone \
+  --label "results/standalone/net-standalone-opensuse16=openSUSE 16.0" \
+  --label "results/standalone/net-standalone-rocky9=Rocky Linux 9" \
+  --label "results/standalone/net-standalone-ubuntu2404=Ubuntu 24.04" \
+  results/standalone/net-standalone-opensuse16 \
+  results/standalone/net-standalone-rocky9 \
+  results/standalone/net-standalone-ubuntu2404
+```
 
 **OpenBenchmarking.org results:**
 

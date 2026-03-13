@@ -18,15 +18,15 @@ BIOS-e820: [mem 0x00000000feffc000-0x00000000feffffff] reserved
 BIOS-e820: [mem 0x0000000100000000-0x000000047fffffff] usable
 NX (Execute Disable) protection: active
 APIC: Static calls initialized
-e820: update [mem 0x7cea4018-0x7cecb457] usable ==> usable
+e820: update [mem 0x7cea3018-0x7ceca457] usable ==> usable
 extended physical RAM map:
 reserve setup_data: [mem 0x0000000000000000-0x000000000002ffff] usable
 reserve setup_data: [mem 0x0000000000030000-0x000000000004ffff] reserved
 reserve setup_data: [mem 0x0000000000050000-0x000000000009efff] usable
 reserve setup_data: [mem 0x000000000009f000-0x000000000009ffff] reserved
-reserve setup_data: [mem 0x0000000000100000-0x000000007cea4017] usable
-reserve setup_data: [mem 0x000000007cea4018-0x000000007cecb457] usable
-reserve setup_data: [mem 0x000000007cecb458-0x000000007e8ebfff] usable
+reserve setup_data: [mem 0x0000000000100000-0x000000007cea3017] usable
+reserve setup_data: [mem 0x000000007cea3018-0x000000007ceca457] usable
+reserve setup_data: [mem 0x000000007ceca458-0x000000007e8ebfff] usable
 reserve setup_data: [mem 0x000000007e8ec000-0x000000007eb6bfff] reserved
 reserve setup_data: [mem 0x000000007eb6c000-0x000000007eb7dfff] ACPI data
 reserve setup_data: [mem 0x000000007eb7e000-0x000000007ebfdfff] ACPI NVS
@@ -38,13 +38,13 @@ reserve setup_data: [mem 0x00000000e0000000-0x00000000efffffff] reserved
 reserve setup_data: [mem 0x00000000feffc000-0x00000000feffffff] reserved
 reserve setup_data: [mem 0x0000000100000000-0x000000047fffffff] usable
 efi: EFI v2.7 by Proxmox distribution of EDK II
-efi: SMBIOS=0x7e9d4000 ACPI=0x7eb7d000 ACPI 2.0=0x7eb7d014 MEMATTR=0x7cf1b018 MOKvar=0x7e980000 RNG=0x7eb6f018 
+efi: SMBIOS=0x7e9d4000 ACPI=0x7eb7d000 ACPI 2.0=0x7eb7d014 MEMATTR=0x7cf0b518 MOKvar=0x7e980000 RNG=0x7eb6f018 
 secureboot: Secure boot disabled
 SMBIOS 2.8 present.
 DMI: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 4.2025.05-2 11/13/2025
 Hypervisor detected: KVM
 kvm-clock: Using msrs 4b564d01 and 4b564d00
-kvm-clock: using sched offset of 9703244058 cycles
+kvm-clock: using sched offset of 24823094044 cycles
 clocksource: kvm-clock: mask: 0xffffffffffffffff max_cycles: 0x1cd42e4dffb, max_idle_ns: 881590591483 ns
 tsc: Detected 2793.268 MHz processor
 e820: update [mem 0x00000000-0x00000fff] usable ==> reserved
@@ -55,19 +55,19 @@ x86/PAT: Configuration [0-7]: WB  WC  UC- UC  WB  WP  UC- WT
 last_pfn = 0x7f000 max_arch_pfn = 0x400000000
 Using GB pages for direct mapping
 secureboot: Secure boot disabled
-RAMDISK: [mem 0x6fdd3000-0x74c46fff]
+RAMDISK: [mem 0x70017000-0x74b46fff]
 ACPI: Early table checksum verification disabled
 ACPI: RSDP 0x000000007EB7D014 000024 (v02 BOCHS )
 ACPI: XSDT 0x000000007EB7C0E8 00004C (v01 BOCHS  BXPC     00000001      01000013)
 ACPI: FACP 0x000000007EB74000 0000F4 (v03 BOCHS  BXPC     00000001 BXPC 00000001)
-ACPI: DSDT 0x000000007EB75000 0069B3 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+ACPI: DSDT 0x000000007EB75000 0069B9 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
 ACPI: FACS 0x000000007EBDB000 000040
 ACPI: APIC 0x000000007EB73000 0000B0 (v03 BOCHS  BXPC     00000001 BXPC 00000001)
 ACPI: SSDT 0x000000007EB72000 0000CA (v01 BOCHS  VMGENID  00000001 BXPC 00000001)
 ACPI: MCFG 0x000000007EB71000 00003C (v01 BOCHS  BXPC     00000001 BXPC 00000001)
 ACPI: WAET 0x000000007EB70000 000028 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
 ACPI: Reserving FACP table memory at [mem 0x7eb74000-0x7eb740f3]
-ACPI: Reserving DSDT table memory at [mem 0x7eb75000-0x7eb7b9b2]
+ACPI: Reserving DSDT table memory at [mem 0x7eb75000-0x7eb7b9b8]
 ACPI: Reserving FACS table memory at [mem 0x7ebdb000-0x7ebdb03f]
 ACPI: Reserving APIC table memory at [mem 0x7eb73000-0x7eb730af]
 ACPI: Reserving SSDT table memory at [mem 0x7eb72000-0x7eb720c9]
@@ -76,7 +76,7 @@ ACPI: Reserving WAET table memory at [mem 0x7eb70000-0x7eb70027]
 No NUMA configuration found
 Faking a node at [mem 0x0000000000000000-0x000000047fffffff]
 NODE_DATA(0) allocated [mem 0x47ffd5000-0x47fffffff]
-crashkernel reserved: 0x000000005f000000 - 0x000000006f000000 (256 MB)
+crashkernel reserved: 0x0000000060000000 - 0x0000000070000000 (256 MB)
 Zone ranges:
   DMA      [mem 0x0000000000001000-0x0000000000ffffff]
   DMA32    [mem 0x0000000001000000-0x00000000ffffffff]
@@ -121,8 +121,8 @@ PM: hibernation: Registered nosave memory: [mem 0x00000000-0x00000fff]
 PM: hibernation: Registered nosave memory: [mem 0x00030000-0x0004ffff]
 PM: hibernation: Registered nosave memory: [mem 0x0009f000-0x0009ffff]
 PM: hibernation: Registered nosave memory: [mem 0x000a0000-0x000fffff]
-PM: hibernation: Registered nosave memory: [mem 0x7cea4000-0x7cea4fff]
-PM: hibernation: Registered nosave memory: [mem 0x7cecb000-0x7cecbfff]
+PM: hibernation: Registered nosave memory: [mem 0x7cea3000-0x7cea3fff]
+PM: hibernation: Registered nosave memory: [mem 0x7ceca000-0x7cecafff]
 PM: hibernation: Registered nosave memory: [mem 0x7e8ec000-0x7eb6bfff]
 PM: hibernation: Registered nosave memory: [mem 0x7eb6c000-0x7eb7dfff]
 PM: hibernation: Registered nosave memory: [mem 0x7eb7e000-0x7ebfdfff]
@@ -224,8 +224,8 @@ smpboot: x86: Booting SMP configuration:
 .... node  #0, CPUs:      #1 #2 #3 #4 #5 #6 #7
 smp: Brought up 1 node, 8 CPUs
 smpboot: Total of 8 processors activated (44692.28 BogoMIPS)
-node 0 deferred pages initialised in 21ms
-Memory: 15996760K/16757160K available (16384K kernel code, 5783K rwdata, 13988K rodata, 4068K init, 7312K bss, 754152K reserved, 0K cma-reserved)
+node 0 deferred pages initialised in 35ms
+Memory: 15999752K/16757160K available (16384K kernel code, 5783K rwdata, 13988K rodata, 4068K init, 7312K bss, 750808K reserved, 0K cma-reserved)
 devtmpfs: initialized
 x86/mm: Memory block size: 128MB
 ACPI: PM: Registering ACPI NVS region [mem 0x7eb7e000-0x7ebfdfff] (524288 bytes)
@@ -238,10 +238,10 @@ DMA: preallocated 2048 KiB GFP_KERNEL pool for atomic allocations
 DMA: preallocated 2048 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
 DMA: preallocated 2048 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
 audit: initializing netlink subsys (disabled)
-audit: type=2000 audit(1773273881.569:1): state=initialized audit_enabled=0 res=1
 thermal_sys: Registered thermal governor 'fair_share'
 thermal_sys: Registered thermal governor 'step_wise'
 thermal_sys: Registered thermal governor 'user_space'
+audit: type=2000 audit(1773338963.283:1): state=initialized audit_enabled=0 res=1
 cpuidle: using governor menu
 acpiphp: ACPI Hot Plug PCI Controller Driver version: 0.5
 PCI: ECAM [mem 0xe0000000-0xefffffff] (base 0xe0000000) for domain 0000 [bus 00-ff]
@@ -399,13 +399,13 @@ pci 0000:00:1e.0:   bridge window [mem 0x80000000-0xdfffffff window] (subtractiv
 pci 0000:00:1e.0:   bridge window [mem 0xf0000000-0xfebfffff window] (subtractive decode)
 pci 0000:00:1e.0:   bridge window [mem 0x380000000000-0x383fffffffff window] (subtractive decode)
 pci_bus 0000:06: extended config space not accessible
+acpiphp: Slot [3] registered
 acpiphp: Slot [5-2] registered
 acpiphp: Slot [8-2] registered
 acpiphp: Slot [18-2] registered
 acpiphp: Slot [0-6] registered
 acpiphp: Slot [1] registered
 acpiphp: Slot [2] registered
-acpiphp: Slot [3] registered
 acpiphp: Slot [4] registered
 acpiphp: Slot [6-2] registered
 acpiphp: Slot [7-2] registered
@@ -431,6 +431,10 @@ acpiphp: Slot [28-2] registered
 acpiphp: Slot [29-2] registered
 acpiphp: Slot [30-2] registered
 acpiphp: Slot [31-2] registered
+pci 0000:06:03.0: [1af4:1002] type 00 class 0x00ff00 conventional PCI endpoint
+pci 0000:06:03.0: BAR 0 [io  0x60c0-0x60ff]
+pci 0000:06:03.0: BAR 1 [mem 0x80603000-0x80603fff]
+pci 0000:06:03.0: BAR 4 [mem 0x38380000c000-0x38380000ffff 64bit pref]
 pci 0000:06:05.0: [1af4:1004] type 00 class 0x010000 conventional PCI endpoint
 pci 0000:06:05.0: BAR 0 [io  0x6080-0x60bf]
 pci 0000:06:05.0: BAR 1 [mem 0x80602000-0x80602fff]
@@ -582,7 +586,7 @@ NetLabel:  unlabeled traffic allowed by default
 PCI: Using ACPI for IRQ routing
 PCI: pci_cache_line_size set to 64 bytes
 e820: reserve RAM buffer [mem 0x0009f000-0x0009ffff]
-e820: reserve RAM buffer [mem 0x7cea4018-0x7fffffff]
+e820: reserve RAM buffer [mem 0x7cea3018-0x7fffffff]
 e820: reserve RAM buffer [mem 0x7e8ec000-0x7fffffff]
 e820: reserve RAM buffer [mem 0x7ef9a000-0x7fffffff]
 e820: reserve RAM buffer [mem 0x7f000000-0x7fffffff]
@@ -701,7 +705,7 @@ workingset: timestamp_bits=36 max_order=22 bucket_order=0
 zbud: loaded
 integrity: Platform Keyring initialized
 integrity: Machine keyring initialized
-Freeing initrd memory: 80336K
+Freeing initrd memory: 76992K
 NET: Registered PF_ALG protocol family
 xor: automatically using best checksumming function   avx       
 Key type asymmetric registered
@@ -744,28 +748,28 @@ rdac: device handler registered
 hp_sw: device handler registered
 emc: device handler registered
 alua: device handler registered
-ehci-pci 0000:00:1d.7: EHCI Host Controller
-ehci-pci 0000:00:1d.7: new USB bus registered, assigned bus number 1
-ehci-pci 0000:00:1d.7: irq 19, io mem 0x81245000
-ehci-pci 0000:00:1d.7: USB 2.0 started, EHCI 1.00
-usb usb1: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice= 5.14
-usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
-usb usb1: Product: EHCI Host Controller
-usb usb1: Manufacturer: Linux 5.14.0-611.5.1.el9_7.x86_64 ehci_hcd
-usb usb1: SerialNumber: 0000:00:1d.7
-hub 1-0:1.0: USB hub found
-hub 1-0:1.0: 6 ports detected
 uhci_hcd 0000:00:1a.0: UHCI Host Controller
-uhci_hcd 0000:00:1a.0: new USB bus registered, assigned bus number 2
+uhci_hcd 0000:00:1a.0: new USB bus registered, assigned bus number 1
 uhci_hcd 0000:00:1a.0: detected 2 ports
 uhci_hcd 0000:00:1a.0: irq 16, io port 0x00007100
-usb usb2: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 5.14
+usb usb1: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 5.14
+usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+usb usb1: Product: UHCI Host Controller
+usb usb1: Manufacturer: Linux 5.14.0-611.5.1.el9_7.x86_64 uhci_hcd
+usb usb1: SerialNumber: 0000:00:1a.0
+hub 1-0:1.0: USB hub found
+hub 1-0:1.0: 2 ports detected
+ehci-pci 0000:00:1d.7: EHCI Host Controller
+ehci-pci 0000:00:1d.7: new USB bus registered, assigned bus number 2
+ehci-pci 0000:00:1d.7: irq 19, io mem 0x81245000
+ehci-pci 0000:00:1d.7: USB 2.0 started, EHCI 1.00
+usb usb2: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice= 5.14
 usb usb2: New USB device strings: Mfr=3, Product=2, SerialNumber=1
-usb usb2: Product: UHCI Host Controller
-usb usb2: Manufacturer: Linux 5.14.0-611.5.1.el9_7.x86_64 uhci_hcd
-usb usb2: SerialNumber: 0000:00:1a.0
+usb usb2: Product: EHCI Host Controller
+usb usb2: Manufacturer: Linux 5.14.0-611.5.1.el9_7.x86_64 ehci_hcd
+usb usb2: SerialNumber: 0000:00:1d.7
 hub 2-0:1.0: USB hub found
-hub 2-0:1.0: 2 ports detected
+hub 2-0:1.0: 6 ports detected
 ehci-pci 0000:00:1a.7: EHCI Host Controller
 ehci-pci 0000:00:1a.7: new USB bus registered, assigned bus number 3
 ehci-pci 0000:00:1a.7: irq 19, io mem 0x8124a000
@@ -777,8 +781,8 @@ usb usb3: Manufacturer: Linux 5.14.0-611.5.1.el9_7.x86_64 ehci_hcd
 usb usb3: SerialNumber: 0000:00:1a.7
 hub 3-0:1.0: USB hub found
 hub 3-0:1.0: 6 ports detected
-hub 2-0:1.0: USB hub found
-hub 2-0:1.0: 2 ports detected
+hub 1-0:1.0: USB hub found
+hub 1-0:1.0: 2 ports detected
 uhci_hcd 0000:00:1a.1: UHCI Host Controller
 uhci_hcd 0000:00:1a.1: new USB bus registered, assigned bus number 4
 uhci_hcd 0000:00:1a.1: detected 2 ports
@@ -839,15 +843,15 @@ i8042: PNP: PS/2 Controller [PNP0303:KBD,PNP0f13:MOU] at 0x60,0x64 irq 1,12
 serio: i8042 KBD port at 0x60,0x64 irq 1
 serio: i8042 AUX port at 0x60,0x64 irq 12
 mousedev: PS/2 mouse device common for all mice
-input: AT Translated Set 2 keyboard as /devices/platform/i8042/serio0/input/input1
 rtc_cmos 00:03: RTC can wake from S4
-input: VirtualPS/2 VMware VMMouse as /devices/platform/i8042/serio1/input/input4
 rtc_cmos 00:03: registered as rtc0
-input: VirtualPS/2 VMware VMMouse as /devices/platform/i8042/serio1/input/input3
-rtc_cmos 00:03: setting system clock to 2026-03-12T00:04:41 UTC (1773273881)
+rtc_cmos 00:03: setting system clock to 2026-03-12T18:09:24 UTC (1773338964)
 rtc_cmos 00:03: alarms up to one day, y3k, 242 bytes nvram
 intel_pstate: CPU model not supported
+input: AT Translated Set 2 keyboard as /devices/platform/i8042/serio0/input/input1
 EFI Variables Facility v0.08 2004-May-17
+input: VirtualPS/2 VMware VMMouse as /devices/platform/i8042/serio1/input/input4
+input: VirtualPS/2 VMware VMMouse as /devices/platform/i8042/serio1/input/input3
 hid: raw HID events driver (C) Jiri Kosina
 usbcore: registered new interface driver usbhid
 usbhid: USB HID core driver
@@ -860,7 +864,7 @@ mpls_gso: MPLS GSO support
 IPI shorthand broadcast: enabled
 AVX version of gcm_enc/dec engaged.
 AES CTR mode by8 optimization enabled
-sched_clock: Marking stable (1188024572, 316240480)->(1821807290, -317542238)
+sched_clock: Marking stable (3181159661, 439141541)->(4270649118, -650347916)
 registered taskstats version 1
 Loading compiled-in X.509 certificates
 Loaded X.509 cert 'Rocky kernel signing key: fa6cbcb3dc0861ff64dac87fb1f9dc9ed3234237'
@@ -939,11 +943,13 @@ systemd[1]: Starting Create System Users...
 systemd[1]: Starting Setup Virtual Console...
 systemd[1]: Finished Create List of Static Device Nodes.
 systemd[1]: Finished Load Kernel Modules.
+systemd[1]: Finished Setup Virtual Console.
+systemd[1]: dracut ask for additional cmdline parameters was skipped because no trigger condition checks were met.
+systemd[1]: Starting dracut cmdline hook...
 systemd[1]: Starting Apply Kernel Variables...
-systemd[1]: Finished Create System Users.
 systemd[1]: Finished Apply Kernel Variables.
+systemd[1]: Finished Create System Users.
 systemd[1]: Starting Create Static Device Nodes in /dev...
-systemd[1]: Finished Create Static Device Nodes in /dev.
 systemd[1]: Started Journal Service.
 device-mapper: core: CONFIG_IMA_DISABLE_HTABLE is disabled. Duplicate IMA measurements will not be recorded in the IMA log.
 device-mapper: uevent: version 1.0.3
@@ -953,13 +959,26 @@ RPC: Registered udp transport module.
 RPC: Registered tcp transport module.
 RPC: Registered tcp-with-tls transport module.
 RPC: Registered tcp NFSv4.1 backchannel transport module.
-libata version 3.00 loaded.
 scsi host0: Virtio SCSI HBA
 scsi 0:0:0:0: Direct-Access     QEMU     QEMU HARDDISK    2.5+ PQ: 0 ANSI: 5
+libata version 3.00 loaded.
+scsi 0:0:0:0: Attached scsi generic sg0 type 0
+sd 0:0:0:0: Power-on or device reset occurred
+sd 0:0:0:0: [sda] 41943040 512-byte logical blocks: (21.5 GB/20.0 GiB)
+sd 0:0:0:0: [sda] Write Protect is off
+sd 0:0:0:0: [sda] Mode Sense: 63 00 10 08
+sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, supports DPO and FUA
 ahci 0000:00:1f.2: version 3.0
 ahci 0000:00:1f.2: AHCI vers 0001.0000, 32 command slots, 1.5 Gbps, SATA mode
 ahci 0000:00:1f.2: 6/6 ports implemented (port mask 0x3f)
 ahci 0000:00:1f.2: flags: 64bit ncq only 
+GPT:Primary header thinks Alt. header is not at the end of the disk.
+GPT:20971519 != 41943039
+GPT:Alternate GPT header not at the end of the disk.
+GPT:20971519 != 41943039
+GPT: Use GNU Parted to correct GPT errors.
+ sda: sda1 sda2 sda3 sda4
+sd 0:0:0:0: [sda] Attached SCSI disk
 scsi host1: ahci
 scsi host2: ahci
 scsi host3: ahci
@@ -972,38 +991,25 @@ ata3: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244200 irq 44 lpm-pol 0
 ata4: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244280 irq 44 lpm-pol 0
 ata5: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244300 irq 44 lpm-pol 0
 ata6: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244380 irq 44 lpm-pol 0
-ata2: SATA link up 1.5 Gbps (SStatus 113 SControl 300)
-ata3: SATA link down (SStatus 0 SControl 300)
-ata5: SATA link down (SStatus 0 SControl 300)
 ata4: SATA link down (SStatus 0 SControl 300)
+ata3: SATA link down (SStatus 0 SControl 300)
+ata2: SATA link up 1.5 Gbps (SStatus 113 SControl 300)
 ata6: SATA link down (SStatus 0 SControl 300)
-ata1: SATA link down (SStatus 0 SControl 300)
 ata2.00: ATAPI: QEMU DVD-ROM, 2.5+, max UDMA/100
 ata2.00: applying bridge limits
 ata2.00: configured for UDMA/100
+ata1: SATA link down (SStatus 0 SControl 300)
 scsi 2:0:0:0: CD-ROM            QEMU     QEMU DVD-ROM     2.5+ PQ: 0 ANSI: 5
-scsi 0:0:0:0: Attached scsi generic sg0 type 0
+ata5: SATA link down (SStatus 0 SControl 300)
 scsi 2:0:0:0: Attached scsi generic sg1 type 5
-sd 0:0:0:0: Power-on or device reset occurred
-sd 0:0:0:0: [sda] 41943040 512-byte logical blocks: (21.5 GB/20.0 GiB)
-sd 0:0:0:0: [sda] Write Protect is off
-sd 0:0:0:0: [sda] Mode Sense: 63 00 10 08
-sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, supports DPO and FUA
-GPT:Primary header thinks Alt. header is not at the end of the disk.
-GPT:20971519 != 41943039
-GPT:Alternate GPT header not at the end of the disk.
-GPT:20971519 != 41943039
-GPT: Use GNU Parted to correct GPT errors.
- sda: sda1 sda2 sda3 sda4
-sd 0:0:0:0: [sda] Attached SCSI disk
 sr 2:0:0:0: [sr0] scsi3-mmc drive: 4x/4x cd/rw xa/form2 tray
 cdrom: Uniform CD-ROM driver Revision: 3.20
 sr 2:0:0:0: Attached scsi CD-ROM sr0
 SGI XFS with ACLs, security attributes, scrub, quota, no debug enabled
-XFS (dm-0): Mounting V5 Filesystem cfc6d3b1-da0a-4f73-9a50-f7f887d05c61
-XFS (dm-0): Ending clean mount
-systemd-journald[281]: Received SIGTERM from PID 1 (systemd).
-audit: type=1404 audit(1773273884.609:2): enforcing=1 old_enforcing=0 auid=4294967295 ses=4294967295 enabled=1 old-enabled=1 lsm=selinux res=1
+XFS (sda4): Mounting V5 Filesystem 0dddae77-65d9-4a11-8963-b8bae9a916b7
+XFS (sda4): Ending clean mount
+systemd-journald[284]: Received SIGTERM from PID 1 (systemd).
+audit: type=1404 audit(1773338973.821:2): enforcing=1 old_enforcing=0 auid=4294967295 ses=4294967295 enabled=1 old-enabled=1 lsm=selinux res=1
 SELinux:  policy capability network_peer_controls=1
 SELinux:  policy capability open_perms=1
 SELinux:  policy capability extended_socket_class=1
@@ -1011,14 +1017,14 @@ SELinux:  policy capability always_check_network=0
 SELinux:  policy capability cgroup_seclabel=1
 SELinux:  policy capability nnp_nosuid_transition=1
 SELinux:  policy capability genfs_seclabel_symlinks=1
-audit: type=1403 audit(1773273884.702:3): auid=4294967295 ses=4294967295 lsm=selinux res=1
-systemd[1]: Successfully loaded SELinux policy in 96.271ms.
-systemd[1]: Relabelled /dev, /dev/shm, /run, /sys/fs/cgroup in 45.492ms.
+audit: type=1403 audit(1773338974.064:3): auid=4294967295 ses=4294967295 lsm=selinux res=1
+systemd[1]: Successfully loaded SELinux policy in 251.427ms.
+systemd[1]: Relabelled /dev, /dev/shm, /run, /sys/fs/cgroup in 85.068ms.
 systemd[1]: systemd 252-55.el9_7.2.rocky.0.1 running in system mode (+PAM +AUDIT +SELINUX -APPARMOR +IMA +SMACK +SECCOMP +GCRYPT +GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN -IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 -PWQUALITY +P11KIT -QRENCODE +TPM2 +BZIP2 +LZ4 +XZ +ZLIB +ZSTD -BPF_FRAMEWORK +XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified)
 systemd[1]: Detected virtualization kvm.
 systemd[1]: Detected architecture x86-64.
 systemd[1]: Installed transient /etc/machine-id file.
-systemd-rc-local-generator[727]: /etc/rc.d/rc.local is not marked executable, skipping.
+systemd-rc-local-generator[645]: /etc/rc.d/rc.local is not marked executable, skipping.
 systemd[1]: initrd-switch-root.service: Deactivated successfully.
 systemd[1]: Stopped Switch Root.
 systemd[1]: systemd-journald.service: Scheduled restart job, restart counter is at 1.
@@ -1039,8 +1045,6 @@ systemd[1]: Reached target rpc_pipefs.target.
 systemd[1]: Reached target Slice Units.
 systemd[1]: Reached target Swaps.
 systemd[1]: Reached target Local Verity Protected Volumes.
-systemd[1]: Listening on Device-mapper event daemon FIFOs.
-systemd[1]: Listening on LVM2 poll daemon socket.
 systemd[1]: Listening on RPCbind Server Activation Socket.
 systemd[1]: Reached target RPC Port Mapper.
 systemd[1]: Listening on Process Core Dump Socket.
@@ -1053,16 +1057,15 @@ systemd[1]: Mounting Kernel Debug File System...
 systemd[1]: Mounting Kernel Trace File System...
 systemd[1]: Kernel Module supporting RPCSEC_GSS was skipped because of an unmet condition check (ConditionPathExists=/etc/krb5.keytab).
 systemd[1]: Starting Create List of Static Device Nodes...
-systemd[1]: Starting Monitoring of LVM2 mirrors, snapshots etc. using dmeventd or progress polling...
 systemd[1]: Starting Load Kernel Module configfs...
 systemd[1]: Starting Load Kernel Module drm...
 systemd[1]: Starting Load Kernel Module efi_pstore...
 systemd[1]: Starting Load Kernel Module fuse...
 systemd[1]: Starting Read and set NIS domainname from /etc/sysconfig/network...
 systemd[1]: Stopped Journal Service.
+fuse: init (API version 7.37)
 systemd[1]: Starting Journal Service...
 systemd[1]: Starting Load Kernel Modules...
-fuse: init (API version 7.37)
 systemd[1]: Starting Generate network units from Kernel command line...
 systemd[1]: TPM2 PCR Machine ID Measurement was skipped because of an unmet condition check (ConditionPathExists=/sys/firmware/efi/efivars/StubPcrKernelImage-4a67b082-0a4c-41cf-b6c7-440b29bb8c4f).
 systemd[1]: Starting Remount Root and Kernel File Systems...
@@ -1070,15 +1073,16 @@ systemd[1]: Repartition Root Disk was skipped because no trigger condition check
 systemd[1]: Starting Coldplug All udev Devices...
 systemd[1]: Started Journal Service.
 ACPI: bus type drm_connector registered
-systemd-journald[767]: Received client request to flush runtime journal.
-XFS (sda3): Mounting V5 Filesystem 88ce174c-296a-46d5-98fc-ca20a792372e
+systemd-journald[684]: Received client request to flush runtime journal.
+XFS (sda3): Mounting V5 Filesystem 85ca011f-1f82-44c5-a2ab-2dfb75665277
+XFS (sda3): Ending clean mount
+lpc_ich 0000:00:1f.0: I/O space for GPIO uninitialized
 input: PC Speaker as /devices/platform/pcspkr/input/input5
+Free page reporting enabled
 i801_smbus 0000:00:1f.3: Enabling SMBus device
 i801_smbus 0000:00:1f.3: SMBus using PCI interrupt
 i2c i2c-0: 1/1 memory slots populated (from DMI)
 i2c i2c-0: Memory type 0x07 not supported yet, not instantiating SPD
-lpc_ich 0000:00:1f.0: I/O space for GPIO uninitialized
-XFS (sda3): Ending clean mount
 RAPL PMU: API unit is 2^-32 Joules, 0 fixed counters, 10737418240 ms ovfl timer
 iTCO_vendor_support: vendor-support=0
 iTCO_wdt iTCO_wdt.1.auto: Found a ICH9 TCO device (Version=2, TCOBASE=0x0660)
@@ -1086,8 +1090,8 @@ iTCO_wdt iTCO_wdt.1.auto: initialized. heartbeat=30 sec (nowayout=0)
 snd_hda_intel 0000:00:1b.0: no codecs found!
 ISO 9660 Extensions: Microsoft Joliet Level 3
 ISO 9660 Extensions: RRIP_1991A
-block dm-0: the capability attribute has been deprecated.
-SELinux:  Converting 379 SID table entries...
+block sda: the capability attribute has been deprecated.
+SELinux:  Converting 364 SID table entries...
 SELinux:  policy capability network_peer_controls=1
 SELinux:  policy capability open_perms=1
 SELinux:  policy capability extended_socket_class=1
@@ -1098,8 +1102,8 @@ SELinux:  policy capability genfs_seclabel_symlinks=1
 systemd[1]: systemd 252-55.el9_7.2.rocky.0.1 running in system mode (+PAM +AUDIT +SELINUX -APPARMOR +IMA +SMACK +SECCOMP +GCRYPT +GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN -IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 -PWQUALITY +P11KIT -QRENCODE +TPM2 +BZIP2 +LZ4 +XZ +ZLIB +ZSTD -BPF_FRAMEWORK +XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified)
 systemd[1]: Detected virtualization kvm.
 systemd[1]: Detected architecture x86-64.
-systemd-rc-local-generator[5704]: /etc/rc.d/rc.local is not marked executable, skipping.
-SELinux:  Converting 389 SID table entries...
+systemd-rc-local-generator[5110]: /etc/rc.d/rc.local is not marked executable, skipping.
+SELinux:  Converting 371 SID table entries...
 SELinux:  policy capability network_peer_controls=1
 SELinux:  policy capability open_perms=1
 SELinux:  policy capability extended_socket_class=1
@@ -1110,28 +1114,29 @@ SELinux:  policy capability genfs_seclabel_symlinks=1
 systemd[1]: systemd 252-55.el9_7.7.rocky.0.1 running in system mode (+PAM +AUDIT +SELINUX -APPARMOR +IMA +SMACK +SECCOMP +GCRYPT +GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN -IPTC +KMOD +LIBCRYPTSETUP +LIBFDISK +PCRE2 -PWQUALITY +P11KIT -QRENCODE +TPM2 +BZIP2 +LZ4 +XZ +ZLIB +ZSTD -BPF_FRAMEWORK +XKBCOMMON +UTMP +SYSVINIT default-hierarchy=unified)
 systemd[1]: Detected virtualization kvm.
 systemd[1]: Detected architecture x86-64.
-systemd-rc-local-generator[6255]: /etc/rc.d/rc.local is not marked executable, skipping.
-systemd-rc-local-generator[6298]: /etc/rc.d/rc.local is not marked executable, skipping.
-systemd-rc-local-generator[8415]: /etc/rc.d/rc.local is not marked executable, skipping.
-systemd-rc-local-generator[8447]: /etc/rc.d/rc.local is not marked executable, skipping.
-systemd-rc-local-generator[8474]: /etc/rc.d/rc.local is not marked executable, skipping.
-systemd-rc-local-generator[8504]: /etc/rc.d/rc.local is not marked executable, skipping.
-systemd-rc-local-generator[8533]: /etc/rc.d/rc.local is not marked executable, skipping.
-systemd-rc-local-generator[8564]: /etc/rc.d/rc.local is not marked executable, skipping.
-systemd-rc-local-generator[50936]: /etc/rc.d/rc.local is not marked executable, skipping.
+systemd-rc-local-generator[5592]: /etc/rc.d/rc.local is not marked executable, skipping.
+systemd-rc-local-generator[7718]: /etc/rc.d/rc.local is not marked executable, skipping.
+systemd-rc-local-generator[7747]: /etc/rc.d/rc.local is not marked executable, skipping.
+systemd-rc-local-generator[7776]: /etc/rc.d/rc.local is not marked executable, skipping.
+systemd-rc-local-generator[7809]: /etc/rc.d/rc.local is not marked executable, skipping.
+systemd-rc-local-generator[7836]: /etc/rc.d/rc.local is not marked executable, skipping.
+systemd-rc-local-generator[49436]: /etc/rc.d/rc.local is not marked executable, skipping.
+systemd-journald[684]: Received SIGTERM from PID 1 (systemd).
 systemd[1]: Stopping Journal Service...
-systemd-journald[767]: Received SIGTERM from PID 1 (systemd).
 systemd[1]: Stopping Rule-based Manager for Device Events and Files...
 systemd[1]: systemd-journald.service: Deactivated successfully.
 systemd[1]: Stopped Journal Service.
-systemd[1]: systemd-journald.service: Consumed 1.734s CPU time.
+systemd[1]: systemd-journald.service: Consumed 4.953s CPU time.
+systemd[1]: qemu-guest-agent.service: Deactivated successfully.
+systemd[1]: Stopped QEMU Guest Agent.
 systemd[1]: systemd-udevd.service: Deactivated successfully.
 systemd[1]: Stopped Rule-based Manager for Device Events and Files.
-systemd[1]: systemd-udevd.service: Consumed 2.367s CPU time.
+systemd[1]: systemd-udevd.service: Consumed 5.659s CPU time.
 systemd[1]: sshd.service: Deactivated successfully.
 systemd[1]: Stopped OpenSSH server daemon.
 systemd[1]: Stopped target sshd-keygen.target.
 systemd[1]: Stopping sshd-keygen.target...
+systemd[1]: Started QEMU Guest Agent.
 systemd[1]: OpenSSH ecdsa Server Key Generation was skipped because of an unmet condition check (ConditionPathExists=!/run/systemd/generator.early/multi-user.target.wants/cloud-init.target).
 systemd[1]: OpenSSH ed25519 Server Key Generation was skipped because of an unmet condition check (ConditionPathExists=!/run/systemd/generator.early/multi-user.target.wants/cloud-init.target).
 systemd[1]: OpenSSH rsa Server Key Generation was skipped because of an unmet condition check (ConditionPathExists=!/run/systemd/generator.early/multi-user.target.wants/cloud-init.target).
@@ -1140,10 +1145,8 @@ systemd[1]: Starting OpenSSH server daemon...
 systemd[1]: Starting Journal Service...
 systemd[1]: Starting Rule-based Manager for Device Events and Files...
 systemd[1]: Started OpenSSH server daemon.
-systemd[1]: qemu-guest-agent.service: Deactivated successfully.
-systemd[1]: Stopped QEMU Guest Agent.
-systemd[1]: Started QEMU Guest Agent.
 systemd[1]: Started Journal Service.
-systemd-rc-local-generator[52052]: /etc/rc.d/rc.local is not marked executable, skipping.
-systemd-rc-local-generator[53712]: /etc/rc.d/rc.local is not marked executable, skipping.
-systemd-rc-local-generator[61172]: /etc/rc.d/rc.local is not marked executable, skipping.
+systemd-rc-local-generator[50735]: /etc/rc.d/rc.local is not marked executable, skipping.
+systemd-rc-local-generator[59425]: /etc/rc.d/rc.local is not marked executable, skipping.
+systemd-rc-local-generator[59578]: /etc/rc.d/rc.local is not marked executable, skipping.
+hrtimer: interrupt took 2024657 ns

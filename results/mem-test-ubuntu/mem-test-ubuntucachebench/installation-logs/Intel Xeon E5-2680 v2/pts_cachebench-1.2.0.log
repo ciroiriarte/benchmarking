@@ -1,0 +1,136 @@
+llcbench/
+llcbench/README
+llcbench/.#sys.def.1.6
+llcbench/doc/
+llcbench/doc/Makefile
+llcbench/doc/blasbench/
+llcbench/doc/blasbench/blasbench.tex
+llcbench/doc/blasbench/blasbench.README
+llcbench/doc/blasbench/Makefile
+llcbench/doc/blasbench/pics/
+llcbench/doc/blasbench/pics/cewes_vdgemv.ps
+llcbench/doc/blasbench/pics/cewes_vdaxpy.ps
+llcbench/doc/blasbench/pics/cewes_vdgemm.ps
+llcbench/doc/blasbench/Version
+llcbench/doc/cachebench/
+llcbench/doc/cachebench/cachebench.tex
+llcbench/doc/cachebench/Makefile
+llcbench/doc/cachebench/pics/
+llcbench/doc/cachebench/pics/cache_cewes_handread.ps
+llcbench/doc/cachebench/pics/cache_cewes_read.ps
+llcbench/doc/cachebench/pics/cache_cewes_handrmw.ps
+llcbench/doc/cachebench/pics/cache_cewes_write.ps
+llcbench/doc/cachebench/pics/cache_cewes_memset.ps
+llcbench/doc/cachebench/pics/cache_cewes_memcpy.ps
+llcbench/doc/cachebench/pics/cache_cewes_handwrite.ps
+llcbench/doc/cachebench/pics/cache_cewes_rmw.ps
+llcbench/doc/cachebench/Version
+llcbench/doc/cachebench/cachebench.README
+llcbench/doc/mpbench/
+llcbench/doc/mpbench/Makefile
+llcbench/doc/mpbench/pics/
+llcbench/doc/mpbench/pics/cewes_mpi_barrier.ps
+llcbench/doc/mpbench/pics/cewes_mpi_allreduce.ps
+llcbench/doc/mpbench/pics/cewes_mpi_broadcast.ps
+llcbench/doc/mpbench/pics/cewes_mpi_roundtrip.ps
+llcbench/doc/mpbench/pics/cewes_mpi_latency.ps
+llcbench/doc/mpbench/pics/cewes_mpi_bandwidth.ps
+llcbench/doc/mpbench/pics/cewes_mpi_reduce.ps
+llcbench/doc/mpbench/mpbench.README
+llcbench/doc/mpbench/mpbench.tex
+llcbench/flushall.c
+llcbench/misc/
+llcbench/misc/errorbars.pl
+llcbench/conf/
+llcbench/conf/sys.solaris
+llcbench/conf/sys.solaris-mpich
+llcbench/conf/sys.ppc
+llcbench/conf/sys.linux-opteron-mpich-acml
+llcbench/conf/sys.default
+llcbench/conf/sys.pow3
+llcbench/conf/sys.o2k
+llcbench/conf/sys.alpha-mpich
+llcbench/conf/sys.linux-lam
+llcbench/conf/sys.linux-mpich-pathscale
+llcbench/conf/sys.pow2
+llcbench/conf/sys.linux-mpich
+llcbench/conf/sys.t3e
+llcbench/conf/sys.ia64-mpich-ecc
+llcbench/conf/.#sys.linux-mpich.1.2
+llcbench/conf/sys.alpha
+llcbench/timer.c
+llcbench/Makefile
+llcbench/blasbench/
+llcbench/blasbench/bb.c
+llcbench/blasbench/Makefile
+llcbench/blasbench/blasgraph.gp
+llcbench/results/
+llcbench/sys.def
+llcbench/CHANGES
+llcbench/www/
+llcbench/www/index.html
+llcbench/www/blasbench.html
+llcbench/www/cachebench.html
+llcbench/www/results/
+llcbench/www/mpbench.html
+llcbench/www/results.html
+llcbench/user.def
+llcbench/llcbench.h
+llcbench/cachebench/
+llcbench/cachebench/cachegraph.gp
+llcbench/cachebench/Makefile
+llcbench/cachebench/cachebench.c
+llcbench/cachebench/scripts/
+llcbench/cachebench/scripts/run_em
+llcbench/mpbench/
+llcbench/mpbench/make_graphs.sh
+llcbench/mpbench/make_templates.sh
+llcbench/mpbench/Makefile
+llcbench/mpbench/lib/
+llcbench/mpbench/lib/allreduce_template.gp
+llcbench/mpbench/lib/bibandwidth_template.gp
+llcbench/mpbench/lib/reduce_template.gp
+llcbench/mpbench/lib/roundtrip_template.gp
+llcbench/mpbench/lib/bandwidth_template.gp
+llcbench/mpbench/lib/broadcast_template.gp
+llcbench/mpbench/lib/alltoall_template.gp
+llcbench/mpbench/lib/latency_template.gp
+llcbench/mpbench/mpbench.c
+llcbench/COPYING
+sed: -e expression #1, char 1: unknown command: `.'
+ln -s conf/sys.linux-mpich sys.def
+cd cachebench; make 
+make[1]: Entering directory '/var/lib/phoronix-test-suite/installed-tests/pts/cachebench-1.2.0/llcbench/cachebench'
+gcc -c -I.. ../flushall.c
+gcc -O3 -Wall -c -I.. ../timer.c
+../timer.c: In function ‘cycles_per_second’:
+../timer.c:42:10: warning: unused variable ‘seconds’ [-Wunused-variable]
+   42 |   double seconds;
+      |          ^~~~~~~
+gcc -O3 -Wall -DUSE_DOUBLE -I.. cachebench.c flushall.o timer.o -lrt -o cachebench
+In file included from cachebench.c:10:
+cachebench.c: In function ‘fake_out_optimizations’:
+cachebench.c:296:12: warning: suggest parentheses around assignment used as truth value [-Wparentheses]
+  296 |     assert(fd=open("/dev/null",O_WRONLY));
+      |            ^~
+cachebench.c: In function ‘do_memory_copy’:
+cachebench.c:712:10: warning: suggest parentheses around assignment used as truth value [-Wparentheses]
+  712 |   assert(y = (void *)malloc(memsize));
+      |          ^
+cachebench.c: In function ‘main’:
+cachebench.c:947:10: warning: suggest parentheses around assignment used as truth value [-Wparentheses]
+  947 |   assert(sizes = (long *)malloc(timeslots*sizeof(long)));
+      |          ^~~~~
+cachebench.c:949:10: warning: suggest parentheses around assignment used as truth value [-Wparentheses]
+  949 |   assert(times = (double *)malloc(timeslots*repeat_count*sizeof(double)));
+      |          ^~~~~
+cachebench.c:951:10: warning: suggest parentheses around assignment used as truth value [-Wparentheses]
+  951 |   assert(bws = (double *)malloc(timeslots*repeat_count*sizeof(double)));
+      |          ^~~
+cachebench.c:953:10: warning: suggest parentheses around assignment used as truth value [-Wparentheses]
+  953 |   assert(percents = (double *)malloc(timeslots*repeat_count*sizeof(double)));
+      |          ^~~~~~~~
+cachebench.c:955:10: warning: suggest parentheses around assignment used as truth value [-Wparentheses]
+  955 |   assert(x = (DATATYPE *)malloc((size_t)memsize));
+      |          ^
+make[1]: Leaving directory '/var/lib/phoronix-test-suite/installed-tests/pts/cachebench-1.2.0/llcbench/cachebench'

@@ -1,0 +1,444 @@
+#####
+1 x 16 GB RAM QEMU - Run 1
+2026-03-13 00:41:50
+#####
+tinymembench v0.4.9 (simple benchmark for memory throughput and latency)
+
+==========================================================================
+== Memory bandwidth tests                                               ==
+==                                                                      ==
+== Note 1: 1MB = 1000000 bytes                                          ==
+== Note 2: Results for 'copy' tests show how many bytes can be          ==
+==         copied per second (adding together read and writen           ==
+==         bytes would have provided twice higher numbers)              ==
+== Note 3: 2-pass copy means that we are using a small temporary buffer ==
+==         to first fetch data into it, and only then write it to the   ==
+==         destination (source -> L1 cache, L1 cache -> destination)    ==
+== Note 4: If sample standard deviation exceeds 0.1%, it is shown in    ==
+==         brackets                                                     ==
+==========================================================================
+
+ C copy backwards                                     :   4634.3 MB/s (9.5%)
+ C copy backwards (32 byte blocks)                    :   4796.4 MB/s (9.4%)
+ C copy backwards (64 byte blocks)                    :   5170.0 MB/s (3.1%)
+ C copy                                               :   5249.2 MB/s (2.4%)
+ C copy prefetched (32 bytes step)                    :   4979.5 MB/s (2.5%)
+ C copy prefetched (64 bytes step)                    :   5164.0 MB/s (3.1%)
+ C 2-pass copy                                        :   4362.4 MB/s (3.2%)
+ C 2-pass copy prefetched (32 bytes step)             :   4596.2 MB/s (3.3%)
+ C 2-pass copy prefetched (64 bytes step)             :   4656.1 MB/s (4.0%)
+ C fill                                               :   7827.9 MB/s (1.9%)
+ C fill (shuffle within 16 byte blocks)               :   7915.8 MB/s (3.5%)
+ C fill (shuffle within 32 byte blocks)               :   7695.0 MB/s (1.8%)
+ C fill (shuffle within 64 byte blocks)               :   7883.5 MB/s (2.2%)
+ ---
+ standard memcpy                                      :   3539.3 MB/s (1.2%)
+ standard memset                                      :   6351.8 MB/s (2.4%)
+ ---
+ MOVSB copy                                           :   4905.2 MB/s (4.2%)
+ MOVSD copy                                           :   4785.7 MB/s (3.7%)
+ SSE2 copy                                            :   5266.2 MB/s (4.0%)
+ SSE2 nontemporal copy                                :   3417.4 MB/s (0.8%)
+ SSE2 copy prefetched (32 bytes step)                 :   5051.9 MB/s (4.5%)
+ SSE2 copy prefetched (64 bytes step)                 :   5101.9 MB/s (3.9%)
+ SSE2 nontemporal copy prefetched (32 bytes step)     :   3488.5 MB/s (1.8%)
+ SSE2 nontemporal copy prefetched (64 bytes step)     :   3544.5 MB/s (1.3%)
+ SSE2 2-pass copy                                     :   4771.8 MB/s (3.0%)
+ SSE2 2-pass copy prefetched (32 bytes step)          :   4748.0 MB/s (3.7%)
+ SSE2 2-pass copy prefetched (64 bytes step)          :   4703.2 MB/s (3.9%)
+ SSE2 2-pass nontemporal copy                         :   1901.0 MB/s (2.7%)
+ SSE2 fill                                            :   8205.3 MB/s (3.5%)
+ SSE2 nontemporal fill                                :   5220.3 MB/s (4.0%)
+
+==========================================================================
+== Memory latency test                                                  ==
+==                                                                      ==
+== Average time is measured for random memory accesses in the buffers   ==
+== of different sizes. The larger is the buffer, the more significant   ==
+== are relative contributions of TLB, L1/L2 cache misses and SDRAM      ==
+== accesses. For extremely large buffer sizes we are expecting to see   ==
+== page table walk with several requests to SDRAM for almost every      ==
+== memory access (though 64MiB is not nearly large enough to experience ==
+== this effect to its fullest).                                         ==
+==                                                                      ==
+== Note 1: All the numbers are representing extra time, which needs to  ==
+==         be added to L1 cache latency. The cycle timings for L1 cache ==
+==         latency can be usually found in the processor documentation. ==
+== Note 2: Dual random read means that we are simultaneously performing ==
+==         two independent memory accesses at a time. In the case if    ==
+==         the memory subsystem can't handle multiple outstanding       ==
+==         requests, dual random read has the same timings as two       ==
+==         single reads performed one after another.                    ==
+==========================================================================
+
+block size : single random read / dual random read, [MADV_NOHUGEPAGE]
+      1024 :    0.0 ns          /     0.0 ns 
+      2048 :    0.0 ns          /     0.2 ns 
+      4096 :    0.1 ns          /     0.2 ns 
+      8192 :    0.0 ns          /     0.1 ns 
+     16384 :    0.1 ns          /     0.6 ns 
+     32768 :    0.7 ns          /     1.0 ns 
+     65536 :    1.2 ns          /     1.6 ns 
+    131072 :    3.0 ns          /     4.2 ns 
+    262144 :    3.9 ns          /     6.1 ns 
+    524288 :    9.2 ns          /    12.2 ns 
+   1048576 :   12.3 ns          /    14.7 ns 
+   2097152 :   14.1 ns          /    16.2 ns 
+   4194304 :   23.4 ns          /    31.9 ns 
+   8388608 :   31.2 ns          /    55.8 ns 
+  16777216 :  117.7 ns          /   147.0 ns 
+  33554432 :  127.7 ns          /   161.8 ns 
+  67108864 :  131.7 ns          /   159.3 ns 
+
+block size : single random read / dual random read, [MADV_HUGEPAGE]
+      1024 :    0.0 ns          /     0.0 ns 
+      2048 :    0.0 ns          /     0.1 ns 
+      4096 :    0.1 ns          /     0.1 ns 
+      8192 :    0.1 ns          /     0.2 ns 
+     16384 :    0.2 ns          /     0.2 ns 
+     32768 :    0.3 ns          /     0.5 ns 
+     65536 :    1.4 ns          /     1.8 ns 
+    131072 :    1.7 ns          /     2.2 ns 
+    262144 :    4.0 ns          /     6.0 ns 
+    524288 :    7.9 ns          /    10.7 ns 
+   1048576 :   12.2 ns          /    14.4 ns 
+   2097152 :   12.1 ns          /    13.7 ns 
+   4194304 :   13.3 ns          /    14.0 ns 
+   8388608 :   52.8 ns          /    63.1 ns 
+  16777216 :   80.7 ns          /    98.8 ns 
+  33554432 :   46.5 ns          /    58.3 ns 
+  67108864 :   65.6 ns          /    85.8 ns 
+
+#####
+1 x 16 GB RAM QEMU - Run 2
+2026-03-13 00:50:13
+#####
+tinymembench v0.4.9 (simple benchmark for memory throughput and latency)
+
+==========================================================================
+== Memory bandwidth tests                                               ==
+==                                                                      ==
+== Note 1: 1MB = 1000000 bytes                                          ==
+== Note 2: Results for 'copy' tests show how many bytes can be          ==
+==         copied per second (adding together read and writen           ==
+==         bytes would have provided twice higher numbers)              ==
+== Note 3: 2-pass copy means that we are using a small temporary buffer ==
+==         to first fetch data into it, and only then write it to the   ==
+==         destination (source -> L1 cache, L1 cache -> destination)    ==
+== Note 4: If sample standard deviation exceeds 0.1%, it is shown in    ==
+==         brackets                                                     ==
+==========================================================================
+
+ C copy backwards                                     :   5263.2 MB/s (2.0%)
+ C copy backwards (32 byte blocks)                    :   5194.1 MB/s (1.4%)
+ C copy backwards (64 byte blocks)                    :   5220.5 MB/s (4.0%)
+ C copy                                               :   5383.2 MB/s (5.2%)
+ C copy prefetched (32 bytes step)                    :   5132.2 MB/s (3.2%)
+ C copy prefetched (64 bytes step)                    :   5057.4 MB/s (3.9%)
+ C 2-pass copy                                        :   4398.4 MB/s (4.7%)
+ C 2-pass copy prefetched (32 bytes step)             :   4539.5 MB/s (3.5%)
+ C 2-pass copy prefetched (64 bytes step)             :   4631.2 MB/s (1.6%)
+ C fill                                               :   8209.0 MB/s (1.8%)
+ C fill (shuffle within 16 byte blocks)               :   7837.2 MB/s (0.4%)
+ C fill (shuffle within 32 byte blocks)               :   7812.3 MB/s (4.4%)
+ C fill (shuffle within 64 byte blocks)               :   8221.7 MB/s (2.6%)
+ ---
+ standard memcpy                                      :   3691.1 MB/s (1.3%)
+ standard memset                                      :   6412.3 MB/s (4.8%)
+ ---
+ MOVSB copy                                           :   4822.7 MB/s (6.0%)
+ MOVSD copy                                           :   4758.8 MB/s (3.7%)
+ SSE2 copy                                            :   5226.6 MB/s (4.0%)
+ SSE2 nontemporal copy                                :   3479.0 MB/s (2.8%)
+ SSE2 copy prefetched (32 bytes step)                 :   5096.5 MB/s (5.0%)
+ SSE2 copy prefetched (64 bytes step)                 :   5120.0 MB/s (4.5%)
+ SSE2 nontemporal copy prefetched (32 bytes step)     :   3485.2 MB/s (0.2%)
+ SSE2 nontemporal copy prefetched (64 bytes step)     :   3575.8 MB/s (0.9%)
+ SSE2 2-pass copy                                     :   4576.6 MB/s (4.3%)
+ SSE2 2-pass copy prefetched (32 bytes step)          :   4605.9 MB/s (4.4%)
+ SSE2 2-pass copy prefetched (64 bytes step)          :   4576.8 MB/s (5.2%)
+ SSE2 2-pass nontemporal copy                         :   1880.7 MB/s (3.4%)
+ SSE2 fill                                            :   7846.4 MB/s (4.8%)
+ SSE2 nontemporal fill                                :   5390.4 MB/s (4.3%)
+
+==========================================================================
+== Memory latency test                                                  ==
+==                                                                      ==
+== Average time is measured for random memory accesses in the buffers   ==
+== of different sizes. The larger is the buffer, the more significant   ==
+== are relative contributions of TLB, L1/L2 cache misses and SDRAM      ==
+== accesses. For extremely large buffer sizes we are expecting to see   ==
+== page table walk with several requests to SDRAM for almost every      ==
+== memory access (though 64MiB is not nearly large enough to experience ==
+== this effect to its fullest).                                         ==
+==                                                                      ==
+== Note 1: All the numbers are representing extra time, which needs to  ==
+==         be added to L1 cache latency. The cycle timings for L1 cache ==
+==         latency can be usually found in the processor documentation. ==
+== Note 2: Dual random read means that we are simultaneously performing ==
+==         two independent memory accesses at a time. In the case if    ==
+==         the memory subsystem can't handle multiple outstanding       ==
+==         requests, dual random read has the same timings as two       ==
+==         single reads performed one after another.                    ==
+==========================================================================
+
+block size : single random read / dual random read, [MADV_NOHUGEPAGE]
+      1024 :    0.2 ns          /     0.2 ns 
+      2048 :    0.0 ns          /     0.0 ns 
+      4096 :    0.0 ns          /     0.0 ns 
+      8192 :    0.0 ns          /     0.0 ns 
+     16384 :    0.0 ns          /     0.2 ns 
+     32768 :    0.1 ns          /     0.1 ns 
+     65536 :    1.3 ns          /     1.6 ns 
+    131072 :    1.9 ns          /     2.2 ns 
+    262144 :    3.4 ns          /     4.6 ns 
+    524288 :    9.1 ns          /    11.8 ns 
+   1048576 :   12.2 ns          /    14.6 ns 
+   2097152 :   14.0 ns          /    17.0 ns 
+   4194304 :   22.2 ns          /    32.3 ns 
+   8388608 :   28.0 ns          /    47.1 ns 
+  16777216 :  118.4 ns          /   144.1 ns 
+  33554432 :  125.8 ns          /   154.6 ns 
+  67108864 :  118.9 ns          /   153.4 ns 
+
+block size : single random read / dual random read, [MADV_HUGEPAGE]
+      1024 :    0.0 ns          /     0.0 ns 
+      2048 :    0.0 ns          /     0.0 ns 
+      4096 :    0.0 ns          /     0.0 ns 
+      8192 :    0.0 ns          /     0.0 ns 
+     16384 :    0.0 ns          /     0.0 ns 
+     32768 :    0.0 ns          /     0.0 ns 
+     65536 :    0.7 ns          /     0.7 ns 
+    131072 :    1.4 ns          /     1.2 ns 
+    262144 :    2.1 ns          /     2.3 ns 
+    524288 :    7.5 ns          /    10.3 ns 
+   1048576 :   10.3 ns          /    12.3 ns 
+   2097152 :   15.8 ns          /    13.7 ns 
+   4194304 :   13.5 ns          /    13.5 ns 
+   8388608 :   59.0 ns          /    73.6 ns 
+  16777216 :   74.8 ns          /    70.4 ns 
+  33554432 :   46.6 ns          /    65.8 ns 
+  67108864 :   66.8 ns          /    83.6 ns 
+
+#####
+1 x 16 GB RAM QEMU - Run 3
+2026-03-13 00:58:38
+#####
+tinymembench v0.4.9 (simple benchmark for memory throughput and latency)
+
+==========================================================================
+== Memory bandwidth tests                                               ==
+==                                                                      ==
+== Note 1: 1MB = 1000000 bytes                                          ==
+== Note 2: Results for 'copy' tests show how many bytes can be          ==
+==         copied per second (adding together read and writen           ==
+==         bytes would have provided twice higher numbers)              ==
+== Note 3: 2-pass copy means that we are using a small temporary buffer ==
+==         to first fetch data into it, and only then write it to the   ==
+==         destination (source -> L1 cache, L1 cache -> destination)    ==
+== Note 4: If sample standard deviation exceeds 0.1%, it is shown in    ==
+==         brackets                                                     ==
+==========================================================================
+
+ C copy backwards                                     :   5097.8 MB/s (4.4%)
+ C copy backwards (32 byte blocks)                    :   5377.2 MB/s (6.0%)
+ C copy backwards (64 byte blocks)                    :   5313.3 MB/s (0.7%)
+ C copy                                               :   5197.6 MB/s (2.5%)
+ C copy prefetched (32 bytes step)                    :   5053.4 MB/s (2.3%)
+ C copy prefetched (64 bytes step)                    :   4952.4 MB/s (4.4%)
+ C 2-pass copy                                        :   4429.9 MB/s (6.1%)
+ C 2-pass copy prefetched (32 bytes step)             :   4227.5 MB/s (1.7%)
+ C 2-pass copy prefetched (64 bytes step)             :   4280.3 MB/s (1.8%)
+ C fill                                               :   8083.5 MB/s (5.7%)
+ C fill (shuffle within 16 byte blocks)               :   8137.9 MB/s (5.2%)
+ C fill (shuffle within 32 byte blocks)               :   8009.3 MB/s (4.8%)
+ C fill (shuffle within 64 byte blocks)               :   7991.3 MB/s (4.0%)
+ ---
+ standard memcpy                                      :   3497.9 MB/s (2.6%)
+ standard memset                                      :   6405.0 MB/s (5.8%)
+ ---
+ MOVSB copy                                           :   4684.1 MB/s (2.7%)
+ MOVSD copy                                           :   4755.4 MB/s (3.3%)
+ SSE2 copy                                            :   5183.1 MB/s (5.7%)
+ SSE2 nontemporal copy                                :   3423.5 MB/s (3.0%)
+ SSE2 copy prefetched (32 bytes step)                 :   5095.7 MB/s (4.2%)
+ SSE2 copy prefetched (64 bytes step)                 :   5074.2 MB/s (4.8%)
+ SSE2 nontemporal copy prefetched (32 bytes step)     :   3491.7 MB/s (3.4%)
+ SSE2 nontemporal copy prefetched (64 bytes step)     :   3567.9 MB/s (2.9%)
+ SSE2 2-pass copy                                     :   4728.5 MB/s (6.7%)
+ SSE2 2-pass copy prefetched (32 bytes step)          :   4721.4 MB/s (5.6%)
+ SSE2 2-pass copy prefetched (64 bytes step)          :   4656.0 MB/s (4.9%)
+ SSE2 2-pass nontemporal copy                         :   1867.4 MB/s (0.7%)
+ SSE2 fill                                            :   7687.5 MB/s (2.1%)
+ SSE2 nontemporal fill                                :   5199.8 MB/s (2.9%)
+
+==========================================================================
+== Memory latency test                                                  ==
+==                                                                      ==
+== Average time is measured for random memory accesses in the buffers   ==
+== of different sizes. The larger is the buffer, the more significant   ==
+== are relative contributions of TLB, L1/L2 cache misses and SDRAM      ==
+== accesses. For extremely large buffer sizes we are expecting to see   ==
+== page table walk with several requests to SDRAM for almost every      ==
+== memory access (though 64MiB is not nearly large enough to experience ==
+== this effect to its fullest).                                         ==
+==                                                                      ==
+== Note 1: All the numbers are representing extra time, which needs to  ==
+==         be added to L1 cache latency. The cycle timings for L1 cache ==
+==         latency can be usually found in the processor documentation. ==
+== Note 2: Dual random read means that we are simultaneously performing ==
+==         two independent memory accesses at a time. In the case if    ==
+==         the memory subsystem can't handle multiple outstanding       ==
+==         requests, dual random read has the same timings as two       ==
+==         single reads performed one after another.                    ==
+==========================================================================
+
+block size : single random read / dual random read, [MADV_NOHUGEPAGE]
+      1024 :    0.0 ns          /     0.0 ns 
+      2048 :    0.0 ns          /     0.0 ns 
+      4096 :    0.1 ns          /     0.0 ns 
+      8192 :    0.0 ns          /     0.0 ns 
+     16384 :    0.0 ns          /     0.0 ns 
+     32768 :    0.1 ns          /     0.0 ns 
+     65536 :    1.1 ns          /     1.4 ns 
+    131072 :    1.8 ns          /     2.0 ns 
+    262144 :    4.5 ns          /     6.1 ns 
+    524288 :    8.9 ns          /    11.9 ns 
+   1048576 :   12.1 ns          /    14.4 ns 
+   2097152 :   16.8 ns          /    17.8 ns 
+   4194304 :   89.5 ns          /   105.6 ns 
+   8388608 :  109.6 ns          /   131.1 ns 
+  16777216 :  114.1 ns          /   147.5 ns 
+  33554432 :  112.2 ns          /   139.2 ns 
+  67108864 :  117.5 ns          /   152.6 ns 
+
+block size : single random read / dual random read, [MADV_HUGEPAGE]
+      1024 :    0.0 ns          /     0.1 ns 
+      2048 :    0.0 ns          /     0.0 ns 
+      4096 :    0.0 ns          /     0.0 ns 
+      8192 :    0.0 ns          /     0.1 ns 
+     16384 :    0.2 ns          /     0.3 ns 
+     32768 :    0.2 ns          /     0.1 ns 
+     65536 :    1.3 ns          /     2.1 ns 
+    131072 :    1.8 ns          /     2.0 ns 
+    262144 :    2.9 ns          /     2.9 ns 
+    524288 :    7.8 ns          /    10.7 ns 
+   1048576 :   10.4 ns          /    12.9 ns 
+   2097152 :   12.0 ns          /    14.0 ns 
+   4194304 :   69.6 ns          /    82.3 ns 
+   8388608 :   15.2 ns          /    14.9 ns 
+  16777216 :   15.7 ns          /    15.2 ns 
+  33554432 :   44.6 ns          /    59.7 ns 
+  67108864 :   67.0 ns          /    84.5 ns 
+
+#####
+1 x 16 GB RAM QEMU - Run 4
+2026-03-13 01:06:00
+#####
+tinymembench v0.4.9 (simple benchmark for memory throughput and latency)
+
+==========================================================================
+== Memory bandwidth tests                                               ==
+==                                                                      ==
+== Note 1: 1MB = 1000000 bytes                                          ==
+== Note 2: Results for 'copy' tests show how many bytes can be          ==
+==         copied per second (adding together read and writen           ==
+==         bytes would have provided twice higher numbers)              ==
+== Note 3: 2-pass copy means that we are using a small temporary buffer ==
+==         to first fetch data into it, and only then write it to the   ==
+==         destination (source -> L1 cache, L1 cache -> destination)    ==
+== Note 4: If sample standard deviation exceeds 0.1%, it is shown in    ==
+==         brackets                                                     ==
+==========================================================================
+
+ C copy backwards                                     :   5316.2 MB/s (3.2%)
+ C copy backwards (32 byte blocks)                    :   5325.7 MB/s (2.6%)
+ C copy backwards (64 byte blocks)                    :   5258.0 MB/s (2.7%)
+ C copy                                               :   5471.7 MB/s (3.5%)
+ C copy prefetched (32 bytes step)                    :   5291.6 MB/s (5.7%)
+ C copy prefetched (64 bytes step)                    :   5210.6 MB/s (4.1%)
+ C 2-pass copy                                        :   4512.8 MB/s (7.5%)
+ C 2-pass copy prefetched (32 bytes step)             :   4129.0 MB/s (0.7%)
+ C 2-pass copy prefetched (64 bytes step)             :   4116.7 MB/s (0.7%)
+ C fill                                               :   8041.6 MB/s (0.7%)
+ C fill (shuffle within 16 byte blocks)               :   7882.5 MB/s
+ C fill (shuffle within 32 byte blocks)               :   7968.7 MB/s (4.6%)
+ C fill (shuffle within 64 byte blocks)               :   8014.2 MB/s (5.2%)
+ ---
+ standard memcpy                                      :   3529.4 MB/s (2.3%)
+ standard memset                                      :   6649.1 MB/s (5.9%)
+ ---
+ MOVSB copy                                           :   4882.1 MB/s (5.2%)
+ MOVSD copy                                           :   4875.0 MB/s (5.6%)
+ SSE2 copy                                            :   5224.1 MB/s (4.8%)
+ SSE2 nontemporal copy                                :   3482.4 MB/s (4.0%)
+ SSE2 copy prefetched (32 bytes step)                 :   5075.9 MB/s (5.0%)
+ SSE2 copy prefetched (64 bytes step)                 :   5273.7 MB/s (1.2%)
+ SSE2 nontemporal copy prefetched (32 bytes step)     :   3483.0 MB/s
+ SSE2 nontemporal copy prefetched (64 bytes step)     :   3682.2 MB/s (1.4%)
+ SSE2 2-pass copy                                     :   4753.7 MB/s (2.1%)
+ SSE2 2-pass copy prefetched (32 bytes step)          :   4692.9 MB/s (7.7%)
+ SSE2 2-pass copy prefetched (64 bytes step)          :   4620.4 MB/s (4.8%)
+ SSE2 2-pass nontemporal copy                         :   1889.4 MB/s (4.2%)
+ SSE2 fill                                            :   7632.2 MB/s (4.7%)
+ SSE2 nontemporal fill                                :   5249.2 MB/s (3.4%)
+
+==========================================================================
+== Memory latency test                                                  ==
+==                                                                      ==
+== Average time is measured for random memory accesses in the buffers   ==
+== of different sizes. The larger is the buffer, the more significant   ==
+== are relative contributions of TLB, L1/L2 cache misses and SDRAM      ==
+== accesses. For extremely large buffer sizes we are expecting to see   ==
+== page table walk with several requests to SDRAM for almost every      ==
+== memory access (though 64MiB is not nearly large enough to experience ==
+== this effect to its fullest).                                         ==
+==                                                                      ==
+== Note 1: All the numbers are representing extra time, which needs to  ==
+==         be added to L1 cache latency. The cycle timings for L1 cache ==
+==         latency can be usually found in the processor documentation. ==
+== Note 2: Dual random read means that we are simultaneously performing ==
+==         two independent memory accesses at a time. In the case if    ==
+==         the memory subsystem can't handle multiple outstanding       ==
+==         requests, dual random read has the same timings as two       ==
+==         single reads performed one after another.                    ==
+==========================================================================
+
+block size : single random read / dual random read, [MADV_NOHUGEPAGE]
+      1024 :    0.0 ns          /     0.0 ns 
+      2048 :    0.0 ns          /     0.1 ns 
+      4096 :    0.1 ns          /     0.3 ns 
+      8192 :    0.1 ns          /     0.1 ns 
+     16384 :    0.0 ns          /     0.1 ns 
+     32768 :    0.1 ns          /     0.1 ns 
+     65536 :    1.2 ns          /     1.5 ns 
+    131072 :    1.9 ns          /     2.1 ns 
+    262144 :    3.5 ns          /     4.5 ns 
+    524288 :    8.8 ns          /    11.4 ns 
+   1048576 :   11.8 ns          /    14.1 ns 
+   2097152 :   13.8 ns          /    15.3 ns 
+   4194304 :   21.1 ns          /    28.1 ns 
+   8388608 :   27.0 ns          /    36.3 ns 
+  16777216 :   37.1 ns          /    55.0 ns 
+  33554432 :  132.5 ns          /   162.2 ns 
+  67108864 :  141.8 ns          /   175.2 ns 
+
+block size : single random read / dual random read, [MADV_HUGEPAGE]
+      1024 :    0.0 ns          /     0.0 ns 
+      2048 :    0.0 ns          /     0.0 ns 
+      4096 :    0.0 ns          /     0.0 ns 
+      8192 :    0.0 ns          /     0.0 ns 
+     16384 :    0.0 ns          /     0.0 ns 
+     32768 :    0.3 ns          /     0.4 ns 
+     65536 :    1.4 ns          /     1.6 ns 
+    131072 :    1.8 ns          /     2.1 ns 
+    262144 :    2.7 ns          /     3.0 ns 
+    524288 :    8.1 ns          /    11.0 ns 
+   1048576 :   10.7 ns          /    13.0 ns 
+   2097152 :   11.8 ns          /    13.6 ns 
+   4194304 :   12.4 ns          /    13.7 ns 
+   8388608 :   12.8 ns          /    13.8 ns 
+  16777216 :   13.8 ns          /    14.0 ns 
+  33554432 :   38.8 ns          /    56.0 ns 
+  67108864 :  125.8 ns          /   146.0 ns 
+

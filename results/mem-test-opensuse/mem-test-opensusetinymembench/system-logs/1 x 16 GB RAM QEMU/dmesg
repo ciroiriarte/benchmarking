@@ -45,7 +45,7 @@
 [      T0] DMI: Memory slots populated: 1/1
 [      T0] Hypervisor detected: KVM
 [      T0] kvm-clock: Using msrs 4b564d01 and 4b564d00
-[      T0] kvm-clock: using sched offset of 9155181890 cycles
+[      T0] kvm-clock: using sched offset of 15526337940 cycles
 [      T0] clocksource: kvm-clock: mask: 0xffffffffffffffff max_cycles: 0x1cd42e4dffb, max_idle_ns: 881590591483 ns
 [      T0] tsc: Detected 2793.268 MHz processor
 [      T0] e820: update [mem 0x00000000-0x00000fff] usable ==> reserved
@@ -60,14 +60,14 @@
 [      T0] ACPI: RSDP 0x000000007EB7D014 000024 (v02 BOCHS )
 [      T0] ACPI: XSDT 0x000000007EB7C0E8 00004C (v01 BOCHS  BXPC     00000001      01000013)
 [      T0] ACPI: FACP 0x000000007EB74000 0000F4 (v03 BOCHS  BXPC     00000001 BXPC 00000001)
-[      T0] ACPI: DSDT 0x000000007EB75000 0069B3 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
+[      T0] ACPI: DSDT 0x000000007EB75000 0069B9 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
 [      T0] ACPI: FACS 0x000000007EBDB000 000040
 [      T0] ACPI: APIC 0x000000007EB73000 0000B0 (v03 BOCHS  BXPC     00000001 BXPC 00000001)
 [      T0] ACPI: SSDT 0x000000007EB72000 0000CA (v01 BOCHS  VMGENID  00000001 BXPC 00000001)
 [      T0] ACPI: MCFG 0x000000007EB71000 00003C (v01 BOCHS  BXPC     00000001 BXPC 00000001)
 [      T0] ACPI: WAET 0x000000007EB70000 000028 (v01 BOCHS  BXPC     00000001 BXPC 00000001)
 [      T0] ACPI: Reserving FACP table memory at [mem 0x7eb74000-0x7eb740f3]
-[      T0] ACPI: Reserving DSDT table memory at [mem 0x7eb75000-0x7eb7b9b2]
+[      T0] ACPI: Reserving DSDT table memory at [mem 0x7eb75000-0x7eb7b9b8]
 [      T0] ACPI: Reserving FACS table memory at [mem 0x7ebdb000-0x7ebdb03f]
 [      T0] ACPI: Reserving APIC table memory at [mem 0x7eb73000-0x7eb730af]
 [      T0] ACPI: Reserving SSDT table memory at [mem 0x7eb72000-0x7eb720c9]
@@ -226,8 +226,8 @@
 [      T1] .... node  #0, CPUs:      #1 #2 #3 #4 #5 #6 #7
 [      T1] smp: Brought up 1 node, 8 CPUs
 [      T1] smpboot: Total of 8 processors activated (44692.28 BogoMIPS)
-[     T67] node 0 deferred pages initialised in 14ms
-[      T1] Memory: 16298192K/16757160K available (16384K kernel code, 3070K rwdata, 13716K rodata, 4164K init, 6248K bss, 450704K reserved, 0K cma-reserved)
+[     T67] node 0 deferred pages initialised in 30ms
+[      T1] Memory: 16297444K/16757160K available (16384K kernel code, 3070K rwdata, 13716K rodata, 4164K init, 6248K bss, 450712K reserved, 0K cma-reserved)
 [      T1] devtmpfs: initialized
 [      T1] x86/mm: Memory block size: 128MB
 [      T1] ACPI: PM: Registering ACPI NVS region [mem 0x7eb7e000-0x7ebfdfff] (524288 bytes)
@@ -235,13 +235,13 @@
 [      T1] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1911260446275000 ns
 [      T1] futex hash table entries: 2048 (order: 5, 131072 bytes, linear)
 [      T1] pinctrl core: initialized pinctrl subsystem
-[      T1] PM: RTC time: 00:04:37, date: 2026-03-12
+[      T1] PM: RTC time: 18:08:52, date: 2026-03-12
 [      T1] NET: Registered PF_NETLINK/PF_ROUTE protocol family
 [      T1] DMA: preallocated 2048 KiB GFP_KERNEL pool for atomic allocations
 [      T1] DMA: preallocated 2048 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
 [      T1] DMA: preallocated 2048 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
 [      T1] audit: initializing netlink subsys (disabled)
-[     T77] audit: type=2000 audit(1773273878.408:1): state=initialized audit_enabled=0 res=1
+[     T77] audit: type=2000 audit(1773338932.758:1): state=initialized audit_enabled=0 res=1
 [      T1] thermal_sys: Registered thermal governor 'fair_share'
 [      T1] thermal_sys: Registered thermal governor 'bang_bang'
 [      T1] thermal_sys: Registered thermal governor 'step_wise'
@@ -400,13 +400,13 @@
 [      T1] pci 0000:00:1e.0:   bridge window [mem 0xf0000000-0xfebfffff window] (subtractive decode)
 [      T1] pci 0000:00:1e.0:   bridge window [mem 0x380000000000-0x383fffffffff window] (subtractive decode)
 [      T1] pci_bus 0000:06: extended config space not accessible
+[      T1] acpiphp: Slot [3] registered
 [      T1] acpiphp: Slot [5-2] registered
 [      T1] acpiphp: Slot [8-2] registered
 [      T1] acpiphp: Slot [18-2] registered
 [      T1] acpiphp: Slot [0-6] registered
 [      T1] acpiphp: Slot [1] registered
 [      T1] acpiphp: Slot [2] registered
-[      T1] acpiphp: Slot [3] registered
 [      T1] acpiphp: Slot [4] registered
 [      T1] acpiphp: Slot [6-2] registered
 [      T1] acpiphp: Slot [7-2] registered
@@ -432,6 +432,10 @@
 [      T1] acpiphp: Slot [29-2] registered
 [      T1] acpiphp: Slot [30-2] registered
 [      T1] acpiphp: Slot [31-2] registered
+[      T1] pci 0000:06:03.0: [1af4:1002] type 00 class 0x00ff00 conventional PCI endpoint
+[      T1] pci 0000:06:03.0: BAR 0 [io  0x60c0-0x60ff]
+[      T1] pci 0000:06:03.0: BAR 1 [mem 0x80603000-0x80603fff]
+[      T1] pci 0000:06:03.0: BAR 4 [mem 0x38380000c000-0x38380000ffff 64bit pref]
 [      T1] pci 0000:06:05.0: [1af4:1004] type 00 class 0x010000 conventional PCI endpoint
 [      T1] pci 0000:06:05.0: BAR 0 [io  0x6080-0x60bf]
 [      T1] pci 0000:06:05.0: BAR 1 [mem 0x80602000-0x80602fff]
@@ -691,7 +695,7 @@
 [      T1] software IO TLB: mapped [mem 0x0000000076f3e000-0x000000007af3e000] (64MB)
 [      T1] RAPL PMU: API unit is 2^-32 Joules, 0 fixed counters, 10737418240 ms ovfl timer
 [      T1] clocksource: tsc: mask: 0xffffffffffffffff max_cycles: 0x28436928c28, max_idle_ns: 440795267499 ns
-[     T72] Trying to unpack rootfs image as initramfs...
+[     T68] Trying to unpack rootfs image as initramfs...
 [      T1] Initialise system trusted keyrings
 [      T1] Key type blacklist registered
 [      T1] workingset: timestamp_bits=36 max_order=22 bucket_order=0
@@ -699,7 +703,7 @@
 [      T1] integrity: Platform Keyring initialized
 [      T1] integrity: Machine keyring initialized
 [      T1] Allocating IMA blacklist keyring.
-[     T72] Freeing initrd memory: 42228K
+[     T68] Freeing initrd memory: 42228K
 [      T1] Key type asymmetric registered
 [      T1] Asymmetric key parser 'x509' registered
 [      T1] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 246)
@@ -741,22 +745,22 @@
 [      T1] serio: i8042 KBD port at 0x60,0x64 irq 1
 [      T1] serio: i8042 AUX port at 0x60,0x64 irq 12
 [      T1] mousedev: PS/2 mouse device common for all mice
-[      T9] input: AT Translated Set 2 keyboard as /devices/platform/i8042/serio0/input/input0
 [      T1] rtc_cmos 00:03: RTC can wake from S4
 [      T1] rtc_cmos 00:03: registered as rtc0
-[      T1] rtc_cmos 00:03: setting system clock to 2026-03-12T00:04:38 UTC (1773273878)
+[     T29] input: AT Translated Set 2 keyboard as /devices/platform/i8042/serio0/input/input0
+[      T1] rtc_cmos 00:03: setting system clock to 2026-03-12T18:08:53 UTC (1773338933)
 [      T1] rtc_cmos 00:03: alarms up to one day, y3k, 242 bytes nvram
 [      T1] intel_pstate: CPU model not supported
 [      T1] hid: raw HID events driver (C) Jiri Kosina
 [      T1] drop_monitor: Initializing network drop monitor service
 [      T1] NET: Registered PF_INET6 protocol family
-[      T9] input: VirtualPS/2 VMware VMMouse as /devices/platform/i8042/serio1/input/input3
-[      T9] input: VirtualPS/2 VMware VMMouse as /devices/platform/i8042/serio1/input/input2
+[     T29] input: VirtualPS/2 VMware VMMouse as /devices/platform/i8042/serio1/input/input3
+[     T29] input: VirtualPS/2 VMware VMMouse as /devices/platform/i8042/serio1/input/input2
 [      T1] Segment Routing with IPv6
 [      T1] RPL Segment Routing with IPv6
 [      T1] In-situ OAM (IOAM) with IPv6
 [      T1] IPI shorthand broadcast: enabled
-[      T1] sched_clock: Marking stable (1135013578, 2451359)->(1176812098, -39347161)
+[      T1] sched_clock: Marking stable (1975003633, 3548841)->(2104759077, -126206603)
 [      T1] registered taskstats version 1
 [      T1] Loading compiled-in X.509 certificates
 [      T1] Loaded X.509 cert 'SUSE Linux Products GmbH: ALP Secure Boot Signkey: 939dd72e1ee1ba7b2e5c14b8180da819d7822c79'
@@ -764,8 +768,8 @@
 [      T1] page_owner is disabled
 [      T1] Key type .fscrypt registered
 [      T1] Key type fscrypt-provisioning registered
-[    T138] cryptd: max_cpu_qlen set to 1000
-[    T138] AES CTR mode by8 optimization enabled
+[    T139] cryptd: max_cpu_qlen set to 1000
+[    T139] AES CTR mode by8 optimization enabled
 [      T1] Key type encrypted registered
 [      T1] ima: No TPM chip found, activating TPM-bypass!
 [      T1] Loading compiled-in module X.509 certificates
@@ -786,8 +790,8 @@
 [      T1] Loaded X.509 cert 'Certificate verification self-testing key: f58703bb33ce1b73ee02eccdee5b8817518fe3db'
 [      T1] Running certificate verification ECDSA selftest
 [      T1] Loaded X.509 cert 'Certificate verification ECDSA self-testing key: 2900bcea1deb7bc8479a84a23d758efdfdd2b2d3'
-[      T1] PM:   Magic number: 2:392:51
-[      T1] memory memory83: hash matches
+[      T1] PM:   Magic number: 2:856:139
+[      T1] acpi device:10: hash matches
 [      T1] RAS: Correctable Errors collector initialized.
 [      T1] clk: Disabling unused clocks
 [      T1] PM: genpd: Disabling unused power domains
@@ -843,166 +847,169 @@
 [      T1] systemd[1]: Finished Create Static Device Nodes in /dev.
 [      T1] systemd[1]: Reached target Preparation for Local File Systems.
 [      T1] systemd[1]: Reached target Local File Systems.
+[      T1] systemd[1]: Finished Virtual Console Setup.
+[      T1] systemd[1]: dracut ask for additional cmdline parameters was skipped because no trigger condition checks were met.
+[      T1] systemd[1]: Starting dracut cmdline hook...
 [      T1] systemd[1]: Started Journal Service.
-[    T455] device-mapper: uevent: version 1.0.3
-[    T455] device-mapper: ioctl: 4.49.0-ioctl (2025-01-17) initialised: dm-devel@lists.linux.dev
-[    T526] ACPI: bus type USB registered
-[    T526] usbcore: registered new interface driver usbfs
-[    T526] usbcore: registered new interface driver hub
-[    T526] usbcore: registered new device driver usb
-[     T72] ehci-pci 0000:00:1a.7: EHCI Host Controller
-[     T72] ehci-pci 0000:00:1a.7: new USB bus registered, assigned bus number 1
-[     T72] ehci-pci 0000:00:1a.7: irq 19, io mem 0x8124a000
-[    T514] SCSI subsystem initialized
-[     T72] ehci-pci 0000:00:1a.7: USB 2.0 started, EHCI 1.00
-[     T72] usb usb1: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice= 6.12
-[     T72] usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
-[     T72] usb usb1: Product: EHCI Host Controller
-[     T72] usb usb1: Manufacturer: Linux 6.12.0-160000.5-default ehci_hcd
-[     T72] usb usb1: SerialNumber: 0000:00:1a.7
-[     T72] hub 1-0:1.0: USB hub found
-[     T72] hub 1-0:1.0: 6 ports detected
-[    T516] uhci_hcd 0000:00:1a.0: UHCI Host Controller
-[    T516] uhci_hcd 0000:00:1a.0: new USB bus registered, assigned bus number 2
-[    T516] uhci_hcd 0000:00:1a.0: detected 2 ports
-[    T516] uhci_hcd 0000:00:1a.0: irq 16, io port 0x00007100
-[    T516] usb usb2: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 6.12
-[    T516] usb usb2: New USB device strings: Mfr=3, Product=2, SerialNumber=1
-[    T516] usb usb2: Product: UHCI Host Controller
-[    T516] usb usb2: Manufacturer: Linux 6.12.0-160000.5-default uhci_hcd
-[    T516] usb usb2: SerialNumber: 0000:00:1a.0
-[    T516] hub 2-0:1.0: USB hub found
-[    T516] hub 2-0:1.0: 2 ports detected
-[    T169] ehci-pci 0000:00:1d.7: EHCI Host Controller
-[    T169] ehci-pci 0000:00:1d.7: new USB bus registered, assigned bus number 3
-[    T169] ehci-pci 0000:00:1d.7: irq 19, io mem 0x81245000
-[    T169] ehci-pci 0000:00:1d.7: USB 2.0 started, EHCI 1.00
-[    T169] usb usb3: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice= 6.12
-[    T169] usb usb3: New USB device strings: Mfr=3, Product=2, SerialNumber=1
-[    T169] usb usb3: Product: EHCI Host Controller
-[    T169] usb usb3: Manufacturer: Linux 6.12.0-160000.5-default ehci_hcd
-[    T169] usb usb3: SerialNumber: 0000:00:1d.7
-[    T169] hub 3-0:1.0: USB hub found
-[    T169] hub 3-0:1.0: 6 ports detected
-[    T516] uhci_hcd 0000:00:1a.1: UHCI Host Controller
-[    T516] uhci_hcd 0000:00:1a.1: new USB bus registered, assigned bus number 4
-[    T516] uhci_hcd 0000:00:1a.1: detected 2 ports
-[    T516] uhci_hcd 0000:00:1a.1: irq 17, io port 0x000070e0
-[    T516] usb usb4: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 6.12
-[    T516] usb usb4: New USB device strings: Mfr=3, Product=2, SerialNumber=1
-[    T516] usb usb4: Product: UHCI Host Controller
-[    T516] usb usb4: Manufacturer: Linux 6.12.0-160000.5-default uhci_hcd
-[    T516] usb usb4: SerialNumber: 0000:00:1a.1
-[    T516] hub 4-0:1.0: USB hub found
-[    T516] hub 4-0:1.0: 2 ports detected
-[    T516] uhci_hcd 0000:00:1a.2: UHCI Host Controller
-[    T516] uhci_hcd 0000:00:1a.2: new USB bus registered, assigned bus number 5
-[    T516] uhci_hcd 0000:00:1a.2: detected 2 ports
-[    T516] uhci_hcd 0000:00:1a.2: irq 18, io port 0x000070c0
-[    T516] usb usb5: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 6.12
-[    T516] usb usb5: New USB device strings: Mfr=3, Product=2, SerialNumber=1
-[    T516] usb usb5: Product: UHCI Host Controller
-[    T516] usb usb5: Manufacturer: Linux 6.12.0-160000.5-default uhci_hcd
-[    T516] usb usb5: SerialNumber: 0000:00:1a.2
-[    T516] hub 5-0:1.0: USB hub found
-[    T516] hub 5-0:1.0: 2 ports detected
-[    T516] uhci_hcd 0000:00:1d.0: UHCI Host Controller
-[    T516] uhci_hcd 0000:00:1d.0: new USB bus registered, assigned bus number 6
-[    T516] uhci_hcd 0000:00:1d.0: detected 2 ports
-[    T516] uhci_hcd 0000:00:1d.0: irq 16, io port 0x000070a0
-[    T516] usb usb6: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 6.12
-[    T516] usb usb6: New USB device strings: Mfr=3, Product=2, SerialNumber=1
-[    T516] usb usb6: Product: UHCI Host Controller
-[    T516] usb usb6: Manufacturer: Linux 6.12.0-160000.5-default uhci_hcd
-[    T516] usb usb6: SerialNumber: 0000:00:1d.0
-[    T516] hub 6-0:1.0: USB hub found
-[    T516] hub 6-0:1.0: 2 ports detected
-[    T516] uhci_hcd 0000:00:1d.1: UHCI Host Controller
-[    T516] uhci_hcd 0000:00:1d.1: new USB bus registered, assigned bus number 7
-[    T516] uhci_hcd 0000:00:1d.1: detected 2 ports
-[    T516] uhci_hcd 0000:00:1d.1: irq 17, io port 0x00007080
-[    T516] usb usb7: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 6.12
-[    T516] usb usb7: New USB device strings: Mfr=3, Product=2, SerialNumber=1
-[    T516] usb usb7: Product: UHCI Host Controller
-[    T516] usb usb7: Manufacturer: Linux 6.12.0-160000.5-default uhci_hcd
-[    T516] usb usb7: SerialNumber: 0000:00:1d.1
-[    T516] hub 7-0:1.0: USB hub found
-[    T516] hub 7-0:1.0: 2 ports detected
-[    T516] uhci_hcd 0000:00:1d.2: UHCI Host Controller
-[    T516] uhci_hcd 0000:00:1d.2: new USB bus registered, assigned bus number 8
-[    T516] uhci_hcd 0000:00:1d.2: detected 2 ports
-[    T516] uhci_hcd 0000:00:1d.2: irq 18, io port 0x00007060
-[    T516] usb usb8: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 6.12
-[    T516] usb usb8: New USB device strings: Mfr=3, Product=2, SerialNumber=1
-[    T516] usb usb8: Product: UHCI Host Controller
-[    T516] usb usb8: Manufacturer: Linux 6.12.0-160000.5-default uhci_hcd
-[    T516] usb usb8: SerialNumber: 0000:00:1d.2
-[    T516] hub 8-0:1.0: USB hub found
-[    T516] hub 8-0:1.0: 2 ports detected
-[    T541] virtio_scsi virtio0: 8/0/0 default/read/poll queues
-[    T541] scsi host0: Virtio SCSI HBA
-[     T74] scsi 0:0:0:0: Direct-Access     QEMU     QEMU HARDDISK    2.5+ PQ: 0 ANSI: 5
-[    T514] libata version 3.00 loaded.
-[     T74] sd 0:0:0:0: Attached scsi generic sg0 type 0
-[      C0] sd 0:0:0:0: Power-on or device reset occurred
-[    T169] sd 0:0:0:0: [sda] 41943040 512-byte logical blocks: (21.5 GB/20.0 GiB)
-[    T169] sd 0:0:0:0: [sda] Write Protect is off
-[    T169] sd 0:0:0:0: [sda] Mode Sense: 63 00 10 08
-[    T169] sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, supports DPO and FUA
-[    T169] GPT:Primary header thinks Alt. header is not at the end of the disk.
-[    T169] GPT:2717695 != 41943039
-[    T169] GPT:Alternate GPT header not at the end of the disk.
-[    T169] GPT:2717695 != 41943039
-[    T169] GPT: Use GNU Parted to correct GPT errors.
-[    T169]  sda: sda1 sda2 sda3
-[    T169] sd 0:0:0:0: [sda] Attached SCSI disk
-[    T514] ahci 0000:00:1f.2: version 3.0
-[    T514] ahci 0000:00:1f.2: AHCI vers 0001.0000, 32 command slots, 1.5 Gbps, SATA mode
-[    T514] ahci 0000:00:1f.2: 6/6 ports implemented (port mask 0x3f)
-[    T514] ahci 0000:00:1f.2: flags: 64bit ncq only 
-[    T514] scsi host1: ahci
-[    T514] scsi host2: ahci
-[    T514] scsi host3: ahci
-[    T514] scsi host4: ahci
-[    T514] scsi host5: ahci
-[    T514] scsi host6: ahci
-[    T514] ata1: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244100 irq 44 lpm-pol 0
-[    T514] ata2: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244180 irq 44 lpm-pol 0
-[    T514] ata3: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244200 irq 44 lpm-pol 0
-[    T514] ata4: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244280 irq 44 lpm-pol 0
-[    T514] ata5: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244300 irq 44 lpm-pol 0
-[    T514] ata6: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244380 irq 44 lpm-pol 0
-[    T579] ata3: SATA link down (SStatus 0 SControl 300)
-[    T575] ata1: SATA link down (SStatus 0 SControl 300)
-[    T585] ata6: SATA link down (SStatus 0 SControl 300)
-[    T583] ata5: SATA link down (SStatus 0 SControl 300)
-[    T577] ata2: SATA link up 1.5 Gbps (SStatus 113 SControl 300)
-[    T581] ata4: SATA link down (SStatus 0 SControl 300)
-[    T577] ata2.00: ATAPI: QEMU DVD-ROM, 2.5+, max UDMA/100
-[    T577] ata2.00: applying bridge limits
-[    T577] ata2.00: configured for UDMA/100
-[     T74] scsi 2:0:0:0: CD-ROM            QEMU     QEMU DVD-ROM     2.5+ PQ: 0 ANSI: 5
-[     T74] scsi 2:0:0:0: Attached scsi generic sg1 type 5
-[    T541] sr 2:0:0:0: [sr0] scsi3-mmc drive: 4x/4x cd/rw xa/form2 tray
-[    T541] cdrom: Uniform CD-ROM driver Revision: 3.20
-[    T541] sr 2:0:0:0: Attached scsi CD-ROM sr0
-[    T595] SGI XFS with ACLs, security attributes, quota, no debug enabled
-[    T594] XFS (sda3): Mounting V5 Filesystem 7cd62367-5adf-a5b9-ab92-4153f7e649ec
-[    T594] XFS (sda3): Ending clean mount
-[    T589] XFS (sda3): Unmounting Filesystem 7cd62367-5adf-a5b9-ab92-4153f7e649ec
-[     T53] sched: DL replenish lagged too much
-[    T916]  sda: sda1 sda2 sda3
-[    T475]  sda: sda1 sda2 sda3
-[    T959]  sda: sda1 sda2
-[    T964]  sda: sda1 sda2 sda3
-[    T967]  sda: sda1 sda2 sda3
-[   T1002] XFS (sda3): Mounting V5 Filesystem 7cd62367-5adf-a5b9-ab92-4153f7e649ec
-[   T1002] XFS (sda3): Ending clean mount
-[   T1013] XFS (sda3): Unmounting Filesystem 7cd62367-5adf-a5b9-ab92-4153f7e649ec
-[   T1025] XFS (sda3): Mounting V5 Filesystem 7cd62367-5adf-a5b9-ab92-4153f7e649ec
-[   T1025] XFS (sda3): Ending clean mount
+[    T457] device-mapper: uevent: version 1.0.3
+[    T457] device-mapper: ioctl: 4.49.0-ioctl (2025-01-17) initialised: dm-devel@lists.linux.dev
+[    T532] ACPI: bus type USB registered
+[    T532] usbcore: registered new interface driver usbfs
+[    T532] usbcore: registered new interface driver hub
+[    T532] usbcore: registered new device driver usb
+[    T520] SCSI subsystem initialized
+[     T69] ehci-pci 0000:00:1a.7: EHCI Host Controller
+[     T69] ehci-pci 0000:00:1a.7: new USB bus registered, assigned bus number 1
+[     T69] ehci-pci 0000:00:1a.7: irq 19, io mem 0x8124a000
+[     T69] ehci-pci 0000:00:1a.7: USB 2.0 started, EHCI 1.00
+[     T69] usb usb1: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice= 6.12
+[     T69] usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[     T69] usb usb1: Product: EHCI Host Controller
+[     T69] usb usb1: Manufacturer: Linux 6.12.0-160000.5-default ehci_hcd
+[     T69] usb usb1: SerialNumber: 0000:00:1a.7
+[     T69] hub 1-0:1.0: USB hub found
+[     T69] hub 1-0:1.0: 6 ports detected
+[     T73] ehci-pci 0000:00:1d.7: EHCI Host Controller
+[     T73] ehci-pci 0000:00:1d.7: new USB bus registered, assigned bus number 2
+[     T73] ehci-pci 0000:00:1d.7: irq 19, io mem 0x81245000
+[     T73] ehci-pci 0000:00:1d.7: USB 2.0 started, EHCI 1.00
+[     T73] usb usb2: New USB device found, idVendor=1d6b, idProduct=0002, bcdDevice= 6.12
+[     T73] usb usb2: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[     T73] usb usb2: Product: EHCI Host Controller
+[     T73] usb usb2: Manufacturer: Linux 6.12.0-160000.5-default ehci_hcd
+[     T73] usb usb2: SerialNumber: 0000:00:1d.7
+[     T73] hub 2-0:1.0: USB hub found
+[     T73] hub 2-0:1.0: 6 ports detected
+[    T530] uhci_hcd 0000:00:1a.0: UHCI Host Controller
+[    T530] uhci_hcd 0000:00:1a.0: new USB bus registered, assigned bus number 3
+[    T530] uhci_hcd 0000:00:1a.0: detected 2 ports
+[    T530] uhci_hcd 0000:00:1a.0: irq 16, io port 0x00007100
+[    T530] usb usb3: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 6.12
+[    T530] usb usb3: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    T530] usb usb3: Product: UHCI Host Controller
+[    T530] usb usb3: Manufacturer: Linux 6.12.0-160000.5-default uhci_hcd
+[    T530] usb usb3: SerialNumber: 0000:00:1a.0
+[    T530] hub 3-0:1.0: USB hub found
+[    T530] hub 3-0:1.0: 2 ports detected
+[    T527] virtio_scsi virtio1: 8/0/0 default/read/poll queues
+[    T530] uhci_hcd 0000:00:1a.1: UHCI Host Controller
+[    T530] uhci_hcd 0000:00:1a.1: new USB bus registered, assigned bus number 4
+[    T530] uhci_hcd 0000:00:1a.1: detected 2 ports
+[    T530] uhci_hcd 0000:00:1a.1: irq 17, io port 0x000070e0
+[    T530] usb usb4: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 6.12
+[    T530] usb usb4: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    T530] usb usb4: Product: UHCI Host Controller
+[    T530] usb usb4: Manufacturer: Linux 6.12.0-160000.5-default uhci_hcd
+[    T530] usb usb4: SerialNumber: 0000:00:1a.1
+[    T530] hub 4-0:1.0: USB hub found
+[    T530] hub 4-0:1.0: 2 ports detected
+[    T530] uhci_hcd 0000:00:1a.2: UHCI Host Controller
+[    T530] uhci_hcd 0000:00:1a.2: new USB bus registered, assigned bus number 5
+[    T530] uhci_hcd 0000:00:1a.2: detected 2 ports
+[    T530] uhci_hcd 0000:00:1a.2: irq 18, io port 0x000070c0
+[    T530] usb usb5: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 6.12
+[    T530] usb usb5: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    T530] usb usb5: Product: UHCI Host Controller
+[    T530] usb usb5: Manufacturer: Linux 6.12.0-160000.5-default uhci_hcd
+[    T530] usb usb5: SerialNumber: 0000:00:1a.2
+[    T530] hub 5-0:1.0: USB hub found
+[    T530] hub 5-0:1.0: 2 ports detected
+[    T527] scsi host0: Virtio SCSI HBA
+[    T530] uhci_hcd 0000:00:1d.0: UHCI Host Controller
+[    T530] uhci_hcd 0000:00:1d.0: new USB bus registered, assigned bus number 6
+[    T530] uhci_hcd 0000:00:1d.0: detected 2 ports
+[    T530] uhci_hcd 0000:00:1d.0: irq 16, io port 0x000070a0
+[    T530] usb usb6: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 6.12
+[    T530] usb usb6: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    T530] usb usb6: Product: UHCI Host Controller
+[    T530] usb usb6: Manufacturer: Linux 6.12.0-160000.5-default uhci_hcd
+[    T530] usb usb6: SerialNumber: 0000:00:1d.0
+[    T530] hub 6-0:1.0: USB hub found
+[    T530] hub 6-0:1.0: 2 ports detected
+[     T73] scsi 0:0:0:0: Direct-Access     QEMU     QEMU HARDDISK    2.5+ PQ: 0 ANSI: 5
+[    T530] uhci_hcd 0000:00:1d.1: UHCI Host Controller
+[    T530] uhci_hcd 0000:00:1d.1: new USB bus registered, assigned bus number 7
+[    T530] uhci_hcd 0000:00:1d.1: detected 2 ports
+[    T530] uhci_hcd 0000:00:1d.1: irq 17, io port 0x00007080
+[    T530] usb usb7: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 6.12
+[    T530] usb usb7: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    T530] usb usb7: Product: UHCI Host Controller
+[    T530] usb usb7: Manufacturer: Linux 6.12.0-160000.5-default uhci_hcd
+[    T530] usb usb7: SerialNumber: 0000:00:1d.1
+[    T530] hub 7-0:1.0: USB hub found
+[    T530] hub 7-0:1.0: 2 ports detected
+[    T530] uhci_hcd 0000:00:1d.2: UHCI Host Controller
+[    T530] uhci_hcd 0000:00:1d.2: new USB bus registered, assigned bus number 8
+[    T530] uhci_hcd 0000:00:1d.2: detected 2 ports
+[    T530] uhci_hcd 0000:00:1d.2: irq 18, io port 0x00007060
+[    T530] usb usb8: New USB device found, idVendor=1d6b, idProduct=0001, bcdDevice= 6.12
+[    T530] usb usb8: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    T530] usb usb8: Product: UHCI Host Controller
+[    T530] usb usb8: Manufacturer: Linux 6.12.0-160000.5-default uhci_hcd
+[    T530] usb usb8: SerialNumber: 0000:00:1d.2
+[    T530] hub 8-0:1.0: USB hub found
+[    T530] hub 8-0:1.0: 2 ports detected
+[    T520] libata version 3.00 loaded.
+[     T73] sd 0:0:0:0: Attached scsi generic sg0 type 0
+[      C5] sd 0:0:0:0: Power-on or device reset occurred
+[     T69] sd 0:0:0:0: [sda] 41943040 512-byte logical blocks: (21.5 GB/20.0 GiB)
+[     T69] sd 0:0:0:0: [sda] Write Protect is off
+[     T69] sd 0:0:0:0: [sda] Mode Sense: 63 00 10 08
+[     T69] sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[     T69] GPT:Primary header thinks Alt. header is not at the end of the disk.
+[     T69] GPT:2717695 != 41943039
+[     T69] GPT:Alternate GPT header not at the end of the disk.
+[     T69] GPT:2717695 != 41943039
+[     T69] GPT: Use GNU Parted to correct GPT errors.
+[     T69]  sda: sda1 sda2 sda3
+[     T69] sd 0:0:0:0: [sda] Attached SCSI disk
+[    T520] ahci 0000:00:1f.2: version 3.0
+[    T520] ahci 0000:00:1f.2: AHCI vers 0001.0000, 32 command slots, 1.5 Gbps, SATA mode
+[    T520] ahci 0000:00:1f.2: 6/6 ports implemented (port mask 0x3f)
+[    T520] ahci 0000:00:1f.2: flags: 64bit ncq only 
+[    T520] scsi host1: ahci
+[    T520] scsi host2: ahci
+[    T520] scsi host3: ahci
+[    T520] scsi host4: ahci
+[    T520] scsi host5: ahci
+[    T520] scsi host6: ahci
+[    T520] ata1: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244100 irq 44 lpm-pol 0
+[    T520] ata2: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244180 irq 44 lpm-pol 0
+[    T520] ata3: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244200 irq 44 lpm-pol 0
+[    T520] ata4: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244280 irq 44 lpm-pol 0
+[    T520] ata5: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244300 irq 44 lpm-pol 0
+[    T520] ata6: SATA max UDMA/133 abar m4096@0x81244000 port 0x81244380 irq 44 lpm-pol 0
+[    T579] ata2: SATA link up 1.5 Gbps (SStatus 113 SControl 300)
+[    T579] ata2.00: ATAPI: QEMU DVD-ROM, 2.5+, max UDMA/100
+[    T579] ata2.00: applying bridge limits
+[    T584] ata4: SATA link down (SStatus 0 SControl 300)
+[    T577] ata1: SATA link down (SStatus 0 SControl 300)
+[    T579] ata2.00: configured for UDMA/100
+[     T73] scsi 2:0:0:0: CD-ROM            QEMU     QEMU DVD-ROM     2.5+ PQ: 0 ANSI: 5
+[    T582] ata3: SATA link down (SStatus 0 SControl 300)
+[    T586] ata5: SATA link down (SStatus 0 SControl 300)
+[    T588] ata6: SATA link down (SStatus 0 SControl 300)
+[     T73] scsi 2:0:0:0: Attached scsi generic sg1 type 5
+[    T540] sr 2:0:0:0: [sr0] scsi3-mmc drive: 4x/4x cd/rw xa/form2 tray
+[    T540] cdrom: Uniform CD-ROM driver Revision: 3.20
+[    T540] sr 2:0:0:0: Attached scsi CD-ROM sr0
+[    T599] SGI XFS with ACLs, security attributes, quota, no debug enabled
+[    T598] XFS (sda3): Mounting V5 Filesystem 7cd62367-5adf-a5b9-ab92-4153f7e649ec
+[    T598] XFS (sda3): Ending clean mount
+[    T592] XFS (sda3): Unmounting Filesystem 7cd62367-5adf-a5b9-ab92-4153f7e649ec
+[     T90] sched: DL replenish lagged too much
+[    T920]  sda: sda1 sda2 sda3
+[    T477]  sda: sda1 sda2 sda3
+[    T963]  sda: sda1 sda2
+[    T968]  sda: sda1 sda2 sda3
+[    T971]  sda: sda1 sda2 sda3
+[   T1006] XFS (sda3): Mounting V5 Filesystem 7cd62367-5adf-a5b9-ab92-4153f7e649ec
+[   T1006] XFS (sda3): Ending clean mount
+[   T1017] XFS (sda3): Unmounting Filesystem 7cd62367-5adf-a5b9-ab92-4153f7e649ec
+[   T1029] XFS (sda3): Mounting V5 Filesystem 7cd62367-5adf-a5b9-ab92-4153f7e649ec
+[   T1029] XFS (sda3): Ending clean mount
 [    T291] systemd-journald[291]: Received SIGTERM from PID 1 (systemd).
-[     T77] audit: type=1404 audit(1773273900.103:2): enforcing=1 old_enforcing=0 auid=4294967295 ses=4294967295 enabled=1 old-enabled=1 lsm=selinux res=1
+[     T77] audit: type=1404 audit(1773338966.568:2): enforcing=1 old_enforcing=0 auid=4294967295 ses=4294967295 enabled=1 old-enabled=1 lsm=selinux res=1
 [      T1] SELinux:  policy capability network_peer_controls=1
 [      T1] SELinux:  policy capability open_perms=1
 [      T1] SELinux:  policy capability extended_socket_class=1
@@ -1012,9 +1019,9 @@
 [      T1] SELinux:  policy capability genfs_seclabel_symlinks=1
 [      T1] SELinux:  policy capability ioctl_skip_cloexec=0
 [      T1] SELinux:  policy capability userspace_initial_context=0
-[     T77] audit: type=1403 audit(1773273900.361:3): auid=4294967295 ses=4294967295 lsm=selinux res=1
-[      T1] systemd[1]: Successfully loaded SELinux policy in 262.142ms.
-[      T1] systemd[1]: Relabeled /dev/, /dev/shm/, /run/ in 17.856ms.
+[     T77] audit: type=1403 audit(1773338967.156:3): auid=4294967295 ses=4294967295 lsm=selinux res=1
+[      T1] systemd[1]: Successfully loaded SELinux policy in 600.130ms.
+[      T1] systemd[1]: Relabeled /dev/, /dev/shm/, /run/ in 45.567ms.
 [      T1] systemd[1]: systemd 257.7+suse.19.ga0dfd5de4c running in system mode (+PAM +AUDIT +SELINUX -APPARMOR +IMA +IPE -SMACK +SECCOMP +GCRYPT +GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBCRYPTSETUP_PLUGINS +LIBFDISK +PCRE2 +PWQUALITY +P11KIT +QRENCODE +TPM2 +BZIP2 +LZ4 +XZ +ZLIB +ZSTD +BPF_FRAMEWORK -BTF -XKBCOMMON -UTMP +SYSVINIT +LIBARCHIVE)
 [      T1] systemd[1]: Detected virtualization kvm.
 [      T1] systemd[1]: Detected architecture x86-64.
@@ -1066,7 +1073,6 @@
 [      T1] systemd[1]: Starting Remount Root and Kernel File Systems...
 [      T1] systemd[1]: Starting Load udev Rules from Credentials...
 [      T1] systemd[1]: Starting Coldplug All udev Devices...
-[   T1220] loop: module loaded
 [      T1] systemd[1]: Mounted Huge Pages File System.
 [      T1] systemd[1]: Mounted POSIX Message Queue File System.
 [      T1] systemd[1]: Mounted Kernel Debug File System.
@@ -1082,59 +1088,63 @@
 [      T1] systemd[1]: Finished Load Kernel Module drm.
 [      T1] systemd[1]: modprobe@efi_pstore.service: Deactivated successfully.
 [      T1] systemd[1]: Finished Load Kernel Module efi_pstore.
-[      T1] systemd[1]: modprobe@loop.service: Deactivated successfully.
-[      T1] systemd[1]: Finished Load Kernel Module loop.
-[      T1] systemd[1]: Finished Load Kernel Modules.
 [      T1] systemd[1]: Mounting Kernel Configuration File System...
-[      T1] systemd[1]: Apply Kernel Variables for 6.12.0-160000.5-default from /boot was skipped because of an unmet condition check (ConditionPathExists=!/usr/lib/modules/6.12.0-160000.5-default/sysctl.conf).
-[      T1] systemd[1]: Starting Apply Kernel Variables for 6.12.0-160000.5-default...
-[      T1] systemd[1]: Repartition Root Disk was skipped because no trigger condition checks were met.
 [      T1] systemd[1]: Starting Create Static Device Nodes in /dev gracefully...
-[   T1219] fuse: init (API version 7.41)
-[      T1] systemd[1]: modprobe@fuse.service: Deactivated successfully.
-[   T1221] systemd-journald[1221]: Collecting audit messages is disabled.
-[      T1] systemd[1]: Finished Load Kernel Module fuse.
 [      T1] systemd[1]: Finished Remount Root and Kernel File Systems.
-[      T1] systemd[1]: Finished Load udev Rules from Credentials.
-[      T1] systemd[1]: Mounting FUSE Control File System...
 [      T1] systemd[1]: Starting Rebuild Hardware Database...
 [      T1] systemd[1]: Platform Persistent Storage Archival was skipped because of an unmet condition check (ConditionDirectoryNotEmpty=/sys/fs/pstore).
 [      T1] systemd[1]: Starting Load/Save OS Random Seed...
+[      T1] systemd[1]: Mounted Kernel Configuration File System.
+[      T1] systemd[1]: Finished Load/Save OS Random Seed.
+[      T1] systemd[1]: Reached target First Boot Complete.
+[   T1225] loop: module loaded
+[      T1] systemd[1]: Finished Load udev Rules from Credentials.
+[      T1] systemd[1]: modprobe@loop.service: Deactivated successfully.
+[      T1] systemd[1]: Finished Load Kernel Module loop.
+[      T1] systemd[1]: Finished Load Kernel Modules.
+[      T1] systemd[1]: Apply Kernel Variables for 6.12.0-160000.5-default from /boot was skipped because of an unmet condition check (ConditionPathExists=!/usr/lib/modules/6.12.0-160000.5-default/sysctl.conf).
+[      T1] systemd[1]: Starting Apply Kernel Variables for 6.12.0-160000.5-default...
+[      T1] systemd[1]: Repartition Root Disk was skipped because no trigger condition checks were met.
+[   T1226] systemd-journald[1226]: Collecting audit messages is disabled.
 [      T1] systemd[1]: Started Journal Service.
-[   T1221] systemd-journald[1221]: Received client request to flush runtime journal.
-[   T1301] input: Power Button as /devices/LNXSYSTM:00/LNXPWRBN:00/input/input4
-[   T1301] ACPI: button: Power Button [PWRF]
-[   T1498] ISO 9660 Extensions: Microsoft Joliet Level 3
-[   T1498] ISO 9660 Extensions: RRIP_1991A
-[   T1514] NET: Registered PF_PACKET protocol family
+[   T1224] fuse: init (API version 7.41)
+[   T1226] systemd-journald[1226]: Received client request to flush runtime journal.
+[   T1296] input: Power Button as /devices/LNXSYSTM:00/LNXPWRBN:00/input/input4
+[   T1296] ACPI: button: Power Button [PWRF]
+[   T1290] Free page reporting enabled
+[   T1500] ISO 9660 Extensions: Microsoft Joliet Level 3
+[   T1500] ISO 9660 Extensions: RRIP_1991A
+[   T1518] NET: Registered PF_PACKET protocol family
 [      T1] systemd[1]: systemd 257.10+suse.31.gfb9d92682b running in system mode (+PAM +AUDIT +SELINUX -APPARMOR +IMA +IPE -SMACK +SECCOMP +GCRYPT +GNUTLS +OPENSSL +ACL +BLKID +CURL +ELFUTILS +FIDO2 +IDN2 -IDN +IPTC +KMOD +LIBCRYPTSETUP +LIBCRYPTSETUP_PLUGINS +LIBFDISK +PCRE2 +PWQUALITY +P11KIT +QRENCODE +TPM2 +BZIP2 +LZ4 +XZ +ZLIB +ZSTD +BPF_FRAMEWORK -BTF -XKBCOMMON -UTMP +SYSVINIT +LIBARCHIVE)
 [      T1] systemd[1]: Detected virtualization kvm.
 [      T1] systemd[1]: Detected architecture x86-64.
 [      T1] systemd[1]: bpf-restrict-fs: LSM BPF program attached
-[   T3509] block sda: the capability attribute has been deprecated.
-[   T4683] NET: Registered PF_ALG protocol family
-[   T5518] SELinux:  Converting 384 SID table entries...
-[   T5518] SELinux:  Context system_u:object_r:selinux_autorelabel_generator_exec_t:s0 became invalid (unmapped).
-[   T5518] SELinux:  Context system_u:system_r:selinux_autorelabel_generator_t:s0 became invalid (unmapped).
-[   T5518] SELinux:  Context system_u:object_r:selinux_autorelabel_generator_unit_file_t:s0 became invalid (unmapped).
-[   T5518] SELinux:  policy capability network_peer_controls=1
-[   T5518] SELinux:  policy capability open_perms=1
-[   T5518] SELinux:  policy capability extended_socket_class=1
-[   T5518] SELinux:  policy capability always_check_network=0
-[   T5518] SELinux:  policy capability cgroup_seclabel=1
-[   T5518] SELinux:  policy capability nnp_nosuid_transition=1
-[   T5518] SELinux:  policy capability genfs_seclabel_symlinks=1
-[   T5518] SELinux:  policy capability ioctl_skip_cloexec=0
-[   T5518] SELinux:  policy capability userspace_initial_context=0
-[   T1221] systemd-journald[1221]: Received SIGTERM from PID 1 (systemd).
+[   T3454] block sda: the capability attribute has been deprecated.
+[   T4628] NET: Registered PF_ALG protocol family
+[   T5419] SELinux:  Converting 374 SID table entries...
+[   T5419] SELinux:  Context system_u:object_r:selinux_autorelabel_generator_exec_t:s0 became invalid (unmapped).
+[   T5419] SELinux:  Context system_u:system_r:selinux_autorelabel_generator_t:s0 became invalid (unmapped).
+[   T5419] SELinux:  Context system_u:object_r:selinux_autorelabel_generator_unit_file_t:s0 became invalid (unmapped).
+[   T5419] SELinux:  policy capability network_peer_controls=1
+[   T5419] SELinux:  policy capability open_perms=1
+[   T5419] SELinux:  policy capability extended_socket_class=1
+[   T5419] SELinux:  policy capability always_check_network=0
+[   T5419] SELinux:  policy capability cgroup_seclabel=1
+[   T5419] SELinux:  policy capability nnp_nosuid_transition=1
+[   T5419] SELinux:  policy capability genfs_seclabel_symlinks=1
+[   T5419] SELinux:  policy capability ioctl_skip_cloexec=0
+[   T5419] SELinux:  policy capability userspace_initial_context=0
+[   T1226] systemd-journald[1226]: Received SIGTERM from PID 1 (systemd).
 [      T1] systemd[1]: Stopping Journal Service...
 [      T1] systemd[1]: Stopping Rule-based Manager for Device Events and Files...
 [      T1] systemd[1]: sshd.service: Deactivated successfully.
 [      T1] systemd[1]: Stopped OpenSSH Daemon.
 [      T1] systemd[1]: systemd-journald.service: Deactivated successfully.
 [      T1] systemd[1]: Stopped Journal Service.
+[      T1] systemd[1]: systemd-journald.service: Consumed 1.412s CPU time.
 [      T1] systemd[1]: systemd-udevd.service: Deactivated successfully.
 [      T1] systemd[1]: Stopped Rule-based Manager for Device Events and Files.
+[      T1] systemd[1]: systemd-udevd.service: Consumed 3.284s CPU time.
 [      T1] systemd[1]: NetworkManager.service: Deactivated successfully.
 [      T1] systemd[1]: Stopped Network Manager.
 [      T1] systemd[1]: Starting Network Manager Script Dispatcher Service...
@@ -1148,8 +1158,10 @@
 [      T1] systemd[1]: dm-event.socket: Deactivated successfully.
 [      T1] systemd[1]: Closed Device-mapper event daemon FIFOs.
 [      T1] systemd[1]: Stopping Device-mapper event daemon FIFOs...
+[  T11424] systemd-journald[11424]: Collecting audit messages is disabled.
 [      T1] systemd[1]: Listening on Device-mapper event daemon FIFOs.
 [      T1] systemd[1]: Starting Monitoring of LVM2 mirrors, snapshots etc. using dmeventd or progress polling...
-[  T11544] systemd-journald[11544]: Collecting audit messages is disabled.
+[      T1] systemd[1]: Starting Hostname Service...
 [      T1] systemd[1]: Started Journal Service.
-[  T16250] process 'pts/tinymembench-1.0.2/tinymembench-master/tinymembench' started with executable stack
+[      C2] hrtimer: interrupt took 3696398 ns
+[  T15043] process 'pts/tinymembench-1.0.2/tinymembench-master/tinymembench' started with executable stack

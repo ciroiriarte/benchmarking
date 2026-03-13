@@ -5,27 +5,28 @@ nls_utf8               12288  0
 isofs                  65536  0
 intel_rapl_msr         20480  0
 intel_rapl_common      57344  1 intel_rapl_msr
-vfat                   24576  1
-kvm_intel             471040  0
-fat                   106496  1 vfat
 snd_hda_intel          69632  0
 snd_intel_dspcfg       40960  1 snd_hda_intel
 snd_intel_sdw_acpi     16384  1 snd_intel_dspcfg
 snd_hda_codec         233472  1 snd_hda_intel
-kvm                  1417216  1 kvm_intel
+kvm_intel             471040  0
 snd_hda_core          159744  2 snd_hda_intel,snd_hda_codec
-iTCO_wdt               16384  0
-iTCO_vendor_support    12288  1 iTCO_wdt
 snd_hwdep              24576  1 snd_hda_codec
 snd_pcm               204800  3 snd_hda_intel,snd_hda_codec,snd_hda_core
-rapl                   24576  0
+kvm                  1417216  1 kvm_intel
+iTCO_wdt               16384  0
 snd_timer              53248  1 snd_pcm
+vfat                   24576  1
+iTCO_vendor_support    12288  1 iTCO_wdt
+rapl                   24576  0
+snd                   159744  5 snd_hwdep,snd_hda_intel,snd_hda_codec,snd_timer,snd_pcm
+fat                   106496  1 vfat
 i2c_i801               36864  0
-lpc_ich                28672  0
 pcspkr                 12288  0
 i2c_smbus              20480  1 i2c_i801
-snd                   159744  5 snd_hwdep,snd_hda_intel,snd_hda_codec,snd_timer,snd_pcm
+lpc_ich                28672  0
 soundcore              16384  1 snd
+virtio_balloon         28672  0
 joydev                 28672  0
 drm                   843776  0
 fuse                  212992  1
@@ -33,23 +34,23 @@ xfs                  3039232  2
 libcrc32c              12288  1 xfs
 sr_mod                 28672  0
 cdrom                  90112  2 isofs,sr_mod
-sd_mod                 90112  3
-sg                     53248  0
 ahci                   57344  0
-virtio_net             94208  0
-libahci                69632  1 ahci
+sd_mod                 90112  3
 crct10dif_pclmul       12288  1
-net_failover           24576  1 virtio_net
+libahci                69632  1 ahci
 crc32_pclmul           12288  0
+sg                     53248  0
 crc32c_intel           24576  1
 libata                520192  2 libahci,ahci
-virtio_console         49152  1
+virtio_net             94208  0
 virtio_scsi            28672  3
-failover               12288  1 net_failover
+virtio_console         49152  1
+net_failover           24576  1 virtio_net
 ghash_clmulni_intel    16384  0
+failover               12288  1 net_failover
 serio_raw              16384  0
 sunrpc                892928  1
 dm_mirror              28672  0
 dm_region_hash         28672  1 dm_mirror
 dm_log                 24576  2 dm_region_hash,dm_mirror
-dm_mod                245760  5 dm_log,dm_mirror
+dm_mod                245760  2 dm_log,dm_mirror

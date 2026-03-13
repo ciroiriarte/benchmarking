@@ -1,0 +1,30 @@
+Archive:  tinymembench-20180528.zip
+a2cf6d7e382e3aea1eb39173174d9fa28cad15f3
+   creating: tinymembench-master/
+  inflating: tinymembench-master/.travis.yml  
+  inflating: tinymembench-master/LICENSE  
+  inflating: tinymembench-master/Makefile  
+  inflating: tinymembench-master/aarch64-asm.S  
+  inflating: tinymembench-master/aarch64-asm.h  
+  inflating: tinymembench-master/arm-neon.S  
+  inflating: tinymembench-master/arm-neon.h  
+  inflating: tinymembench-master/asm-opt.c  
+  inflating: tinymembench-master/asm-opt.h  
+  inflating: tinymembench-master/main.c  
+  inflating: tinymembench-master/mips-32.S  
+  inflating: tinymembench-master/mips-32.h  
+  inflating: tinymembench-master/readme.txt  
+  inflating: tinymembench-master/util.c  
+  inflating: tinymembench-master/util.h  
+ extracting: tinymembench-master/version.h  
+  inflating: tinymembench-master/x86-sse2.S  
+  inflating: tinymembench-master/x86-sse2.h  
+cc -O2  -c util.c
+cc -O2  -c asm-opt.c
+cc -O2  -c x86-sse2.S
+cc -O2  -c arm-neon.S
+cc -O2  -c mips-32.S
+cc -O2  -c aarch64-asm.S
+cc -O2  -o tinymembench main.c util.o asm-opt.o x86-sse2.o arm-neon.o mips-32.o aarch64-asm.o -lm
+/usr/bin/ld: warning: aarch64-asm.o: missing .note.GNU-stack section implies executable stack
+/usr/bin/ld: NOTE: This behaviour is deprecated and will be removed in a future version of the linker

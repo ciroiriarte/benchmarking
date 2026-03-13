@@ -103,7 +103,7 @@
 #
 #
 # Usage:
-#   ./quick-benchmark-cpu.sh [OPTIONS]
+#   ./benchmark-cpu-pts.sh [OPTIONS]
 #
 # OPTIONS:
 #   -r, --runs <N>               Number of timed runs per test (default: 3). More runs improve statistical confidence.
@@ -111,8 +111,8 @@
 #                                Overrides the built-in default test suite.
 #                                (default: build-linux-kernel,compress-7zip,c-ray,openssl,stockfish)
 #   -u, --upload                 Upload the benchmark results to OpenBenchmarking.org.
-#   -i, --result-id <identifier> Set the 'Test Identifier' for the upload (e.g., 'XCloud-cpuN-20250917')."
-#   -n, --result-name <name>     Set the 'Saved Test Name' for the upload (e.g., 'CPU type N on X Cloud provider')."
+#   -i, --result-id <identifier> Set the 'Test Identifier' for the upload (e.g., 'XCloud-cpuN-20250917').
+#   -n, --result-name <name>     Set the 'Saved Test Name' for the upload (e.g., 'CPU type N on X Cloud provider').
 #   --identifier <value>         Set the system identifier for PTS comparison columns.
 #                                "upload-id" = use --result-id value,
 #                                "upload-name" = use --result-name value (default),
@@ -231,8 +231,8 @@ capture_system_snapshot() {
 # Default values
 UPLOAD_RESULTS=0
 TIMES_TO_RUN="$DEFAULT_RUNS"
-UPLOAD_ID="quick-benchmark-cpu-$(date +%Y-%m-%d-%H%M%S)"
-UPLOAD_NAME="Automated CPU benchmark run with quick-benchmark-cpu.sh"
+UPLOAD_ID="benchmark-cpu-pts-$(date +%Y-%m-%d-%H%M%S)"
+UPLOAD_NAME="Automated CPU benchmark run with benchmark-cpu-pts.sh"
 IDENTIFIER_SOURCE="upload-name"
 
 # === Argument Parsing ===

@@ -5,7 +5,7 @@ Benchmark scripts for infrastructure using synthetic workloads via the
 Each script targets a single performance dimension and produces results that can
 be compared locally or uploaded to [OpenBenchmarking.org](https://openbenchmarking.org/).
 
-**Supported distributions:** Ubuntu, Debian, Rocky Linux, openSUSE (Leap 15.6, Tumbleweed, Slowroll).
+**Supported distributions:** Ubuntu, Debian, Rocky Linux, openSUSE (Leap 15.6, Leap 16, Tumbleweed, Slowroll).
 Runs on physical machines and virtual machines (vSphere, OpenStack).
 
 ---
@@ -80,7 +80,6 @@ steady state.
 ./benchmark-cpu-pts.sh [OPTIONS]
 
 OPTIONS:
-  -t, --threads <N>            Number of threads (default: all available)
   -T, --tests <list>           Comma-separated PTS test identifiers (overrides defaults)
   -r, --runs <N>               Minimum timed runs per test (default: 3)
   -u, --upload                 Upload results to OpenBenchmarking.org
@@ -92,11 +91,8 @@ OPTIONS:
 ### Examples
 
 ```bash
-# Run with all available threads
+# Run the full default test suite with all sub-option permutations
 ./benchmark-cpu-pts.sh --result-id "dc1-node3-baseline"
-
-# Run with a fixed thread count
-./benchmark-cpu-pts.sh --threads 4 --result-id "dc1-node3-4t"
 
 # Run a custom test subset
 ./benchmark-cpu-pts.sh --tests pts/compress-7zip,pts/c-ray --result-id "dc1-node3-fp"
@@ -105,6 +101,147 @@ OPTIONS:
 ./benchmark-cpu-pts.sh --upload \
   --result-id "dc1-node3-baseline" \
   --result-name "DC1 Node3 - AMD EPYC 9354"
+```
+
+### Sample report
+
+The following was collected from 8-vCPU / 16 GB KVM virtual machines (Intel Xeon
+E5-2680 v2) across three distributions. Tests were run with `--upload` to publish
+results to OpenBenchmarking.org.
+
+**Command:**
+
+```bash
+sudo ./benchmark-cpu-pts.sh --upload \
+  --result-id cpu-rocky9-8vcpu \
+  --result-name "Rocky Linux 9 - 8 vCPU benchmark"
+```
+
+**Run summary (abbreviated):**
+
+```
+--- Pre-run System Checks ---
+INFO: cpufreq interface not available (VM or container); skipping governor check.
+INFO: Thermal sensors not available; skipping temperature check.
+OK: System load (0.00) is within normal range for 8 CPUs.
+OK: CPU steal time is 0.0% (below 5% threshold).
+------------------------------
+=== Starting CPU Benchmark ===
+Test profile: pts/build-linux-kernel
+--- Warmup run (result discarded) ---
+--- Timed runs (3) ---
+=== Starting CPU Benchmark ===
+Test profile: pts/compress-7zip
+...
+=== Starting CPU Benchmark ===
+Test profile: pts/stockfish
+--- Warmup run (result discarded) ---
+--- Timed runs (3) ---
+--- Collecting results to /home/cloudadmin/benchmark-results/cpu-rocky9-8vcpu ---
+Results collected: 1 PTS result(s) + snapshot -> /home/cloudadmin/benchmark-results/cpu-rocky9-8vcpu
+    Results Uploaded To: https://openbenchmarking.org/result/2603129-NE-CPUROCKY953
+All uploads complete.
+
+=== Benchmark Complete ===
+```
+
+**System snapshot excerpt** (`cpu-rocky9-8vcpu-system-snapshot.txt`):
+
+```
+=== Benchmark Configuration ===
+Date:          2026-03-12 10:19:38 UTC
+Result ID:     cpu-rocky9-8vcpu
+Result Name:   Rocky Linux 9 - 8 vCPU benchmark
+Tests:         pts/build-linux-kernel pts/compress-7zip pts/c-ray pts/openssl pts/stockfish
+Threads:       8
+Runs per test: 3
+
+=== CPU Topology ===
+Model name:          Intel(R) Xeon(R) CPU E5-2680 v2 @ 2.80GHz
+CPU(s):              8
+Thread(s) per core:  1
+Core(s) per socket:  8
+Socket(s):           1
+Hypervisor vendor:   KVM
+L1d cache:           256 KiB (8 instances)
+L2 cache:            32 MiB (8 instances)
+L3 cache:            16 MiB (1 instance)
+
+=== Memory ===
+               total        used        free
+Mem:            15Gi       249Mi        15Gi
+```
+
+**Output structure:**
+
+```
+benchmark-results/
+└── cpu-rocky9-8vcpu/
+    ├── cpu-rocky9-8vcpu-system-snapshot.txt
+    └── cpu-rocky9-8vcpu/
+        ├── composite.xml
+        ├── installation-logs/
+        │   └── Intel Xeon E5-2680 v2/
+        │       ├── pts_compress-7zip-1.12.0.log
+        │       ├── pts_c-ray-2.0.0.log
+        │       ├── pts_openssl-3.6.0.log
+        │       └── pts_stockfish-1.7.0.log
+        ├── system-logs/
+        │   └── Intel Xeon E5-2680 v2/
+        │       ├── cc, cmdline, config, cpuinfo, dmesg, ...
+        │       └── lscpu, lsmod, meminfo, mounts, uname
+        └── test-logs/
+            └── <test-hash>/
+                └── Intel Xeon E5-2680 v2.log
+```
+
+> **Note:** All CPU tests share a single PTS result directory named after the
+> `--result-id`. This differs from the memory and storage scripts where each
+> PTS test produces its own result directory.
+
+**OpenBenchmarking.org results (standalone per VM):**
+
+| Distro | Result URL |
+|---|---|
+| openSUSE Leap 16.0 | [2603127-NE-CPUOPENSU41](https://openbenchmarking.org/result/2603127-NE-CPUOPENSU41) |
+| Ubuntu 24.04 | [2603123-NE-CPUUBUNTU26](https://openbenchmarking.org/result/2603123-NE-CPUUBUNTU26) |
+| Rocky Linux 9.7 | [2603129-NE-CPUROCKY953](https://openbenchmarking.org/result/2603129-NE-CPUROCKY953) |
+
+**Cross-distribution comparison:**
+
+OpenBenchmarking.org can merge results from separate runs into a single comparison view:
+
+https://openbenchmarking.org/result/merge/2603127-NE-CPUOPENSU41,2603123-NE-CPUUBUNTU26,2603129-NE-CPUROCKY953
+
+To produce a local comparison report, collect results from each machine and feed
+them to `create-report-pts.sh`:
+
+```bash
+# Step 1 — Run benchmarks on each machine
+ssh cloudadmin@x.x.x.101 'sudo ./benchmark-cpu-pts.sh --upload \
+  --result-id cpu-opensuse16-8vcpu \
+  --result-name "openSUSE Leap 16.0 - 8 vCPU benchmark"'
+
+ssh cloudadmin@x.x.x.102 'sudo ./benchmark-cpu-pts.sh --upload \
+  --result-id cpu-ubuntu2404-8vcpu \
+  --result-name "Ubuntu 24.04 LTS - 8 vCPU benchmark"'
+
+ssh cloudadmin@x.x.x.103 'sudo ./benchmark-cpu-pts.sh --upload \
+  --result-id cpu-rocky9-8vcpu \
+  --result-name "Rocky Linux 9 - 8 vCPU benchmark"'
+
+# Step 2 — Collect results locally
+mkdir -p results/
+for pair in "opensuse16:x.x.x.101" "ubuntu2404:x.x.x.102" "rocky9:x.x.x.103"; do
+  name="${pair%%:*}"; ip="${pair##*:}"
+  scp -r "cloudadmin@${ip}:~/benchmark-results/cpu-${name}-8vcpu" results/
+done
+
+# Step 3 — Generate combined report
+./create-report-pts.sh \
+  results/cpu-opensuse16-8vcpu/ \
+  results/cpu-ubuntu2404-8vcpu/ \
+  results/cpu-rocky9-8vcpu/
 ```
 
 ---

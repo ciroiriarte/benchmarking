@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script Name: common-checks.sh
-# Version: 1.0
+# Version: 1.1.0
 #
 # Shared library of pre-run check functions, result collection, upload
 # helpers, and invocation context setup.  Sourced (not executed) by the
@@ -10,6 +10,9 @@
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
 #
 # Changelog:
+#   - 2026-03-14: v1.1.0 - Fix collect_results(): PTS lowercases, strips
+#                          underscores AND dots from result directory names.
+#                          Add all candidate variants to the search.
 #   - 2026-03-12: v1.0 - Initial release.  Extracted from benchmark-cpu-pts.sh
 #                        (v2.3) and benchmark-memory-pts.sh (v1.8) as the
 #                        canonical implementations.  Consolidates:
@@ -239,26 +242,28 @@ collect_results() {
 
     local copied=0
     for result_name in "${RESULT_NAMES[@]}"; do
-        # PTS may strip underscores from directory names (e.g.
-        # "foo_bar" -> "foobar"), so check both variants.
-        local sanitized_name="${result_name//_/}"
+        # PTS sanitizes result directory names: lowercases, strips
+        # underscores, and removes dots (e.g. "cpu-E5-2680v2-opensuse.16.0"
+        # becomes "cpu-e5-2680v2-opensuse160"). Build candidate names.
+        local lower_name="${result_name,,}"
+        local no_underscore="${lower_name//_/}"
+        local no_dots="${no_underscore//./}"
         local pts_result_dir=""
 
         # Search both possible PTS result locations.  System-wide installs
         # (running as root) store results under /var/lib/; user installs
         # use $HOME/.phoronix-test-suite/.  The storage script explicitly
         # moves results to $HOME, so check both locations.
-        local base
+        local base candidate
         for base in "/var/lib/phoronix-test-suite/test-results" \
                     "$HOME/.phoronix-test-suite/test-results"; do
             [[ -d "$base" ]] || continue
-            if [[ -d "${base}/${result_name}" ]]; then
-                pts_result_dir="${base}/${result_name}"
-                break
-            elif [[ -d "${base}/${sanitized_name}" ]]; then
-                pts_result_dir="${base}/${sanitized_name}"
-                break
-            fi
+            for candidate in "$result_name" "$lower_name" "$no_underscore" "$no_dots"; do
+                if [[ -d "${base}/${candidate}" ]]; then
+                    pts_result_dir="${base}/${candidate}"
+                    break 2
+                fi
+            done
         done
 
         if [[ -n "$pts_result_dir" ]]; then

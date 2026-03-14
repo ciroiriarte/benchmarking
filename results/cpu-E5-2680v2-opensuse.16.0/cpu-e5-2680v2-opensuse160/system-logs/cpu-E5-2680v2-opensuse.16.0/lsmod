@@ -1,0 +1,50 @@
+Module                  Size  Used by
+algif_hash             16384  0
+af_alg                 36864  1 algif_hash
+af_packet              65536  2
+rfkill                 45056  1
+isofs                  65536  0
+nls_iso8859_1          12288  1
+nls_cp437              16384  1
+vfat                   24576  1
+fat                   114688  1 vfat
+virtio_balloon         32768  0
+button                 24576  0
+ptp_kvm                16384  0
+fuse                  241664  1
+loop                   36864  0
+configfs               69632  1
+dmi_sysfs              24576  0
+ip_tables              36864  0
+x_tables               69632  1 ip_tables
+xfs                  2592768  1
+libcrc32c              12288  1 xfs
+sr_mod                 28672  0
+cdrom                  81920  2 isofs,sr_mod
+ahci                   57344  0
+libahci                69632  1 ahci
+libata                495616  2 libahci,ahci
+virtio_scsi            28672  2
+ehci_pci               20480  0
+sd_mod                 81920  2
+crc32_pclmul           12288  0
+uhci_hcd               61440  0
+crc32c_intel           16384  1
+sg                     49152  0
+ehci_hcd              110592  1 ehci_pci
+ghash_clmulni_intel    16384  0
+virtio_net            122880  0
+sha512_ssse3           53248  0
+sha256_ssse3           36864  0
+net_failover           24576  1 virtio_net
+scsi_mod              352256  5 virtio_scsi,sd_mod,libata,sg,sr_mod
+failover               12288  1 net_failover
+sha1_ssse3             32768  0
+usbcore               450560  3 ehci_pci,ehci_hcd,uhci_hcd
+scsi_common            16384  5 scsi_mod,sd_mod,libata,sg,sr_mod
+dm_mod                241664  0
+efivarfs               28672  1
+qemu_fw_cfg            24576  0
+aesni_intel           122880  0
+crypto_simd            16384  1 aesni_intel
+cryptd                 28672  2 crypto_simd,ghash_clmulni_intel

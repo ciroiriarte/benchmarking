@@ -777,6 +777,17 @@ self-contained and can be opened in any browser.
 
 ```
 report-samples/
+├── cpu/                     # 5 tests: build-linux-kernel, compress-7zip, c-ray, openssl, stockfish
+│   ├── cpu-e5-2680v2-opensuse160/
+│   │   ├── cpu-e5-2680v2-opensuse160.html
+│   │   ├── cpu-e5-2680v2-opensuse160.pdf
+│   │   ├── cpu-e5-2680v2-opensuse160.csv
+│   │   ├── cpu-e5-2680v2-opensuse160.json
+│   │   └── cpu-e5-2680v2-opensuse160.text
+│   ├── cpu-e5-2680v2-rocky-9/
+│   │   └── ...
+│   └── cpu-e5-2680v2-ubuntu-2404/
+│       └── ...
 ├── memory/                  # 4 tests: cachebench, ramspeed, stream, tinymembench
 │   └── cachebench/
 │       ├── cachebench.html  # Bar charts comparing 3 distros
@@ -794,6 +805,14 @@ report-samples/
 To regenerate all report-samples from the raw results:
 
 ```bash
+# CPU benchmarks (3 distros)
+./create-report-pts.sh -o ./report-samples/cpu \
+  --label "results/cpu-E5-2680v2-opensuse.16.0=openSUSE 16.0" \
+  --label "results/cpu-E5-2680v2-ubuntu-24.04=Ubuntu 24.04" \
+  --label "results/cpu-E5-2680v2-rocky-9=Rocky Linux 9" \
+  results/cpu-E5-2680v2-opensuse.16.0 results/cpu-E5-2680v2-ubuntu-24.04 \
+  results/cpu-E5-2680v2-rocky-9
+
 # Memory benchmarks (3 distros)
 ./create-report-pts.sh -o ./report-samples/memory \
   --label "results/mem-test-opensuse=openSUSE 16.0" \

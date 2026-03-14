@@ -1,0 +1,130 @@
+Downloading from https://tests.stockfishchess.org/api/nn/nn-1c0000000000.nnue ...
+Successfully validated nn-1c0000000000.nnue
+Downloading from https://tests.stockfishchess.org/api/nn/nn-37f18f62d772.nnue ...
+Successfully validated nn-37f18f62d772.nnue
+
+Config:
+debug: 'no'
+sanitize: 'none'
+optimize: 'yes'
+arch: 'x86_64'
+bits: '64'
+kernel: 'Linux'
+os: 'GNU/Linux'
+prefetch: 'yes'
+popcnt: 'yes'
+pext: 'no'
+sse: 'yes'
+mmx: 'no'
+sse2: 'yes'
+ssse3: 'yes'
+sse41: 'yes'
+avx2: 'no'
+avxvnni: 'no'
+avx512: 'no'
+vnni256: 'no'
+vnni512: 'no'
+altivec: 'no'
+vsx: 'no'
+neon: 'no'
+dotprod: 'no'
+arm_version: '0'
+lsx: 'no'
+lasx: 'no'
+target_windows: ''
+
+Flags:
+CXX: g++
+CXXFLAGS:  -Wall -Wcast-qual -fno-exceptions -std=c++17  -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one
+LDFLAGS:   -m64 -Wl,--no-as-needed -lpthread  -Wall -Wcast-qual -fno-exceptions -std=c++17  -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one -flto=jobserver
+
+Testing config sanity. If this fails, try 'make help' ...
+
+
+Step 1/4. Building instrumented executable ...
+make ARCH=x86-64-sse41-popcnt COMP=gcc gcc-profile-make
+make[1]: Entering directory '/var/lib/phoronix-test-suite/installed-tests/pts/stockfish-1.7.0/Stockfish-sf_17.1/src'
+make ARCH=x86-64-sse41-popcnt COMP=gcc \
+EXTRACXXFLAGS='-fprofile-generate=profdir' \
+EXTRACXXFLAGS+= \
+EXTRALDFLAGS='-lgcov' \
+all
+make[2]: Entering directory '/var/lib/phoronix-test-suite/installed-tests/pts/stockfish-1.7.0/Stockfish-sf_17.1/src'
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o benchmark.o benchmark.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o bitboard.o bitboard.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o evaluate.o evaluate.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o main.o main.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o misc.o misc.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o movegen.o movegen.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o movepick.o movepick.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o position.o position.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o search.o search.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o thread.o thread.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o timeman.o timeman.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o tt.o tt.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o uci.o uci.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o ucioption.o ucioption.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o tune.o tune.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o tbprobe.o syzygy/tbprobe.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o nnue_accumulator.o nnue/nnue_accumulator.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o nnue_misc.o nnue/nnue_misc.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o half_ka_v2_hm.o nnue/features/half_ka_v2_hm.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o network.o nnue/network.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o engine.o engine.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o score.o score.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o memory.o memory.cpp
+g++ -o stockfish benchmark.o bitboard.o evaluate.o main.o misc.o movegen.o movepick.o position.o search.o thread.o timeman.o tt.o uci.o ucioption.o tune.o tbprobe.o nnue_accumulator.o nnue_misc.o half_ka_v2_hm.o network.o engine.o score.o memory.o  -lgcov -m64 -Wl,--no-as-needed -lpthread  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-generate=profdir -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one -flto=jobserver
+make[2]: Leaving directory '/var/lib/phoronix-test-suite/installed-tests/pts/stockfish-1.7.0/Stockfish-sf_17.1/src'
+make[1]: Leaving directory '/var/lib/phoronix-test-suite/installed-tests/pts/stockfish-1.7.0/Stockfish-sf_17.1/src'
+
+Step 2/4. Running benchmark for pgo-build ...
+./stockfish bench > PGOBENCH.out 2>&1
+tail -n 4 PGOBENCH.out
+===========================
+Total time (ms) : 6641
+Nodes searched  : 2030154
+Nodes/second    : 305700
+
+Step 3/4. Building optimized executable ...
+make ARCH=x86-64-sse41-popcnt COMP=gcc objclean
+make[1]: Entering directory '/var/lib/phoronix-test-suite/installed-tests/pts/stockfish-1.7.0/Stockfish-sf_17.1/src'
+make[1]: Leaving directory '/var/lib/phoronix-test-suite/installed-tests/pts/stockfish-1.7.0/Stockfish-sf_17.1/src'
+make ARCH=x86-64-sse41-popcnt COMP=gcc gcc-profile-use
+make[1]: Entering directory '/var/lib/phoronix-test-suite/installed-tests/pts/stockfish-1.7.0/Stockfish-sf_17.1/src'
+make ARCH=x86-64-sse41-popcnt COMP=gcc \
+EXTRACXXFLAGS='-fprofile-use=profdir -fno-peel-loops -fno-tracer' \
+EXTRACXXFLAGS+= \
+EXTRALDFLAGS='-lgcov' \
+all
+make[2]: Entering directory '/var/lib/phoronix-test-suite/installed-tests/pts/stockfish-1.7.0/Stockfish-sf_17.1/src'
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o benchmark.o benchmark.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o bitboard.o bitboard.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o evaluate.o evaluate.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o main.o main.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o misc.o misc.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o movegen.o movegen.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o movepick.o movepick.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o position.o position.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o search.o search.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o thread.o thread.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o timeman.o timeman.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o tt.o tt.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o uci.o uci.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o ucioption.o ucioption.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o tune.o tune.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o tbprobe.o syzygy/tbprobe.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o nnue_accumulator.o nnue/nnue_accumulator.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o nnue_misc.o nnue/nnue_misc.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o half_ka_v2_hm.o nnue/features/half_ka_v2_hm.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o network.o nnue/network.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o engine.o engine.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o score.o score.cpp
+g++  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one   -c -o memory.o memory.cpp
+g++ -o stockfish benchmark.o bitboard.o evaluate.o main.o misc.o movegen.o movepick.o position.o search.o thread.o timeman.o tt.o uci.o ucioption.o tune.o tbprobe.o nnue_accumulator.o nnue_misc.o half_ka_v2_hm.o network.o engine.o score.o memory.o  -lgcov -m64 -Wl,--no-as-needed -lpthread  -Wall -Wcast-qual -fno-exceptions -std=c++17 -fprofile-use=profdir -fno-peel-loops -fno-tracer -pedantic -Wextra -Wshadow -Wmissing-declarations -m64 -DUSE_PTHREADS -DNDEBUG -O3 -funroll-loops -DIS_64BIT -msse -msse3 -mpopcnt -DUSE_POPCNT -DUSE_SSE41 -msse4.1 -DUSE_SSSE3 -mssse3 -DUSE_SSE2 -msse2 -DARCH=x86-64-sse41-popcnt -flto -flto-partition=one -flto=jobserver
+make[2]: Leaving directory '/var/lib/phoronix-test-suite/installed-tests/pts/stockfish-1.7.0/Stockfish-sf_17.1/src'
+make[1]: Leaving directory '/var/lib/phoronix-test-suite/installed-tests/pts/stockfish-1.7.0/Stockfish-sf_17.1/src'
+
+Step 4/4. Deleting profile data ...
+make ARCH=x86-64-sse41-popcnt COMP=gcc profileclean
+make[1]: Entering directory '/var/lib/phoronix-test-suite/installed-tests/pts/stockfish-1.7.0/Stockfish-sf_17.1/src'
+make[1]: Leaving directory '/var/lib/phoronix-test-suite/installed-tests/pts/stockfish-1.7.0/Stockfish-sf_17.1/src'

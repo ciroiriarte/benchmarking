@@ -8,9 +8,17 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 3.11.0
+# Version: 3.12.0
 #
 # Changelog:
+#   - 2026-03-15: v3.12.0 - Remove non-direct I/O (buffered) fio permutations.
+#                            Direct I/O (O_DIRECT) bypasses the page cache and
+#                            measures actual storage device performance; buffered
+#                            I/O tests measure OS page cache behavior which is
+#                            non-reproducible across runs and hides device
+#                            characteristics.  This halves the fio test matrix
+#                            from 384 to 192 per disk (4 types × 4 engines ×
+#                            1 direct × 12 block sizes × 1 job count).
 #   - 2026-03-13: v3.11.0 - Add --identifier flag to control TEST_RESULTS_IDENTIFIER.
 #                            Accepts "upload-id" (uses --result-id value),
 #                            "upload-name" (uses --result-name, the default),
@@ -78,6 +86,7 @@
 #                        job counts sequentially.  This reduces the total test
 #                        count from 1152 to 384 (4 types × 4 engines × 2 direct
 #                        × 12 block sizes × 1 job count × 1 disk target).
+#                        v3.12.0 further reduces to 192 by removing non-direct.
 #   - 2026-02-25: v2.7 - Replace iozone and postmark (both fail to build with
 #                        GCC 15) with pts/dbench and pts/fs-mark.
 #                        Add Python 2 pre-check: skip compilebench with a clear
@@ -836,7 +845,7 @@ patch_fio_disk_target() {
     local cpu_count
     cpu_count=$(nproc 2>/dev/null || grep -c ^processor /proc/cpuinfo)
 
-    echo "  Patching fio test-definition.xml: Disk Target → ${mount_point}, Job Count → ${cpu_count} (parallel workers), removing Windows AIO"
+    echo "  Patching fio test-definition.xml: Disk Target → ${mount_point}, Job Count → ${cpu_count} (parallel workers), Direct I/O only, removing Windows AIO"
     python3 - "$fio_xml" "$mount_point" "$cpu_count" <<'PYEOF'
 import sys, re
 xml_path, mount, cpu_count = sys.argv[1], sys.argv[2], sys.argv[3]
@@ -891,6 +900,28 @@ content = re.sub(
 content = re.sub(
     r'\s*<Entry>\s*<Name>Windows AIO</Name>\s*<Value>windowsaio</Value>\s*</Entry>',
     '', content, flags=re.DOTALL)
+
+# 4. Replace the Direct option with a single "Yes" entry (direct=1).
+#    Non-direct (buffered) I/O tests measure OS page cache behavior rather than
+#    actual storage device performance.  Results are non-reproducible across runs
+#    due to variable cache hit rates and memory pressure.  Keeping only Direct=Yes
+#    (O_DIRECT) bypasses the page cache and measures the device directly.
+new_direct_option = (
+    '<Option>\n'
+    '      <DisplayName>Direct</DisplayName>\n'
+    '      <Identifier>direct</Identifier>\n'
+    '      <Menu>\n'
+    '        <Entry>\n'
+    '          <Name>Yes</Name>\n'
+    '          <Value>1</Value>\n'
+    '        </Entry>\n'
+    '      </Menu>\n'
+    '    </Option>')
+content = re.sub(
+    r'<Option>\s*<DisplayName>Direct</DisplayName>\s*'
+    r'<Identifier>direct</Identifier>'
+    r'(?:\s*<Menu>.*?</Menu>)?\s*</Option>',
+    new_direct_option, content, flags=re.DOTALL)
 
 with open(xml_path, 'w') as f:
     f.write(content)

@@ -11,9 +11,14 @@
 #              that PTS comparison charts show distinguishable bars per system.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.2.1
+# Version: 1.3.0
 #
 # Changelog:
+#   - 2026-03-21: v1.3.0 - Fix SIGPIPE (exit 141) caused by grep|head pipelines
+#                           under set -eo pipefail; use grep -m1 and find -quit.
+#                           Fix variant grouping for timestamp-named result dirs:
+#                           derive variant from PTS test type + disk label instead
+#                           of directory name prefix stripping
 #   - 2026-03-13: v1.2.1 - Fix HTML/PDF export: capture stdout for formats that
 #                           print content instead of writing files, and broaden
 #                           file search to cover PTS version-dependent locations
@@ -30,7 +35,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-readonly SCRIPT_VERSION="1.2.1"
+readonly SCRIPT_VERSION="1.3.0"
 readonly SCRIPT_NAME=$(basename "$0")
 readonly TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
@@ -187,7 +192,7 @@ check_prerequisites() {
 # ---------------------------------------------------------------------------
 extract_os_label() {
     local xml_file="$1"
-    grep -oP 'OS: \K[^,]+' "$xml_file" 2>/dev/null | head -1
+    grep -m1 -oP 'OS: \K[^,]+' "$xml_file" 2>/dev/null
 }
 
 # ---------------------------------------------------------------------------
@@ -214,7 +219,7 @@ get_label_for_dir() {
 
     # 3. Auto-detect from the first composite.xml's Software/OS field
     local first_xml
-    first_xml=$(find "$run_dir" -name composite.xml -type f 2>/dev/null | head -1)
+    first_xml=$(find "$run_dir" -name composite.xml -type f -print -quit 2>/dev/null)
     if [[ -n "$first_xml" ]]; then
         local os_label
         os_label=$(extract_os_label "$first_xml")
@@ -307,8 +312,7 @@ find_pts_result_dirs() {
 get_pts_identifier() {
     local xml_file="$1"
     # Match <Identifier>pts/...</Identifier> — PTS test IDs always start with "pts/"
-    grep -oP '<Identifier>\Kpts/[^<]+' "$xml_file" \
-        | head -1
+    grep -m1 -oP '<Identifier>\Kpts/[^<]+' "$xml_file"
 }
 
 # ---------------------------------------------------------------------------
@@ -340,6 +344,18 @@ get_result_variant() {
     local result_basename="$1"
     local run_basename="$2"
     echo "${result_basename#"${run_basename}"}"
+}
+
+# ---------------------------------------------------------------------------
+# extract_disk_label <composite.xml>
+#
+# Extracts the disk mount-point label from a PTS result. Looks for
+# "Disk Target: /mnt/LABEL" in <Description> elements (used by fio).
+# Returns the label (e.g. "vSSD") or an empty string.
+# ---------------------------------------------------------------------------
+extract_disk_label() {
+    local xml_file="$1"
+    grep -m1 -oP 'Disk Target: /mnt/\K[^<"]+' "$xml_file" 2>/dev/null || true
 }
 
 # ---------------------------------------------------------------------------
@@ -419,7 +435,7 @@ merge_results() {
         warn "Could not determine merge output path for ${merged_name}"
         # Try to find the most recent merge-* directory as fallback
         local latest_merge
-        latest_merge=$(ls -td "${pts_results_dir}"/merge-* 2>/dev/null | head -1)
+        latest_merge=$(ls -td "${pts_results_dir}"/merge-* 2>/dev/null | head -1 || true)
         if [[ -n "$latest_merge" ]]; then
             mv "$latest_merge" "${pts_results_dir}/${merged_name}"
             MERGED_RESULT_NAMES+=("$merged_name")
@@ -493,7 +509,7 @@ export_formats() {
         # Last resort: any matching file inside the PTS result directory
         if [[ -z "$found" ]]; then
             found=$(find "${pts_results_base}/${result_name}" -maxdepth 1 \
-                -name "*.${format}" -type f 2>/dev/null | head -1)
+                -name "*.${format}" -type f -print -quit 2>/dev/null)
         fi
 
         if [[ -n "$found" ]]; then
@@ -527,14 +543,21 @@ main() {
     # Phase 1: Discover and import all PTS results from every run-dir.
     # Build a map: variant → list of temp result names
     #
-    # The variant key is derived by stripping the run-dir prefix from
-    # each result directory name, giving a test-specific key such as
-    # "cachebench" or "netperftcpmaerts". This ensures that only
-    # same-test results from different runs are merged together, so
-    # each distro gets exactly one bar per chart.
+    # The variant key groups same-test results across run directories.
+    # Primary method: strip the run-dir prefix from the result directory
+    # name (e.g. "net-peer-opensuse16netperftcpmaerts" minus
+    # "net-peer-opensuse16" → "netperftcpmaerts").
+    #
+    # Fallback (timestamp dirs): when the result directory name does not
+    # start with the run-dir prefix (e.g. "2026-03-17-2326"), derive
+    # the variant from the PTS test type + disk label extracted from the
+    # composite.xml, or a positional counter for tests without disk info.
     # ------------------------------------------------------------------
     # Bash 4 associative array: variant → space-separated temp names
     declare -A VARIANT_TO_NAMES
+
+    # Per-run, per-test-type counter for position-based disk labeling
+    declare -A _TEST_TYPE_COUNTER
 
     local run_idx=0
     for run_dir in "${RUN_DIRS[@]}"; do
@@ -567,11 +590,33 @@ main() {
             local result_basename
             result_basename=$(basename "$result_dir")
 
-            # Derive the test variant by stripping the run-dir prefix.
-            # e.g. "net-peer-opensuse16netperftcpmaerts" minus
-            #      "net-peer-opensuse16" → "netperftcpmaerts"
+            # Derive the test variant key
             local variant
             variant=$(get_result_variant "$result_basename" "$run_basename")
+
+            # If prefix stripping had no effect (result dir is not prefixed
+            # by run-dir name, e.g. timestamp-based directories), fall back
+            # to a semantic variant based on the PTS test type + disk label.
+            if [[ "$variant" == "$result_basename" ]]; then
+                local test_short
+                test_short=$(get_pts_test_type "$pts_id")
+                test_short="${test_short##*/}"  # "pts/fio" → "fio"
+
+                # Try to extract disk label from composite.xml (fio has it)
+                local disk_label
+                disk_label=$(extract_disk_label "$xml")
+
+                if [[ -z "$disk_label" ]]; then
+                    # Position-based fallback: 1st occurrence = disk1, etc.
+                    local counter_key="r${run_idx}_${test_short}"
+                    local count=${_TEST_TYPE_COUNTER[$counter_key]:-0}
+                    (( count++ )) || true  # avoid set -e on (( 0 ))
+                    _TEST_TYPE_COUNTER[$counter_key]=$count
+                    disk_label="disk${count}"
+                fi
+
+                variant="${test_short}-${disk_label}"
+            fi
 
             local temp_name="${TEMP_PREFIX}_r${run_idx}_${result_basename}"
 

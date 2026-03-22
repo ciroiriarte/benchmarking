@@ -1,0 +1,93 @@
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 1
+2026-03-20 17:54:56
+#####
+test: (g=0): rw=read, bs=(R) 64.0KiB-64.0KiB, (W) 64.0KiB-64.0KiB, (T) 64.0KiB-64.0KiB, ioengine=sync, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+
+test: (groupid=0, jobs=8): err= 0: pid=321653: Fri Mar 20 17:54:54 2026
+  read: IOPS=499, BW=31.2MiB/s (32.8MB/s)(1875MiB/60015msec)
+   bw (  KiB/s): min=22144, max=41856, per=100.00%, avg=32030.51, stdev=229.72, samples=953
+   iops        : min=  346, max=  654, avg=500.43, stdev= 3.59, samples=953
+  cpu          : usr=0.10%, sys=0.23%, ctx=30122, majf=0, minf=300
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=30004,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=31.2MiB/s (32.8MB/s), 31.2MiB/s-31.2MiB/s (32.8MB/s-32.8MB/s), io=1875MiB (1966MB), run=60015-60015msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 2
+2026-03-20 17:56:25
+#####
+test: (g=0): rw=read, bs=(R) 64.0KiB-64.0KiB, (W) 64.0KiB-64.0KiB, (T) 64.0KiB-64.0KiB, ioengine=sync, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+
+test: (groupid=0, jobs=8): err= 0: pid=321669: Fri Mar 20 17:56:23 2026
+  read: IOPS=499, BW=31.2MiB/s (32.8MB/s)(1875MiB/60015msec)
+   bw (  KiB/s): min=28032, max=35849, per=100.00%, avg=32036.18, stdev=112.38, samples=952
+   iops        : min=  438, max=  560, avg=500.52, stdev= 1.76, samples=952
+  cpu          : usr=0.07%, sys=0.22%, ctx=30003, majf=0, minf=299
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=30003,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=31.2MiB/s (32.8MB/s), 31.2MiB/s-31.2MiB/s (32.8MB/s-32.8MB/s), io=1875MiB (1966MB), run=60015-60015msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 3
+2026-03-20 17:57:53
+#####
+test: (g=0): rw=read, bs=(R) 64.0KiB-64.0KiB, (W) 64.0KiB-64.0KiB, (T) 64.0KiB-64.0KiB, ioengine=sync, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+note: both iodepth >= 1 and synchronous I/O engine are selected, queue depth will be capped at 1
+
+test: (groupid=0, jobs=8): err= 0: pid=321683: Fri Mar 20 17:57:53 2026
+  read: IOPS=499, BW=31.2MiB/s (32.8MB/s)(1875MiB/60015msec)
+   bw (  KiB/s): min=30727, max=32896, per=100.00%, avg=32034.83, stdev=60.94, samples=952
+   iops        : min=  480, max=  514, avg=500.49, stdev= 0.95, samples=952
+  cpu          : usr=0.05%, sys=0.22%, ctx=30008, majf=0, minf=299
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=30005,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=31.2MiB/s (32.8MB/s), 31.2MiB/s-31.2MiB/s (32.8MB/s-32.8MB/s), io=1875MiB (1966MB), run=60015-60015msec
+

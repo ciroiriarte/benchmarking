@@ -1,0 +1,75 @@
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 1
+2026-03-20 08:12:45
+#####
+
+#  ./fs_mark  -d  scratch  -L  10  -s  1048576  -n  4000  -D  32 
+#	Version 3.3, 1 thread(s) starting at Fri Mar 20 08:11:40 2026
+#	Sync method: INBAND FSYNC: fsync() per file in write loop.
+#	Directories:  Time based hash between directories across 32 subdirectories with 180 seconds per subdirectory.
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 1048576 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+    11         4000      1048576        695.5            51687
+    19         8000      1048576        694.9            55591
+    27        12000      1048576        645.9            59001
+    35        16000      1048576        692.4            54430
+    43        20000      1048576        754.5            51054
+    51        24000      1048576        641.4            55163
+    58        28000      1048576        708.6            51611
+    66        32000      1048576        691.1            51729
+    74        36000      1048576        639.5            53732
+    82        40000      1048576        667.7            51251
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 2
+2026-03-20 08:13:50
+#####
+
+#  ./fs_mark  -d  scratch  -L  10  -s  1048576  -n  4000  -D  32 
+#	Version 3.3, 1 thread(s) starting at Fri Mar 20 08:12:47 2026
+#	Sync method: INBAND FSYNC: fsync() per file in write loop.
+#	Directories:  Time based hash between directories across 32 subdirectories with 180 seconds per subdirectory.
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 1048576 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+    11         4000      1048576        687.0            54478
+    19         8000      1048576        747.3            51537
+    27        12000      1048576        673.6            53613
+    35        16000      1048576        655.1            53169
+    43        20000      1048576        724.5            55613
+    51        24000      1048576        736.6            66992
+    58        28000      1048576        694.6            64083
+    66        32000      1048576        672.8            56349
+    74        36000      1048576        692.0            57530
+    82        40000      1048576        703.9            56545
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 3
+2026-03-20 08:14:53
+#####
+
+#  ./fs_mark  -d  scratch  -L  10  -s  1048576  -n  4000  -D  32 
+#	Version 3.3, 1 thread(s) starting at Fri Mar 20 08:13:52 2026
+#	Sync method: INBAND FSYNC: fsync() per file in write loop.
+#	Directories:  Time based hash between directories across 32 subdirectories with 180 seconds per subdirectory.
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 1048576 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+    11         4000      1048576        674.1            55836
+    19         8000      1048576        690.7            57359
+    27        12000      1048576        678.8            57273
+    35        16000      1048576        688.7            51943
+    43        20000      1048576        712.6            58029
+    51        24000      1048576        722.0            56514
+    58        28000      1048576        692.0            57322
+    66        32000      1048576        717.2            53286
+    74        36000      1048576        717.6            53812
+    82        40000      1048576        724.9            50636
+

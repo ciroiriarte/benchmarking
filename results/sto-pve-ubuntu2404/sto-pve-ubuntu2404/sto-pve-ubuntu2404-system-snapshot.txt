@@ -1,0 +1,68 @@
+=== Benchmark Configuration ===
+Date:        2026-03-17 23:27:12 UTC
+Result ID:   sto-pve-ubuntu2404
+Result Name: Storage PVE Ubuntu2404 vSSD vs vHDD
+Tests:       fio dbench fs-mark compilebench
+Disks:
+  /dev/sdb;vSSD
+  /dev/sdc;vHDD
+
+=== Kernel ===
+Linux sto-bench-ubuntu2404 6.8.0-106-generic #106-Ubuntu SMP PREEMPT_DYNAMIC Fri Mar  6 07:58:08 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+
+=== OS Release ===
+PRETTY_NAME="Ubuntu 24.04.4 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04.4 LTS (Noble Numbat)"
+VERSION_CODENAME=noble
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=noble
+LOGO=ubuntu-logo
+
+=== Block Devices ===
+NAME     SIZE TYPE ROTA SCHED       RQ-SIZE  RA
+sda       30G disk    0 none            256 128
+|-sda1    29G part    0 none            256 128
+|-sda14    4M part    0 none            256 128
+|-sda15  106M part    0 none            256 128
+`-sda16  913M part    0 none            256 128
+sdb       50G disk    0 none            256 128
+sdc       50G disk    1 none            256 128
+sr0        4M rom     1 mq-deadline      64 128
+
+=== Per-disk Detail ===
+--- vSSD (/dev/sdb) ---
+  driver:      virtio_scsi
+  type:        virtual
+  scheduler:   none
+  nr_requests: 256
+  read_ahead:  128 kB
+  rotational:  0
+
+--- vHDD (/dev/sdc) ---
+  driver:      virtio_scsi
+  type:        virtual
+  scheduler:   none
+  nr_requests: 256
+  read_ahead:  128 kB
+  rotational:  1
+
+=== Memory ===
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       512Mi        14Gi       1.2Mi       1.1Gi        15Gi
+Swap:             0B          0B          0B
+
+=== Load Average ===
+0.08 0.02 0.01 1/196 6358
+
+=== Storage Controllers (dmidecode) ===
+# dmidecode 3.5
+Getting SMBIOS data from sysfs.
+SMBIOS 2.8 present.
+

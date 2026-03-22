@@ -798,8 +798,23 @@ report-samples/
 ├── network-peer/            # 8 tests: loopback, netperf×4, sockperf×3
 │   └── netperftcpstream/
 │       └── ...
-└── network-standalone/      # 4 tests: loopback, sockperf×3
-    └── ...
+├── network-standalone/      # 4 tests: loopback, sockperf×3
+│   └── ...
+└── storage/                 # 3 tests × 2 disks: fio, dbench, fs-mark on vSSD + vHDD
+    ├── fio-vSSD/            # fio direct I/O on SSD (192 configs: 4 types × 4 engines × 12 block sizes)
+    │   ├── fio-vSSD.html
+    │   ├── fio-vSSD.pdf
+    │   └── fio-vSSD.text
+    ├── fio-vHDD/            # fio direct I/O on HDD-like disk (IOPS/throughput capped)
+    │   └── ...
+    ├── dbench-disk1/        # dbench on SSD (6 client counts)
+    │   └── ...
+    ├── dbench-disk2/        # dbench on HDD-like disk
+    │   └── ...
+    ├── fs-mark-disk1/       # fs-mark on SSD
+    │   └── ...
+    └── fs-mark-disk2/       # fs-mark on HDD-like disk
+        └── ...
 ```
 
 To regenerate all report-samples from the raw results:
@@ -836,6 +851,12 @@ To regenerate all report-samples from the raw results:
   results/standalone/net-standalone-opensuse16 \
   results/standalone/net-standalone-rocky9 \
   results/standalone/net-standalone-ubuntu2404
+
+# Storage benchmarks (3 distros, vSSD + vHDD per VM)
+./create-report-pts.sh -o ./report-samples/storage \
+  results/sto-pve-opensuse16/sto-pve-opensuse16 \
+  results/sto-pve-ubuntu2404/sto-pve-ubuntu2404 \
+  results/sto-pve-rocky9/sto-pve-rocky9
 ```
 
 **OpenBenchmarking.org results:**

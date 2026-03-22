@@ -1,0 +1,66 @@
+=== Benchmark Configuration ===
+Date:        2026-03-17 23:25:58 UTC
+Result ID:   sto-pve-opensuse16
+Result Name: Storage PVE openSUSE16 vSSD vs vHDD
+Tests:       fio dbench fs-mark compilebench
+Disks:
+  /dev/sdb;vSSD
+  /dev/sdc;vHDD
+
+=== Kernel ===
+Linux sto-bench-opensuse16 6.12.0-160000.26-default #1 SMP PREEMPT_DYNAMIC Thu Feb  5 00:00:11 UTC 2026 (f762390) x86_64 x86_64 x86_64 GNU/Linux
+
+=== OS Release ===
+NAME="openSUSE Leap"
+VERSION="16.0"
+ID="opensuse-leap"
+ID_LIKE="suse opensuse"
+VERSION_ID="16.0"
+PRETTY_NAME="openSUSE Leap 16.0"
+ANSI_COLOR="0;32"
+CPE_NAME="cpe:/o:opensuse:leap:16.0"
+BUG_REPORT_URL="https://bugs.opensuse.org"
+HOME_URL="https://www.opensuse.org/"
+DOCUMENTATION_URL="https://en.opensuse.org/Portal:Leap"
+LOGO="distributor-logo-Leap"
+
+=== Block Devices ===
+NAME    SIZE TYPE ROTA SCHED       RQ-SIZE   RA
+sda      30G disk    0 none            256 1024
+├─sda1    2M part    0 none            256 1024
+├─sda2  512M part    0 none            256 1024
+└─sda3 29.5G part    0 none            256 1024
+sdb      50G disk    0 none            256 1024
+sdc      50G disk    1 none            256 1024
+sr0       4M rom     0 mq-deadline      64 1024
+
+=== Per-disk Detail ===
+--- vSSD (/dev/sdb) ---
+  driver:      virtio_scsi
+  type:        virtual
+  scheduler:   none
+  nr_requests: 256
+  read_ahead:  1024 kB
+  rotational:  0
+
+--- vHDD (/dev/sdc) ---
+  driver:      virtio_scsi
+  type:        virtual
+  scheduler:   none
+  nr_requests: 256
+  read_ahead:  1024 kB
+  rotational:  1
+
+=== Memory ===
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       486Mi        15Gi       908Ki       222Mi        15Gi
+Swap:             0B          0B          0B
+
+=== Load Average ===
+0.05 0.01 0.00 1/172 2850
+
+=== Storage Controllers (dmidecode) ===
+# dmidecode 3.6
+Getting SMBIOS data from sysfs.
+SMBIOS 2.8 present.
+

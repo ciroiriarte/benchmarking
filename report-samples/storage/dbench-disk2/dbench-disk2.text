@@ -1,0 +1,72 @@
+
+2026-03-21-1026
+KVM testing on openSUSE Leap 16.0 via the Phoronix Test Suite.
+
+
+openSUSE Leap 16.0: 
+
+	Processor: Intel Xeon E5-2680 v2 (8 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Memory: 1 x 16 GB RAM QEMU, Disk: 32GB QEMU HDD + 2 x 54GB QEMU HDD
+
+	OS: openSUSE Leap 16.0, Kernel: 6.12.0-160000.26-default (x86_64), Compiler: GCC 15.2.0, File-System: xfs, System Layer: KVM
+
+Ubuntu 24.04: 
+
+	Processor: Intel Xeon E5-2680 v2 (8 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Chipset: Intel 82G33/G31/P35/P31 + ICH9, Memory: 1 x 16 GB RAM QEMU, Disk: 32GB QEMU HDD + 2 x 54GB QEMU HDD, Audio: Intel 82801I, Network: Red Hat Virtio device
+
+	OS: Ubuntu 24.04, Kernel: 6.8.0-106-generic (x86_64), Compiler: GCC 13.3.0, File-System: xfs, System Layer: KVM
+
+Rocky Linux 9.7: 
+
+	Processor: Intel Xeon E5-2680 v2 (8 Cores), Motherboard: QEMU Standard PC (Q35 + ICH9 2009) (4.2025.05-2 BIOS), Memory: 1 x 16 GB RAM QEMU, Disk: 32GB QEMU HDD + 2 x 54GB QEMU HDD
+
+	OS: Rocky Linux 9.7, Kernel: 5.14.0-611.36.1.el9_7.x86_64 (x86_64), Compiler: GCC 11.5.0 20240719, File-System: xfs, System Layer: KVM
+
+
+Dbench 4.0
+Client Count: 1
+[3mMB/s > Higher Is Better[0m
+openSUSE Leap 16.0 . 112.92 |===================================================
+Ubuntu 24.04 ....... 113.09 |===================================================
+Rocky Linux 9.7 .... 103.04 |==============================================
+
+
+Dbench 4.0
+Client Count: 6
+[3mMB/s > Higher Is Better[0m
+openSUSE Leap 16.0 . 156.45 |===================================================
+Ubuntu 24.04 ....... 157.68 |===================================================
+Rocky Linux 9.7 .... 148.02 |================================================
+
+
+Dbench 4.0
+Client Count: 12
+[3mMB/s > Higher Is Better[0m
+openSUSE Leap 16.0 . 171.99 |===================================================
+Ubuntu 24.04 ....... 172.45 |===================================================
+Rocky Linux 9.7 .... 169.93 |==================================================
+
+
+Dbench 4.0
+Client Count: 48
+[3mMB/s > Higher Is Better[0m
+openSUSE Leap 16.0 . 182.56 |=================================================
+Ubuntu 24.04 ....... 183.09 |=================================================
+Rocky Linux 9.7 .... 191.16 |===================================================
+
+
+Dbench 4.0
+Client Count: 128
+[3mMB/s > Higher Is Better[0m
+openSUSE Leap 16.0 . 170.87 |==============================================
+Ubuntu 24.04 ....... 173.85 |===============================================
+Rocky Linux 9.7 .... 187.47 |===================================================
+
+
+Dbench 4.0
+Client Count: 256
+[3mMB/s > Higher Is Better[0m
+openSUSE Leap 16.0 . 174.92 |===============================================
+Ubuntu 24.04 ....... 179.18 |================================================
+Rocky Linux 9.7 .... 191.83 |===================================================
+
+

@@ -1,0 +1,69 @@
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 1
+2026-03-19 10:11:25
+#####
+test: (g=0): rw=read, bs=(R) 2048KiB-2048KiB, (W) 2048KiB-2048KiB, (T) 2048KiB-2048KiB, ioengine=libaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=100649: Thu Mar 19 10:11:23 2026
+  read: IOPS=479, BW=975MiB/s (1022MB/s)(57.8GiB/60729msec)
+   bw (  KiB/s): min=73728, max=2396160, per=99.30%, avg=991215.51, stdev=56689.86, samples=962
+   iops        : min=   36, max= 1170, avg=483.92, stdev=27.68, samples=962
+  cpu          : usr=0.04%, sys=0.12%, ctx=15630, majf=0, minf=298
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=29096,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=975MiB/s (1022MB/s), 975MiB/s-975MiB/s (1022MB/s-1022MB/s), io=57.8GiB (62.1GB), run=60729-60729msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 2
+2026-03-19 10:12:55
+#####
+test: (g=0): rw=read, bs=(R) 2048KiB-2048KiB, (W) 2048KiB-2048KiB, (T) 2048KiB-2048KiB, ioengine=libaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=100684: Thu Mar 19 10:12:53 2026
+  read: IOPS=478, BW=975MiB/s (1022MB/s)(57.7GiB/60677msec)
+   bw (  KiB/s): min=45064, max=2589443, per=99.52%, avg=993079.92, stdev=63495.21, samples=961
+   iops        : min=   22, max= 1264, avg=484.82, stdev=31.00, samples=961
+  cpu          : usr=0.03%, sys=0.13%, ctx=14502, majf=0, minf=301
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=29061,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=975MiB/s (1022MB/s), 975MiB/s-975MiB/s (1022MB/s-1022MB/s), io=57.7GiB (62.0GB), run=60677-60677msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 3
+2026-03-19 10:14:23
+#####
+test: (g=0): rw=read, bs=(R) 2048KiB-2048KiB, (W) 2048KiB-2048KiB, (T) 2048KiB-2048KiB, ioengine=libaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=100698: Thu Mar 19 10:14:23 2026
+  read: IOPS=488, BW=994MiB/s (1042MB/s)(58.9GiB/60742msec)
+   bw (  KiB/s): min=65536, max=2387968, per=99.89%, avg=1016438.90, stdev=59275.10, samples=957
+   iops        : min=   32, max= 1166, avg=496.25, stdev=28.94, samples=957
+  cpu          : usr=0.03%, sys=0.13%, ctx=15577, majf=0, minf=298
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=29676,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=994MiB/s (1042MB/s), 994MiB/s-994MiB/s (1042MB/s-1042MB/s), io=58.9GiB (63.3GB), run=60742-60742msec
+

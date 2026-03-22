@@ -1,0 +1,345 @@
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 1
+2026-03-19 02:36:08
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71486: Thu Mar 19 02:36:06 2026
+  write: IOPS=1150, BW=145MiB/s (152MB/s)(8948MiB/61798msec); 0 zone resets
+   bw (  KiB/s): min= 4096, max=390506, per=100.00%, avg=158772.03, stdev=12429.97, samples=917
+   iops        : min=   32, max= 3050, avg=1240.25, stdev=97.10, samples=917
+  cpu          : usr=0.32%, sys=0.31%, ctx=63948, majf=0, minf=299
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,71082,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=145MiB/s (152MB/s), 145MiB/s-145MiB/s (152MB/s-152MB/s), io=8948MiB (9383MB), run=61798-61798msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 2
+2026-03-19 02:37:39
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71615: Thu Mar 19 02:37:37 2026
+  write: IOPS=811, BW=102MiB/s (107MB/s)(6381MiB/62303msec); 0 zone resets
+   bw (  KiB/s): min= 2304, max=461939, per=100.00%, avg=108091.40, stdev=12807.10, samples=958
+   iops        : min=   18, max= 3608, avg=844.35, stdev=100.05, samples=958
+  cpu          : usr=0.26%, sys=0.21%, ctx=45811, majf=0, minf=297
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,50544,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=102MiB/s (107MB/s), 102MiB/s-102MiB/s (107MB/s-107MB/s), io=6381MiB (6691MB), run=62303-62303msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 3
+2026-03-19 02:39:10
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71700: Thu Mar 19 02:39:08 2026
+  write: IOPS=1012, BW=128MiB/s (134MB/s)(7770MiB/60866msec); 0 zone resets
+   bw (  KiB/s): min= 2560, max=454144, per=100.00%, avg=134426.76, stdev=16265.88, samples=940
+   iops        : min=   20, max= 3548, avg=1049.90, stdev=127.05, samples=940
+  cpu          : usr=0.29%, sys=0.27%, ctx=56640, majf=0, minf=297
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,61654,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=128MiB/s (134MB/s), 128MiB/s-128MiB/s (134MB/s-134MB/s), io=7770MiB (8147MB), run=60866-60866msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 4
+2026-03-19 02:40:40
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71779: Thu Mar 19 02:40:38 2026
+  write: IOPS=1653, BW=208MiB/s (218MB/s)(12.4GiB/60890msec); 0 zone resets
+   bw (  KiB/s): min= 4868, max=705792, per=100.00%, avg=214575.40, stdev=26035.24, samples=961
+   iops        : min=   38, max= 5514, avg=1676.26, stdev=203.39, samples=961
+  cpu          : usr=0.43%, sys=0.42%, ctx=89686, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,100679,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=208MiB/s (218MB/s), 208MiB/s-208MiB/s (218MB/s-218MB/s), io=12.4GiB (13.3GB), run=60890-60890msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 5
+2026-03-19 02:42:11
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71899: Thu Mar 19 02:42:09 2026
+  write: IOPS=1607, BW=202MiB/s (212MB/s)(12.1GiB/61381msec); 0 zone resets
+   bw (  KiB/s): min= 2048, max=650907, per=100.00%, avg=212729.00, stdev=23961.88, samples=950
+   iops        : min=   16, max= 5085, avg=1661.73, stdev=187.18, samples=950
+  cpu          : usr=0.40%, sys=0.41%, ctx=87635, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,98661,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=202MiB/s (212MB/s), 202MiB/s-202MiB/s (212MB/s-212MB/s), io=12.1GiB (13.0GB), run=61381-61381msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 6
+2026-03-19 02:43:42
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72057: Thu Mar 19 02:43:40 2026
+  write: IOPS=1189, BW=150MiB/s (157MB/s)(9187MiB/61376msec); 0 zone resets
+   bw (  KiB/s): min= 4096, max=639895, per=100.00%, avg=154765.80, stdev=18262.10, samples=966
+   iops        : min=   32, max= 4999, avg=1208.98, stdev=142.67, samples=966
+  cpu          : usr=0.35%, sys=0.29%, ctx=65339, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,72989,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=150MiB/s (157MB/s), 150MiB/s-150MiB/s (157MB/s-157MB/s), io=9187MiB (9633MB), run=61376-61376msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 7
+2026-03-19 02:45:12
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72169: Thu Mar 19 02:45:10 2026
+  write: IOPS=984, BW=124MiB/s (130MB/s)(7543MiB/60799msec); 0 zone resets
+   bw (  KiB/s): min= 5121, max=477568, per=100.00%, avg=132972.54, stdev=11744.91, samples=922
+   iops        : min=   40, max= 3731, avg=1038.67, stdev=91.75, samples=922
+  cpu          : usr=0.27%, sys=0.26%, ctx=54296, majf=0, minf=291
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,59843,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=124MiB/s (130MB/s), 124MiB/s-124MiB/s (130MB/s-130MB/s), io=7543MiB (7910MB), run=60799-60799msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 8
+2026-03-19 02:46:42
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72262: Thu Mar 19 02:46:40 2026
+  write: IOPS=1732, BW=218MiB/s (228MB/s)(12.9GiB/60720msec); 0 zone resets
+   bw (  KiB/s): min= 6144, max=718012, per=100.00%, avg=223483.25, stdev=24807.44, samples=964
+   iops        : min=   48, max= 5609, avg=1745.84, stdev=193.81, samples=964
+  cpu          : usr=0.50%, sys=0.43%, ctx=93509, majf=0, minf=291
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,105183,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=218MiB/s (228MB/s), 218MiB/s-218MiB/s (228MB/s-228MB/s), io=12.9GiB (13.9GB), run=60720-60720msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 9
+2026-03-19 02:48:13
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72386: Thu Mar 19 02:48:11 2026
+  write: IOPS=1640, BW=206MiB/s (216MB/s)(12.3GiB/61306msec); 0 zone resets
+   bw (  KiB/s): min= 2048, max=704000, per=100.00%, avg=224359.24, stdev=27532.32, samples=918
+   iops        : min=   16, max= 5500, avg=1752.70, stdev=215.09, samples=918
+  cpu          : usr=0.43%, sys=0.43%, ctx=89966, majf=0, minf=291
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,100565,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=206MiB/s (216MB/s), 206MiB/s-206MiB/s (216MB/s-216MB/s), io=12.3GiB (13.2GB), run=61306-61306msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 10
+2026-03-19 02:49:43
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72519: Thu Mar 19 02:49:41 2026
+  write: IOPS=1161, BW=146MiB/s (153MB/s)(8916MiB/60988msec); 0 zone resets
+   bw (  KiB/s): min= 8960, max=635392, per=100.00%, avg=157491.91, stdev=14940.71, samples=921
+   iops        : min=   70, max= 4964, avg=1230.28, stdev=116.72, samples=921
+  cpu          : usr=0.33%, sys=0.30%, ctx=63201, majf=0, minf=291
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,70822,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=146MiB/s (153MB/s), 146MiB/s-146MiB/s (153MB/s-153MB/s), io=8916MiB (9349MB), run=60988-60988msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 11
+2026-03-19 02:51:13
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72661: Thu Mar 19 02:51:11 2026
+  write: IOPS=1209, BW=152MiB/s (160MB/s)(9198MiB/60447msec); 0 zone resets
+   bw (  KiB/s): min= 2561, max=528640, per=100.00%, avg=157565.36, stdev=16620.71, samples=950
+   iops        : min=   20, max= 4130, avg=1230.80, stdev=129.83, samples=950
+  cpu          : usr=0.33%, sys=0.33%, ctx=65691, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,73081,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=152MiB/s (160MB/s), 152MiB/s-152MiB/s (160MB/s-160MB/s), io=9198MiB (9645MB), run=60447-60447msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 12
+2026-03-19 02:52:44
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72780: Thu Mar 19 02:52:42 2026
+  write: IOPS=1157, BW=146MiB/s (153MB/s)(9052MiB/62127msec); 0 zone resets
+   bw (  KiB/s): min= 2048, max=524520, per=100.00%, avg=155965.94, stdev=16349.83, samples=946
+   iops        : min=   16, max= 4096, avg=1218.19, stdev=127.71, samples=946
+  cpu          : usr=0.34%, sys=0.31%, ctx=65474, majf=0, minf=298
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,71909,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=146MiB/s (153MB/s), 146MiB/s-146MiB/s (153MB/s-153MB/s), io=9052MiB (9491MB), run=62127-62127msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 13
+2026-03-19 02:54:15
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72876: Thu Mar 19 02:54:13 2026
+  write: IOPS=1586, BW=199MiB/s (209MB/s)(11.8GiB/60611msec); 0 zone resets
+   bw (  KiB/s): min= 3072, max=719053, per=100.00%, avg=205880.74, stdev=25142.58, samples=957
+   iops        : min=   24, max= 5617, avg=1608.21, stdev=196.41, samples=957
+  cpu          : usr=0.46%, sys=0.40%, ctx=86464, majf=0, minf=291
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,96185,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=199MiB/s (209MB/s), 199MiB/s-199MiB/s (209MB/s-209MB/s), io=11.8GiB (12.7GB), run=60611-60611msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 14
+2026-03-19 02:55:46
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=73008: Thu Mar 19 02:55:44 2026
+  write: IOPS=1729, BW=217MiB/s (228MB/s)(13.3GiB/62546msec); 0 zone resets
+   bw (  KiB/s): min= 2048, max=739261, per=100.00%, avg=240479.31, stdev=25733.29, samples=923
+   iops        : min=   16, max= 5775, avg=1878.62, stdev=201.03, samples=923
+  cpu          : usr=0.49%, sys=0.46%, ctx=96606, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,108181,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=217MiB/s (228MB/s), 217MiB/s-217MiB/s (228MB/s-228MB/s), io=13.3GiB (14.2GB), run=62546-62546msec
+
+#####
+Storage PVE openSUSE16 vSSD vs vHDD - Run 15
+2026-03-19 02:57:14
+#####
+test: (g=0): rw=randwrite, bs=(R) 128KiB-128KiB, (W) 128KiB-128KiB, (T) 128KiB-128KiB, ioengine=io_uring, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=73143: Thu Mar 19 02:57:14 2026
+  write: IOPS=1354, BW=170MiB/s (179MB/s)(10.1GiB/60413msec); 0 zone resets
+   bw (  KiB/s): min= 4608, max=713728, per=100.00%, avg=183429.36, stdev=22760.04, samples=914
+   iops        : min=   36, max= 5576, avg=1432.94, stdev=177.81, samples=914
+  cpu          : usr=0.39%, sys=0.33%, ctx=72521, majf=0, minf=291
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=100.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.1%, >=64=0.0%
+     issued rwts: total=0,81856,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=170MiB/s (179MB/s), 170MiB/s-170MiB/s (179MB/s-179MB/s), io=10.1GiB (10.8GB), run=60413-60413msec
+

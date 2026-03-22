@@ -1,0 +1,105 @@
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 1
+2026-03-20 00:34:50
+#####
+
+#  ./fs_mark  -d  scratch  -L  20  -s  1048576  -n  1000 
+#	Version 3.3, 1 thread(s) starting at Fri Mar 20 00:33:27 2026
+#	Sync method: INBAND FSYNC: fsync() per file in write loop.
+#	Directories:  no subdirectories used
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 1048576 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+     4         1000      1048576         63.0            17223
+     6         2000      1048576         64.0            16932
+     8         3000      1048576         49.1            16528
+    10         4000      1048576        320.3            12605
+    12         5000      1048576        701.4            12309
+    14         6000      1048576        684.2            11745
+    16         7000      1048576        668.8            11279
+    18         8000      1048576        678.3            11591
+    20         9000      1048576        676.9            10879
+    22        10000      1048576        698.8            11999
+    24        11000      1048576        676.6            10327
+    26        12000      1048576        668.7            10932
+    28        13000      1048576        693.6            12056
+    30        14000      1048576        651.3            10475
+    32        15000      1048576        650.2            11765
+    34        16000      1048576        659.5            11429
+    36        17000      1048576        702.7            11942
+    38        18000      1048576        707.3            12043
+    40        19000      1048576        722.4            11673
+    42        20000      1048576        576.7            12195
+
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 2
+2026-03-20 00:36:40
+#####
+
+#  ./fs_mark  -d  scratch  -L  20  -s  1048576  -n  1000 
+#	Version 3.3, 1 thread(s) starting at Fri Mar 20 00:34:52 2026
+#	Sync method: INBAND FSYNC: fsync() per file in write loop.
+#	Directories:  no subdirectories used
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 1048576 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+     4         1000      1048576         63.1            17479
+     6         2000      1048576         69.7            17216
+     8         3000      1048576         35.2            16234
+    10         4000      1048576        211.9            14240
+    12         5000      1048576        713.1            11231
+    14         6000      1048576        692.5            11203
+    16         7000      1048576        719.6            11646
+    18         8000      1048576        688.1            11225
+    20         9000      1048576        689.1            11032
+    22        10000      1048576        684.2            10856
+    24        11000      1048576        704.4            12423
+    26        12000      1048576        742.9            11649
+    28        13000      1048576        710.6            12686
+    30        14000      1048576        688.3            12430
+    32        15000      1048576        664.6            10569
+    34        16000      1048576        734.5            11890
+    36        17000      1048576        730.4            12547
+    38        18000      1048576        711.7            12855
+    40        19000      1048576        162.7            13731
+    42        20000      1048576         73.2            16037
+
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 3
+2026-03-20 00:38:18
+#####
+
+#  ./fs_mark  -d  scratch  -L  20  -s  1048576  -n  1000 
+#	Version 3.3, 1 thread(s) starting at Fri Mar 20 00:36:42 2026
+#	Sync method: INBAND FSYNC: fsync() per file in write loop.
+#	Directories:  no subdirectories used
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 1048576 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+     4         1000      1048576         64.3            16290
+     6         2000      1048576         75.4            15809
+     8         3000      1048576         71.9            15592
+    10         4000      1048576        710.8            12027
+    12         5000      1048576        693.9            12296
+    14         6000      1048576        682.0            10734
+    16         7000      1048576        692.6            11914
+    18         8000      1048576        688.1            10620
+    20         9000      1048576        697.1            11275
+    22        10000      1048576        699.5            12164
+    24        11000      1048576        729.3            12805
+    26        12000      1048576        710.7            15567
+    28        13000      1048576        723.3            12332
+    30        14000      1048576        675.1            12704
+    32        15000      1048576        632.4            11332
+    34        16000      1048576        663.7            13764
+    36        17000      1048576        691.3            11467
+    38        18000      1048576        273.4            11762
+    40        19000      1048576         71.7            17217
+    42        20000      1048576         72.6            16221
+

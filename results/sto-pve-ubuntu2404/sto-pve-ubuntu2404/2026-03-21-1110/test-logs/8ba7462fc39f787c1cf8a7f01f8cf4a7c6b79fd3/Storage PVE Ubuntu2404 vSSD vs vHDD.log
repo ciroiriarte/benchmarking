@@ -1,0 +1,66 @@
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 1
+2026-03-21 11:20:20
+#####
+
+#  ./fs_mark  -d  scratch  -L  5  -s  1048576  -n  5000  -t  4 
+#	Version 3.3, 4 thread(s) starting at Sat Mar 21 11:15:50 2026
+#	Sync method: INBAND FSYNC: fsync() per file in write loop.
+#	Directories:  no subdirectories used
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 1048576 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+    43        20000      1048576        196.8           318843
+    82        40000      1048576        181.8           305329
+Error in creat: No space left on device
+fs_mark: write_file write failed: -1 No space left on device
+Error in creat: No space left on device
+Error in creat: No space left on device
+fopen failed to open: fs_log.txt.332495
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 2
+2026-03-21 11:24:53
+#####
+
+#  ./fs_mark  -d  scratch  -L  5  -s  1048576  -n  5000  -t  4 
+#	Version 3.3, 4 thread(s) starting at Sat Mar 21 11:20:22 2026
+#	Sync method: INBAND FSYNC: fsync() per file in write loop.
+#	Directories:  no subdirectories used
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 1048576 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+    43        20000      1048576        196.8           328920
+    82        40000      1048576        182.0           308057
+Error in creat: No space left on device
+fs_mark: write_file write failed: -1 No space left on device
+fs_mark: write_file write failed: -1 No space left on device
+fs_mark: write_file write failed: -1 No space left on device
+fopen failed to open: fs_log.txt.332521
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 3
+2026-03-21 11:29:23
+#####
+
+#  ./fs_mark  -d  scratch  -L  5  -s  1048576  -n  5000  -t  4 
+#	Version 3.3, 4 thread(s) starting at Sat Mar 21 11:24:55 2026
+#	Sync method: INBAND FSYNC: fsync() per file in write loop.
+#	Directories:  no subdirectories used
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 1048576 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+    43        20000      1048576        196.8           319966
+    82        40000      1048576        182.4           301365
+Error in creat: No space left on device
+fs_mark: write_file write failed: -1 No space left on device
+fs_mark: write_file write failed: -1 No space left on device
+fs_mark: write_file write failed: -1 No space left on device
+fopen failed to open: fs_log.txt.332554
+

@@ -1,0 +1,345 @@
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 1
+2026-03-18 20:53:34
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71806: Wed Mar 18 20:53:32 2026
+  write: IOPS=141, BW=149MiB/s (157MB/s)(9136MiB/61122msec); 0 zone resets
+   bw (  KiB/s): min=18444, max=1049100, per=100.00%, avg=600397.88, stdev=58495.30, samples=242
+   iops        : min=   18, max= 1024, avg=586.11, stdev=57.10, samples=242
+  cpu          : usr=0.31%, sys=0.00%, ctx=1140, majf=0, minf=298
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.4%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.6%, 8=0.1%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,8632,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=149MiB/s (157MB/s), 149MiB/s-149MiB/s (157MB/s-157MB/s), io=9136MiB (9580MB), run=61122-61122msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 2
+2026-03-18 20:55:10
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71829: Wed Mar 18 20:55:08 2026
+  write: IOPS=107, BW=115MiB/s (121MB/s)(7160MiB/62185msec); 0 zone resets
+   bw (  KiB/s): min=16374, max=1048838, per=100.00%, avg=490029.31, stdev=59153.88, samples=222
+   iops        : min=   14, max= 1024, avg=478.23, stdev=57.77, samples=222
+  cpu          : usr=0.25%, sys=0.00%, ctx=886, majf=0, minf=298
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.5%, 8=0.1%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,6656,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=115MiB/s (121MB/s), 115MiB/s-115MiB/s (121MB/s-121MB/s), io=7160MiB (7508MB), run=62185-62185msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 3
+2026-03-18 20:56:46
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71855: Wed Mar 18 20:56:44 2026
+  write: IOPS=56, BW=64.5MiB/s (67.6MB/s)(4088MiB/63416msec); 0 zone resets
+   bw (  KiB/s): min=18436, max=989426, per=100.00%, avg=373616.84, stdev=54634.98, samples=167
+   iops        : min=   18, max=  966, avg=364.64, stdev=53.32, samples=167
+  cpu          : usr=0.13%, sys=0.00%, ctx=508, majf=0, minf=298
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,3584,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=64.5MiB/s (67.6MB/s), 64.5MiB/s-64.5MiB/s (67.6MB/s-67.6MB/s), io=4088MiB (4287MB), run=63416-63416msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 4
+2026-03-18 20:58:29
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71877: Wed Mar 18 20:58:27 2026
+  write: IOPS=63, BW=71.7MiB/s (75.2MB/s)(4600MiB/64121msec); 0 zone resets
+   bw (  KiB/s): min=18440, max=991732, per=100.00%, avg=416112.42, stdev=55729.64, samples=177
+   iops        : min=   18, max=  968, avg=406.15, stdev=54.39, samples=177
+  cpu          : usr=0.14%, sys=0.00%, ctx=577, majf=0, minf=298
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,4096,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=71.7MiB/s (75.2MB/s), 71.7MiB/s-71.7MiB/s (75.2MB/s-75.2MB/s), io=4600MiB (4823MB), run=64121-64121msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 5
+2026-03-18 21:00:08
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71900: Wed Mar 18 21:00:06 2026
+  write: IOPS=60, BW=68.5MiB/s (71.8MB/s)(4147MiB/60582msec); 0 zone resets
+   bw (  KiB/s): min=16388, max=983528, per=100.00%, avg=377052.03, stdev=54603.30, samples=163
+   iops        : min=   16, max=  960, avg=368.02, stdev=53.29, samples=163
+  cpu          : usr=0.13%, sys=0.00%, ctx=522, majf=0, minf=299
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.1%, >=64=12.4%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,3643,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=68.5MiB/s (71.8MB/s), 68.5MiB/s-68.5MiB/s (71.8MB/s-71.8MB/s), io=4147MiB (4348MB), run=60582-60582msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 6
+2026-03-18 21:01:47
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71926: Wed Mar 18 21:01:45 2026
+  write: IOPS=65, BW=74.0MiB/s (77.6MB/s)(4577MiB/61825msec); 0 zone resets
+   bw (  KiB/s): min=16384, max=987628, per=100.00%, avg=361984.86, stdev=54100.27, samples=183
+   iops        : min=   16, max=  964, avg=353.38, stdev=52.82, samples=183
+  cpu          : usr=0.11%, sys=0.00%, ctx=575, majf=0, minf=298
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.6%, 16=25.1%, 32=50.3%, >=64=12.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.6%, 8=0.1%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,4073,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=74.0MiB/s (77.6MB/s), 74.0MiB/s-74.0MiB/s (77.6MB/s-77.6MB/s), io=4577MiB (4799MB), run=61825-61825msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 7
+2026-03-18 21:03:26
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71949: Wed Mar 18 21:03:24 2026
+  write: IOPS=58, BW=67.2MiB/s (70.5MB/s)(4088MiB/60839msec); 0 zone resets
+   bw (  KiB/s): min=18432, max=991974, per=100.00%, avg=373375.24, stdev=54781.80, samples=165
+   iops        : min=   18, max=  968, avg=364.46, stdev=53.47, samples=165
+  cpu          : usr=0.12%, sys=0.00%, ctx=511, majf=0, minf=298
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,3584,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=67.2MiB/s (70.5MB/s), 67.2MiB/s-67.2MiB/s (70.5MB/s-70.5MB/s), io=4088MiB (4287MB), run=60839-60839msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 8
+2026-03-18 21:05:10
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71972: Wed Mar 18 21:05:08 2026
+  write: IOPS=67, BW=75.7MiB/s (79.3MB/s)(4600MiB/60800msec); 0 zone resets
+   bw (  KiB/s): min=16388, max=993280, per=100.00%, avg=404176.33, stdev=55679.09, samples=178
+   iops        : min=   16, max=  970, avg=394.63, stdev=54.37, samples=178
+  cpu          : usr=0.14%, sys=0.00%, ctx=570, majf=0, minf=300
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,4096,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=75.7MiB/s (79.3MB/s), 75.7MiB/s-75.7MiB/s (79.3MB/s-79.3MB/s), io=4600MiB (4823MB), run=60800-60800msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 9
+2026-03-18 21:06:56
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=71998: Wed Mar 18 21:06:54 2026
+  write: IOPS=63, BW=71.1MiB/s (74.6MB/s)(4600MiB/64695msec); 0 zone resets
+   bw (  KiB/s): min=18432, max=997876, per=100.00%, avg=438400.96, stdev=56027.99, samples=170
+   iops        : min=   18, max=  974, avg=427.90, stdev=54.70, samples=170
+  cpu          : usr=0.15%, sys=0.00%, ctx=568, majf=0, minf=299
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,4096,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=71.1MiB/s (74.6MB/s), 71.1MiB/s-71.1MiB/s (74.6MB/s-74.6MB/s), io=4600MiB (4823MB), run=64695-64695msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 10
+2026-03-18 21:08:35
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72020: Wed Mar 18 21:08:33 2026
+  write: IOPS=58, BW=66.3MiB/s (69.6MB/s)(4088MiB/61633msec); 0 zone resets
+   bw (  KiB/s): min=20480, max=985580, per=100.00%, avg=398669.50, stdev=55220.64, samples=166
+   iops        : min=   20, max=  962, avg=389.24, stdev=53.91, samples=166
+  cpu          : usr=0.13%, sys=0.00%, ctx=509, majf=0, minf=298
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,3584,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=66.3MiB/s (69.6MB/s), 66.3MiB/s-66.3MiB/s (69.6MB/s-69.6MB/s), io=4088MiB (4287MB), run=61633-61633msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 11
+2026-03-18 21:10:35
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72042: Wed Mar 18 21:10:33 2026
+  write: IOPS=61, BW=68.5MiB/s (71.9MB/s)(4600MiB/67127msec); 0 zone resets
+   bw (  KiB/s): min=16384, max=985822, per=100.00%, avg=391511.72, stdev=54922.80, samples=189
+   iops        : min=   16, max=  962, avg=382.00, stdev=53.59, samples=189
+  cpu          : usr=0.13%, sys=0.00%, ctx=572, majf=0, minf=299
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,4096,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=68.5MiB/s (71.9MB/s), 68.5MiB/s-68.5MiB/s (71.9MB/s-71.9MB/s), io=4600MiB (4823MB), run=67127-67127msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 12
+2026-03-18 21:12:14
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72100: Wed Mar 18 21:12:12 2026
+  write: IOPS=58, BW=66.2MiB/s (69.4MB/s)(4088MiB/61780msec); 0 zone resets
+   bw (  KiB/s): min=16384, max=993032, per=100.00%, avg=370329.16, stdev=55107.49, samples=168
+   iops        : min=   16, max=  969, avg=361.41, stdev=53.78, samples=168
+  cpu          : usr=0.13%, sys=0.00%, ctx=507, majf=0, minf=298
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,3584,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=66.2MiB/s (69.4MB/s), 66.2MiB/s-66.2MiB/s (69.4MB/s-69.4MB/s), io=4088MiB (4287MB), run=61780-61780msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 13
+2026-03-18 21:14:06
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72123: Wed Mar 18 21:14:04 2026
+  write: IOPS=97, BW=106MiB/s (111MB/s)(6648MiB/62857msec); 0 zone resets
+   bw (  KiB/s): min=16384, max=1049100, per=100.00%, avg=469606.14, stdev=58085.87, samples=219
+   iops        : min=   16, max= 1024, avg=458.47, stdev=56.71, samples=219
+  cpu          : usr=0.19%, sys=0.00%, ctx=829, majf=0, minf=298
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.5%, 8=0.1%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,6144,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=106MiB/s (111MB/s), 106MiB/s-106MiB/s (111MB/s-111MB/s), io=6648MiB (6971MB), run=62857-62857msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 14
+2026-03-18 21:15:46
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72147: Wed Mar 18 21:15:44 2026
+  write: IOPS=141, BW=150MiB/s (157MB/s)(9208MiB/61321msec); 0 zone resets
+   bw (  KiB/s): min=20480, max=1049624, per=100.00%, avg=543539.99, stdev=58480.28, samples=271
+   iops        : min=   20, max= 1024, avg=530.49, stdev=57.08, samples=271
+  cpu          : usr=0.25%, sys=0.00%, ctx=1154, majf=0, minf=298
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.5%, 8=0.1%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,8704,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=150MiB/s (157MB/s), 150MiB/s-150MiB/s (157MB/s-157MB/s), io=9208MiB (9655MB), run=61321-61321msec
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 15
+2026-03-18 21:17:16
+#####
+test: (g=0): rw=randwrite, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=72172: Wed Mar 18 21:17:16 2026
+  write: IOPS=65, BW=74.2MiB/s (77.8MB/s)(4532MiB/61081msec); 0 zone resets
+   bw (  KiB/s): min=16384, max=1017340, per=100.00%, avg=420333.95, stdev=56630.58, samples=159
+   iops        : min=   16, max=  992, avg=410.11, stdev=55.26, samples=159
+  cpu          : usr=0.12%, sys=0.00%, ctx=565, majf=0, minf=299
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.4%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.5%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=0,4028,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+  WRITE: bw=74.2MiB/s (77.8MB/s), 74.2MiB/s-74.2MiB/s (77.8MB/s-77.8MB/s), io=4532MiB (4752MB), run=61081-61081msec
+

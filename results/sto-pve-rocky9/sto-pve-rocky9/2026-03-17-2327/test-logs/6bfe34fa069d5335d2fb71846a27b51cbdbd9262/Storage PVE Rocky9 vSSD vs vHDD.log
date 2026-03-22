@@ -1,0 +1,276 @@
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 1
+2026-03-18 12:20:02
+#####
+test: (g=0): rw=randread, bs=(R) 16.0KiB-16.0KiB, (W) 16.0KiB-16.0KiB, (T) 16.0KiB-16.0KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=20579: Wed Mar 18 12:20:00 2026
+  read: IOPS=48, BW=885KiB/s (906kB/s)(63.9MiB/73945msec)
+   bw (  KiB/s): min=  256, max=15619, per=100.00%, avg=5994.15, stdev=867.80, samples=172
+   iops        : min=   16, max=  976, avg=374.53, stdev=54.22, samples=172
+  cpu          : usr=0.00%, sys=0.00%, ctx=504, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=3584,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=885KiB/s (906kB/s), 885KiB/s-885KiB/s (906kB/s-906kB/s), io=63.9MiB (67.0MB), run=73945-73945msec
+
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 2
+2026-03-18 12:21:40
+#####
+test: (g=0): rw=randread, bs=(R) 16.0KiB-16.0KiB, (W) 16.0KiB-16.0KiB, (T) 16.0KiB-16.0KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=20602: Wed Mar 18 12:21:38 2026
+  read: IOPS=52, BW=960KiB/s (983kB/s)(63.8MiB/68076msec)
+   bw (  KiB/s): min=  256, max=15811, per=100.00%, avg=5804.86, stdev=860.71, samples=172
+   iops        : min=   16, max=  988, avg=362.75, stdev=53.79, samples=172
+  cpu          : usr=0.00%, sys=0.00%, ctx=505, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.1%, >=64=12.4%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=3580,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=960KiB/s (983kB/s), 960KiB/s-960KiB/s (983kB/s-983kB/s), io=63.8MiB (66.9MB), run=68076-68076msec
+
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 3
+2026-03-18 12:23:25
+#####
+test: (g=0): rw=randread, bs=(R) 16.0KiB-16.0KiB, (W) 16.0KiB-16.0KiB, (T) 16.0KiB-16.0KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=20624: Wed Mar 18 12:23:23 2026
+  read: IOPS=55, BW=993KiB/s (1017kB/s)(71.9MiB/74099msec)
+   bw (  KiB/s): min=  256, max=16164, per=100.00%, avg=5991.37, stdev=873.64, samples=192
+   iops        : min=   16, max= 1010, avg=374.30, stdev=54.58, samples=192
+  cpu          : usr=0.00%, sys=0.00%, ctx=568, majf=0, minf=291
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=4096,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=993KiB/s (1017kB/s), 993KiB/s-993KiB/s (1017kB/s-1017kB/s), io=71.9MiB (75.4MB), run=74099-74099msec
+
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 4
+2026-03-18 12:25:03
+#####
+test: (g=0): rw=randread, bs=(R) 16.0KiB-16.0KiB, (W) 16.0KiB-16.0KiB, (T) 16.0KiB-16.0KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=20646: Wed Mar 18 12:25:01 2026
+  read: IOPS=47, BW=881KiB/s (902kB/s)(55.9MiB/64966msec)
+   bw (  KiB/s): min=  256, max=16067, per=100.00%, avg=5389.15, stdev=852.51, samples=164
+   iops        : min=   16, max= 1003, avg=336.65, stdev=53.25, samples=164
+  cpu          : usr=0.00%, sys=0.00%, ctx=440, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=3072,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=881KiB/s (902kB/s), 881KiB/s-881KiB/s (902kB/s-902kB/s), io=55.9MiB (58.6MB), run=64966-64966msec
+
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 5
+2026-03-18 12:26:40
+#####
+test: (g=0): rw=randread, bs=(R) 16.0KiB-16.0KiB, (W) 16.0KiB-16.0KiB, (T) 16.0KiB-16.0KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=20671: Wed Mar 18 12:26:38 2026
+  read: IOPS=48, BW=904KiB/s (925kB/s)(55.9MiB/63323msec)
+   bw (  KiB/s): min=  256, max=15840, per=100.00%, avg=5566.22, stdev=859.48, samples=162
+   iops        : min=   16, max=  990, avg=347.82, stdev=53.71, samples=162
+  cpu          : usr=0.00%, sys=0.00%, ctx=441, majf=0, minf=291
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.4%, 8=0.2%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=3072,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=904KiB/s (925kB/s), 904KiB/s-904KiB/s (925kB/s-925kB/s), io=55.9MiB (58.6MB), run=63323-63323msec
+
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 6
+2026-03-18 12:28:13
+#####
+test: (g=0): rw=randread, bs=(R) 16.0KiB-16.0KiB, (W) 16.0KiB-16.0KiB, (T) 16.0KiB-16.0KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=20694: Wed Mar 18 12:28:11 2026
+  read: IOPS=1726, BW=27.1MiB/s (28.4MB/s)(1628MiB/60031msec)
+   bw (  KiB/s): min=  352, max=381086, per=100.00%, avg=86644.51, stdev=16302.68, samples=280
+   iops        : min=   22, max=23817, avg=5415.05, stdev=1018.90, samples=280
+  cpu          : usr=0.05%, sys=0.02%, ctx=13022, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.6%, 8=0.1%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=103673,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=27.1MiB/s (28.4MB/s), 27.1MiB/s-27.1MiB/s (28.4MB/s-28.4MB/s), io=1628MiB (1707MB), run=60031-60031msec
+
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 7
+2026-03-18 12:29:43
+#####
+test: (g=0): rw=randread, bs=(R) 16.0KiB-16.0KiB, (W) 16.0KiB-16.0KiB, (T) 16.0KiB-16.0KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=20716: Wed Mar 18 12:29:41 2026
+  read: IOPS=20.7k, BW=323MiB/s (339MB/s)(18.9GiB/60025msec)
+   bw (  KiB/s): min=92032, max=409542, per=100.00%, avg=330962.75, stdev=5124.33, samples=954
+   iops        : min= 5752, max=25596, avg=20685.01, stdev=320.27, samples=954
+  cpu          : usr=0.60%, sys=0.17%, ctx=155239, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.6%, 8=0.1%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=1240756,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=323MiB/s (339MB/s), 323MiB/s-323MiB/s (339MB/s-339MB/s), io=18.9GiB (20.3GB), run=60025-60025msec
+
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 8
+2026-03-18 12:31:12
+#####
+test: (g=0): rw=randread, bs=(R) 16.0KiB-16.0KiB, (W) 16.0KiB-16.0KiB, (T) 16.0KiB-16.0KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=20740: Wed Mar 18 12:31:10 2026
+  read: IOPS=20.8k, BW=325MiB/s (340MB/s)(19.0GiB/60020msec)
+   bw (  KiB/s): min=94272, max=395170, per=100.00%, avg=334966.40, stdev=4124.69, samples=949
+   iops        : min= 5892, max=24698, avg=20935.28, stdev=257.79, samples=949
+  cpu          : usr=0.60%, sys=0.16%, ctx=155999, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.6%, 8=0.1%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=1246833,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=325MiB/s (340MB/s), 325MiB/s-325MiB/s (340MB/s-340MB/s), io=19.0GiB (20.4GB), run=60020-60020msec
+
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 9
+2026-03-18 12:32:42
+#####
+test: (g=0): rw=randread, bs=(R) 16.0KiB-16.0KiB, (W) 16.0KiB-16.0KiB, (T) 16.0KiB-16.0KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=20762: Wed Mar 18 12:32:40 2026
+  read: IOPS=20.7k, BW=323MiB/s (339MB/s)(19.0GiB/60014msec)
+   bw (  KiB/s): min=131072, max=393152, per=100.00%, avg=331372.26, stdev=3388.05, samples=952
+   iops        : min= 8192, max=24572, avg=20710.65, stdev=211.75, samples=952
+  cpu          : usr=0.61%, sys=0.17%, ctx=155337, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.6%, 8=0.1%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=1241542,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=323MiB/s (339MB/s), 323MiB/s-323MiB/s (339MB/s-339MB/s), io=19.0GiB (20.3GB), run=60014-60014msec
+
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 10
+2026-03-18 12:34:11
+#####
+test: (g=0): rw=randread, bs=(R) 16.0KiB-16.0KiB, (W) 16.0KiB-16.0KiB, (T) 16.0KiB-16.0KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=20785: Wed Mar 18 12:34:09 2026
+  read: IOPS=20.7k, BW=323MiB/s (339MB/s)(19.0GiB/60024msec)
+   bw (  KiB/s): min=280768, max=436358, per=100.00%, avg=331273.08, stdev=2988.17, samples=954
+   iops        : min=17548, max=27270, avg=20704.42, stdev=186.75, samples=954
+  cpu          : usr=0.58%, sys=0.18%, ctx=155338, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.6%, 8=0.1%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=1241476,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=323MiB/s (339MB/s), 323MiB/s-323MiB/s (339MB/s-339MB/s), io=19.0GiB (20.3GB), run=60024-60024msec
+
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 11
+2026-03-18 12:35:41
+#####
+test: (g=0): rw=randread, bs=(R) 16.0KiB-16.0KiB, (W) 16.0KiB-16.0KiB, (T) 16.0KiB-16.0KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=20808: Wed Mar 18 12:35:39 2026
+  read: IOPS=20.3k, BW=317MiB/s (332MB/s)(18.6GiB/60026msec)
+   bw (  KiB/s): min=125109, max=415924, per=100.00%, avg=324714.68, stdev=3901.34, samples=955
+   iops        : min= 7819, max=25994, avg=20294.46, stdev=243.84, samples=955
+  cpu          : usr=0.60%, sys=0.17%, ctx=152307, majf=0, minf=290
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.6%, 8=0.1%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=1217289,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=317MiB/s (332MB/s), 317MiB/s-317MiB/s (332MB/s-332MB/s), io=18.6GiB (20.0GB), run=60026-60026msec
+
+#####
+Storage PVE Rocky9 vSSD vs vHDD - Run 12
+2026-03-18 12:37:08
+#####
+test: (g=0): rw=randread, bs=(R) 16.0KiB-16.0KiB, (W) 16.0KiB-16.0KiB, (T) 16.0KiB-16.0KiB, ioengine=posixaio, iodepth=64
+...
+fio-3.40
+Starting 8 processes
+
+test: (groupid=0, jobs=8): err= 0: pid=20831: Wed Mar 18 12:37:08 2026
+  read: IOPS=20.2k, BW=316MiB/s (332MB/s)(18.5GiB/60024msec)
+   bw (  KiB/s): min=117013, max=430174, per=100.00%, avg=323983.97, stdev=4214.44, samples=952
+   iops        : min= 7313, max=26884, avg=20248.88, stdev=263.40, samples=952
+  cpu          : usr=0.59%, sys=0.17%, ctx=151975, majf=0, minf=291
+  IO depths    : 1=0.0%, 2=0.0%, 4=0.0%, 8=12.5%, 16=25.0%, 32=50.0%, >=64=12.5%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=98.6%, 8=0.1%, 16=0.0%, 32=0.0%, 64=1.4%, >=64=0.0%
+     issued rwts: total=1214406,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=64
+
+Run status group 0 (all jobs):
+   READ: bw=316MiB/s (332MB/s), 316MiB/s-316MiB/s (332MB/s-332MB/s), io=18.5GiB (19.9GB), run=60024-60024msec
+

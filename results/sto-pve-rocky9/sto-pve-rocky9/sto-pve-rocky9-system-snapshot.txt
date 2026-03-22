@@ -1,0 +1,74 @@
+=== Benchmark Configuration ===
+Date:        2026-03-17 23:27:14 UTC
+Result ID:   sto-pve-rocky9
+Result Name: Storage PVE Rocky9 vSSD vs vHDD
+Tests:       fio dbench fs-mark compilebench
+Disks:
+  /dev/sdb;vSSD
+  /dev/sdc;vHDD
+
+=== Kernel ===
+Linux sto-bench-rocky9 5.14.0-611.36.1.el9_7.x86_64 #1 SMP PREEMPT_DYNAMIC Tue Mar 3 17:30:12 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+
+=== OS Release ===
+NAME="Rocky Linux"
+VERSION="9.7 (Blue Onyx)"
+ID="rocky"
+ID_LIKE="rhel centos fedora"
+VERSION_ID="9.7"
+PLATFORM_ID="platform:el9"
+PRETTY_NAME="Rocky Linux 9.7 (Blue Onyx)"
+ANSI_COLOR="0;32"
+LOGO="fedora-logo-icon"
+CPE_NAME="cpe:/o:rocky:rocky:9::baseos"
+HOME_URL="https://rockylinux.org/"
+VENDOR_NAME="RESF"
+VENDOR_URL="https://resf.org/"
+BUG_REPORT_URL="https://bugs.rockylinux.org/"
+SUPPORT_END="2032-05-31"
+ROCKY_SUPPORT_PRODUCT="Rocky-Linux-9"
+ROCKY_SUPPORT_PRODUCT_VERSION="9.7"
+REDHAT_SUPPORT_PRODUCT="Rocky Linux"
+REDHAT_SUPPORT_PRODUCT_VERSION="9.7"
+
+=== Block Devices ===
+NAME    SIZE TYPE ROTA SCHED       RQ-SIZE  RA
+sda      30G disk    0 none            256 128
+├─sda1    2M part    0 none            256 128
+├─sda2  100M part    0 none            256 128
+├─sda3 1000M part    0 none            256 128
+└─sda4 28.9G part    0 none            256 128
+sdb      50G disk    0 none            256 128
+sdc      50G disk    1 none            256 128
+sr0       4M rom     0 mq-deadline      64 128
+
+=== Per-disk Detail ===
+--- vSSD (/dev/sdb) ---
+  driver:      virtio_scsi
+  type:        virtual
+  scheduler:   none
+  nr_requests: 256
+  read_ahead:  128 kB
+  rotational:  0
+
+--- vHDD (/dev/sdc) ---
+  driver:      virtio_scsi
+  type:        virtual
+  scheduler:   none
+  nr_requests: 256
+  read_ahead:  128 kB
+  rotational:  1
+
+=== Memory ===
+               total        used        free      shared  buff/cache   available
+Mem:            15Gi       464Mi        14Gi       0.0Ki       370Mi        14Gi
+Swap:             0B          0B          0B
+
+=== Load Average ===
+0.16 0.03 0.01 1/196 5913
+
+=== Storage Controllers (dmidecode) ===
+# dmidecode 3.6
+Getting SMBIOS data from sysfs.
+SMBIOS 2.8 present.
+

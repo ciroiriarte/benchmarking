@@ -1,0 +1,75 @@
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 1
+2026-03-21 11:33:21
+#####
+
+#  ./fs_mark  -d  scratch  -L  10  -s  1048576  -n  4000  -D  32 
+#	Version 3.3, 1 thread(s) starting at Sat Mar 21 11:29:34 2026
+#	Sync method: INBAND FSYNC: fsync() per file in write loop.
+#	Directories:  Time based hash between directories across 32 subdirectories with 180 seconds per subdirectory.
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 1048576 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+    11         4000      1048576        195.5            57858
+    19         8000      1048576        194.6            59923
+    27        12000      1048576        194.8            60704
+    35        16000      1048576        194.6            60144
+    43        20000      1048576        194.6            60089
+    51        24000      1048576        194.7            60370
+    58        28000      1048576        175.8            58081
+    66        32000      1048576        160.7            54728
+    74        36000      1048576        159.9            56404
+    82        40000      1048576        156.4            55871
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 2
+2026-03-21 11:37:11
+#####
+
+#  ./fs_mark  -d  scratch  -L  10  -s  1048576  -n  4000  -D  32 
+#	Version 3.3, 1 thread(s) starting at Sat Mar 21 11:33:23 2026
+#	Sync method: INBAND FSYNC: fsync() per file in write loop.
+#	Directories:  Time based hash between directories across 32 subdirectories with 180 seconds per subdirectory.
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 1048576 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+    11         4000      1048576        192.2            60751
+    19         8000      1048576        195.3            60149
+    27        12000      1048576        194.6            59297
+    35        16000      1048576        194.7            59920
+    43        20000      1048576        194.7            60634
+    51        24000      1048576        194.5            59919
+    58        28000      1048576        175.7            60908
+    66        32000      1048576        160.6            63163
+    74        36000      1048576        159.0            59948
+    82        40000      1048576        157.4            60238
+
+#####
+Storage PVE Ubuntu2404 vSSD vs vHDD - Run 3
+2026-03-21 11:40:59
+#####
+
+#  ./fs_mark  -d  scratch  -L  10  -s  1048576  -n  4000  -D  32 
+#	Version 3.3, 1 thread(s) starting at Sat Mar 21 11:37:13 2026
+#	Sync method: INBAND FSYNC: fsync() per file in write loop.
+#	Directories:  Time based hash between directories across 32 subdirectories with 180 seconds per subdirectory.
+#	File names: 40 bytes long, (16 initial bytes of time stamp with 24 random bytes at end of name)
+#	Files info: size 1048576 bytes, written with an IO size of 16384 bytes per write
+#	App overhead is time in microseconds spent in the test not doing file writing related system calls.
+
+FSUse%        Count         Size    Files/sec     App Overhead
+    11         4000      1048576        190.8            58926
+    19         8000      1048576        195.8            60459
+    27        12000      1048576        194.6            61037
+    35        16000      1048576        194.4            59714
+    43        20000      1048576        194.9            58916
+    51        24000      1048576        194.6            60413
+    58        28000      1048576        174.9            65414
+    66        32000      1048576        159.3            63469
+    74        36000      1048576        159.1            69282
+    82        40000      1048576        158.5            59075
+

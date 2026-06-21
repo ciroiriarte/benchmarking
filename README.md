@@ -507,6 +507,9 @@ OPTIONS:
 ## benchmark-storage-pts.sh
 
 > **WARNING: This script is destructive. It formats and completely wipes all data on every target disk.**
+> Safety guards (below) refuse the live system's disks, and a destructive run
+> must be authorized — interactively by typing `WIPE`, or with `--force` for
+> automation.
 
 Benchmarks disk I/O across one or more disks sequentially (one at a time, to
 avoid contention). It offers two methods:
@@ -538,6 +541,38 @@ Fixed `numjobs`/`iodepth` per workload (so results are comparable across hosts),
 `--mode quick` runs a 4-workload subset (the two QD32 randoms + both sequential)
 with shorter runtimes and skips preconditioning — a fast sanity check. `--mode
 full` (default) runs all seven.
+
+### Safety guards and authorization
+
+Because the script wipes its targets, it enforces two independent protections:
+
+**1. Programmatic guards (always on, cannot be bypassed).** Before any write,
+each target is validated; the run aborts (touching nothing) if any target — or
+any of its partitions/holders — is:
+
+- the root/boot disk (mounted at `/`, `/boot`, or `/boot/efi`),
+- mounted anywhere else (e.g. `/dev/sdb1` mounted while `/dev/sdb` is the target),
+- an LVM physical volume, a Linux MD RAID member, or an active swap area.
+
+A stale mount at the target's own `/mnt/<label>` (left by an aborted prior run)
+is tolerated and reclaimed. `--force` does **not** bypass these guards: a typo
+that names the OS disk is refused even in automation.
+
+**2. Destructive confirmation.** After printing the exact list of disks to be
+wiped, the script requires authorization:
+
+| Context | Without `--force` | With `--force` |
+|---|---|---|
+| Interactive (TTY) | prompts to type `WIPE` | proceeds |
+| Non-interactive (`nohup`/SSH/cron) | **aborts** | **proceeds** |
+
+So unattended runs are safe by default and need exactly one extra flag —
+`--force` (aliases `--yes`, `-y`) — to authorize destruction:
+
+```bash
+sudo nohup ./benchmark-storage-pts.sh --disk "/dev/sdb;data01" --force \
+  --result-id nightly > /tmp/bench.log 2>&1 &
+```
 
 ### Disk configuration
 
@@ -609,6 +644,9 @@ OPTIONS:
                                to ~80% of free space). e.g. 4G, 16G, 100G.
   --fio-engine <engine>        Direct-method fio engine (default: auto = io_uring
                                if available, else libaio).
+  --force, --yes, -y           Authorize destruction without the interactive prompt.
+                               Required to run destructively in non-interactive mode
+                               (nohup/SSH/cron). Does NOT bypass the safety guards.
   --upload                     Upload results to OpenBenchmarking.org. Requires --method pts.
   --result-id <id>             Run identifier; names the benchmark-results/<id>/ output dir.
   --result-name <name>         Display name (pts method), e.g. "Ceph NVMe vs HDD - Q1 2026"

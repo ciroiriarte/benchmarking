@@ -8,9 +8,22 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 4.0.0
+# Version: 5.0.0
 #
 # Changelog:
+#   - 2026-06-21: v5.0.0 - Add destructive-target safety guards (issue #11).
+#                          BREAKING: a destructive run now requires authorization.
+#                          Always-on guards refuse to wipe the root/boot disk, any
+#                          mounted filesystem (including a partition such as
+#                          /dev/sdb1 under /dev/sdb), LVM physical volumes, MD RAID
+#                          members and swap — validated before any write, aborting
+#                          the whole run if any target is unsafe.  A destruction
+#                          plan is printed and confirmation is required: on a TTY
+#                          type WIPE; non-interactively pass --force (--yes/-y) to
+#                          authorize (frictionless automation).  --force does NOT
+#                          bypass the programmatic guards.  The EXIT cleanup now
+#                          only releases disks it actually began preparing, so an
+#                          early abort never wipes an untouched disk.
 #   - 2026-06-21: v4.0.0 - Add a direct-fio benchmark method and make it the
 #                          default (issue #25).  BREAKING: storage now runs a
 #                          curated, time-boxed fio matrix by default (--method
@@ -233,6 +246,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 #   /dev/vdd;HDD_Replica3
 #   /dev/vde;HDD_EC32
 DISKS=()
+# Disks the script has actually begun preparing (formatting/mounting).  The EXIT
+# cleanup only releases these, so an early abort never wipes an untouched disk.
+PREPARED_DISKS=()
+# Authorize destruction without the interactive confirmation prompt.  Required to
+# run destructively in non-interactive contexts (nohup/SSH/cron).  Does NOT
+# bypass the programmatic safety guards (root/boot/mounted/LVM/MD/swap).
+FORCE=0
 # iozone (pts/iozone-1.9.6) and postmark (pts/postmark-1.1.2) are excluded:
 # both fail to compile with GCC 15 due to K&R-style function declarations.
 # pts/dbench and pts/fs-mark cover comparable metadata-heavy and filesystem
@@ -332,6 +352,12 @@ usage() {
     echo "                             \"upload-id\" = use --result-id value,"
     echo "                             \"upload-name\" = use --result-name value (default),"
     echo "                             or any custom string."
+    echo "  --force, --yes, -y         Authorize destruction without the interactive prompt."
+    echo "                             REQUIRED to run destructively in non-interactive mode"
+    echo "                             (nohup/SSH/cron) — without it such runs abort safely."
+    echo "                             Does NOT bypass the safety guards that refuse the"
+    echo "                             root/boot disk, mounted filesystems, LVM PVs, MD"
+    echo "                             members and swap (those are never wiped)."
     echo "  --skip-preconditioning     Skip the SSD steady-state preconditioning passes."
     echo "                             Preconditioning is on by default: it writes across"
     echo "                             the full device twice to move SSDs/NVMe from a rested"
@@ -381,6 +407,7 @@ while [[ "$#" -gt 0 ]]; do
         --fio-size) require_optarg "$1" "${2:-}"; FIO_SIZE="$2"; shift ;;
         --fio-engine) require_optarg "$1" "${2:-}"; FIO_ENGINE="$2"; shift ;;
         --skip-preconditioning) PRECONDITIONING_ENABLED=0; PRECONDITIONING_SET_BY_USER=1 ;;
+        --force|--yes|-y) FORCE=1 ;;
         --help) usage; exit 0 ;;
         *) echo "Unknown parameter passed: $1"; usage; exit 1 ;;
     esac
@@ -788,13 +815,18 @@ release_disk() {
 }
 
 # Runs on any exit (normal or error via set -e) so disks are always unmounted
-# and wiped even if a benchmark fails mid-run.
+# and wiped even if a benchmark fails mid-run.  Only disks the script actually
+# began preparing (PREPARED_DISKS) are released, so an early abort — e.g. a
+# safety-guard rejection or a declined confirmation — never wipes a disk the
+# script never touched (issue #11).
 cleanup() {
     set +e  # Do not let cleanup failures mask the original error
-    echo "--- Cleaning up test disks ---"
-    for disk in "${DISKS[@]}"; do
-        release_disk "$disk"
-    done
+    if [[ ${#PREPARED_DISKS[@]} -gt 0 ]]; then
+        echo "--- Cleaning up test disks ---"
+        for disk in "${PREPARED_DISKS[@]}"; do
+            release_disk "$disk"
+        done
+    fi
     # Clean up any stale PTS run_lock files in the system-level installed-tests
     # directory.  These are created by PTS as a global lock regardless of
     # PTS_TEST_INSTALL_ROOT_PATH and persist if the script is killed mid-run,
@@ -936,6 +968,109 @@ PYEOF
     echo "         per-workload JSON: ${outdir}/"
 }
 
+# === Destructive-Target Safety Guards (issue #11) ===
+
+# Return 0 if a disk is safe to wipe, 1 otherwise (printing the reason).
+# These guards are ALWAYS enforced and are NOT bypassable by --force: they
+# refuse the live system's storage so a typo cannot destroy the host.  A disk is
+# refused if it (or any of its partitions/holders) is:
+#   - mounted anywhere other than this target's own /mnt/<label> (a stale mount
+#     from a prior aborted run is tolerated; prepare_disk reclaims it),
+#   - an LVM physical volume, a Linux MD RAID member, or an active swap area.
+# Mounts at /, /boot, /boot/efi are called out explicitly as the OS disk.
+validate_disk_safety() {
+    local disk_entry="$1"
+    local device label allowed
+    device=$(echo "$disk_entry" | cut -d';' -f1)
+    label=$(echo "$disk_entry" | cut -d';' -f2)
+    allowed="/mnt/${label}"
+
+    if [[ ! -b "$device" ]]; then
+        echo "  UNSAFE: ${device} is not a block device."
+        return 1
+    fi
+
+    # Parse lsblk in pairs mode (unambiguous with empty/space values) over the
+    # whole-disk device and all its children.
+    local reasons=()
+    local line name mnt fstype
+    while IFS= read -r line; do
+        name=$(sed -n 's/.*\bNAME="\([^"]*\)".*/\1/p' <<<"$line")
+        mnt=$(sed -n 's/.*\bMOUNTPOINT="\([^"]*\)".*/\1/p' <<<"$line")
+        fstype=$(sed -n 's/.*\bFSTYPE="\([^"]*\)".*/\1/p' <<<"$line")
+        if [[ -n "$mnt" && "$mnt" != "[SWAP]" ]]; then
+            if [[ "$mnt" == "$allowed" || "$mnt" == "$allowed/"* ]]; then
+                : # stale benchmark mount from a prior run; will be reclaimed
+            elif [[ "$mnt" == "/" || "$mnt" == "/boot" || "$mnt" == "/boot/efi" ]]; then
+                reasons+=("${name} hosts the OS (mounted at ${mnt})")
+            else
+                reasons+=("${name} is mounted at ${mnt} (in use)")
+            fi
+        fi
+        case "$fstype" in
+            LVM2_member)        reasons+=("${name} is an LVM physical volume") ;;
+            linux_raid_member)  reasons+=("${name} is a Linux MD RAID member") ;;
+            swap)               reasons+=("${name} is a swap area") ;;
+        esac
+        # MOUNTPOINT=[SWAP] without FSTYPE=swap (e.g. some lsblk versions).
+        [[ "$mnt" == "[SWAP]" && "$fstype" != "swap" ]] && reasons+=("${name} is active swap")
+    done < <(lsblk -Pno NAME,MOUNTPOINT,FSTYPE "$device" 2>/dev/null)
+
+    # Belt-and-braces: also consult /proc/swaps for the device and its partitions.
+    local sw
+    while IFS= read -r sw; do
+        [[ "$sw" == "$device" || "$sw" == "${device}"[0-9]* || "$sw" == "${device}p"[0-9]* ]] \
+            && reasons+=("${sw} is active swap (/proc/swaps)")
+    done < <(awk 'NR>1{print $1}' /proc/swaps 2>/dev/null)
+
+    if [[ ${#reasons[@]} -gt 0 ]]; then
+        local r
+        for r in "${reasons[@]}"; do
+            echo "  UNSAFE: ${r}"
+        done
+        return 1
+    fi
+    return 0
+}
+
+# Print the exact set of disks that will be destroyed.
+print_destruction_plan() {
+    echo ""
+    echo "##############################################################"
+    echo "#  DESTRUCTIVE OPERATION — the following disks WILL BE WIPED  #"
+    echo "##############################################################"
+    local disk device label size
+    for disk in "${DISKS[@]}"; do
+        device=$(echo "$disk" | cut -d';' -f1)
+        label=$(echo "$disk" | cut -d';' -f2)
+        size=$(lsblk -dno SIZE "$device" 2>/dev/null | tr -d ' ')
+        echo "  ${device}  (label: ${label}, size: ${size:-?})  -> mkfs.xfs, all data lost"
+    done
+    echo "##############################################################"
+}
+
+# Require authorization before any destructive action.  --force authorizes
+# non-interactively (frictionless automation); on a TTY without --force the
+# operator must type WIPE; non-interactive without --force aborts.
+confirm_destruction() {
+    print_destruction_plan
+    if [[ "$FORCE" -eq 1 ]]; then
+        echo "Authorized via --force; proceeding without prompt."
+        return 0
+    fi
+    if [[ ! -t 0 ]]; then
+        echo "ERROR: refusing to wipe disks in non-interactive mode without --force."
+        echo "       Pass --force to authorize destruction in automation (nohup/SSH/cron)."
+        exit 1
+    fi
+    local ans
+    read -r -p "Type 'WIPE' (uppercase) to proceed, anything else to abort: " ans
+    if [[ "$ans" != "WIPE" ]]; then
+        echo "Aborted: confirmation not given."
+        exit 1
+    fi
+}
+
 # --- SCRIPT EXECUTION STARTS HERE ---
 
 echo "Starting storage benchmark script..."
@@ -965,6 +1100,32 @@ for disk in "${DISKS[@]}"; do
 done
 echo "---------------------------------------------"
 
+# === Destructive-Target Safety Validation (issue #11) ===
+# Runs before ANY write (preconditioning/mkfs).  Always enforced; --force does
+# not bypass these guards.  Validate every target first and abort the whole run
+# if any is unsafe, so a bad disk in the list never causes a partial wipe.
+echo "--- Validating disk targets ---"
+unsafe=0
+for disk in "${DISKS[@]}"; do
+    device=$(echo "$disk" | cut -d';' -f1)
+    label=$(echo "$disk" | cut -d';' -f2)
+    if validate_disk_safety "$disk"; then
+        echo "  OK: ${device} (${label}) — safe to wipe."
+    else
+        echo "  REFUSED: ${device} (${label})"
+        unsafe=1
+    fi
+done
+if [[ "$unsafe" -eq 1 ]]; then
+    echo "ERROR: one or more targets are part of the live system or in use; aborting."
+    echo "       The root/boot disk, mounted filesystems, LVM PVs, MD members and"
+    echo "       swap are never wiped. Detach/unmount the device or pick another target."
+    exit 1
+fi
+
+# Require authorization before the first destructive action.
+confirm_destruction
+
 # === System Snapshot ===
 capture_system_snapshot
 
@@ -992,6 +1153,10 @@ prepare_disk() {
     device=$(echo "$disk_entry" | cut -d';' -f1)
     label=$(echo "$disk_entry" | cut -d';' -f2)
     local mount_point="/mnt/${label}"
+
+    # Mark this disk as touched so the EXIT cleanup will release it. Recorded
+    # before mkfs so a failure mid-prepare is still cleaned up (issue #11).
+    PREPARED_DISKS+=("$disk_entry")
 
     echo "--- Preparing $device as $label ---"
     echo "WARNING: All data on $device will be erased."

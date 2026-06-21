@@ -14,6 +14,22 @@ benchmark\-storage\-pts.sh \- benchmark storage I/O performance with fio (direct
 .B WARNING: This script is destructive.
 It formats and completely wipes all data on every target disk before testing.
 .PP
+.B Safety.
+Before any write, each target is validated and the run aborts (touching nothing)
+if any target, or any of its partitions or holders, is the root/boot disk,
+mounted elsewhere, an LVM physical volume, an MD RAID member, or active swap.
+These guards are always enforced and are not bypassed by
+.BR \-\-force .
+After printing the list of disks to be wiped, destruction must be authorized: on
+a terminal by typing
+.BR WIPE ,
+or with
+.B \-\-force
+(non-interactive runs without
+.B \-\-force
+abort). The exit cleanup only releases disks the script actually began
+preparing, so an aborted run never wipes an untouched disk.
+.PP
 Benchmarks storage I/O across one or more disks sequentially.
 For each disk the script formats it with XFS, mounts it, runs the selected
 benchmark method, and saves results before moving on to the next disk.
@@ -117,6 +133,15 @@ Lines beginning with
 and blank lines are ignored.
 May be combined with \fB\-\-disk\fR.
 .SS General options
+.TP
+.B \-\-force ", " \-\-yes ", " \-y
+Authorize destruction without the interactive confirmation prompt.
+Required to run destructively in non-interactive contexts (nohup/SSH/cron);
+without it such runs abort safely.
+Does
+.B not
+bypass the safety guards that refuse the root/boot disk, mounted filesystems,
+LVM physical volumes, MD RAID members and swap (those are never wiped).
 .TP
 .B \-\-method " " \fIdirect|pts\fR
 Benchmark method (default

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script Name: common-checks.sh
-# Version: 1.3.0
+# Version: 1.4.0
 #
 # Shared library of pre-run check functions, result collection, upload
 # helpers, and invocation context setup.  Sourced (not executed) by the
@@ -10,6 +10,11 @@
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
 #
 # Changelog:
+#   - 2026-06-21: v1.4.0 - Force C locale (LC_ALL=C/LANG=C) so parsing of ping,
+#                          lscpu, ip, etc. is decimal-point and English-label
+#                          stable regardless of the host locale (issue #18).
+#                          Add require_optarg() to validate that value-taking CLI
+#                          options have an argument (issue #16).
 #   - 2026-06-21: v1.3.0 - Fix upload of results whose id contains a dot
 #                          (issue #12).  Extract resolve_pts_result_dir() and use
 #                          it in both collect_results() and upload_pts_results()
@@ -64,6 +69,36 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     echo "       Usage: . /path/to/common-checks.sh"
     exit 1
 fi
+
+# === Locale ===
+# Force the C locale so that tool output parsed by these scripts is stable
+# regardless of the host's locale: a comma decimal separator (e.g. ping RTT
+# "0,15") would corrupt awk arithmetic, and translated lscpu/ip field labels
+# would defeat the English-keyword greps used for topology and interface
+# detection.  Benchmarks should also run in a fixed locale for reproducibility.
+# (issue #18)
+export LC_ALL=C
+export LANG=C
+
+# === CLI Argument Helpers ===
+
+# Validate that a value-taking option was given a value.  Call as:
+#   require_optarg "$1" "${2:-}"
+# Errors out (with the script's usage(), if defined) when the value is missing
+# or looks like the next option (begins with '-').  Prevents the silent
+# fall-through that occurs when an option consumes the following flag or runs
+# off the end of the argument list.  (issue #16)
+require_optarg() {
+    local opt="$1"
+    local val="${2:-}"
+    if [[ -z "$val" || "$val" == -* ]]; then
+        echo "ERROR: option '$opt' requires a value." >&2
+        if declare -F usage >/dev/null 2>&1; then
+            usage >&2
+        fi
+        exit 1
+    fi
+}
 
 # === Defaults for configuration variables ===
 # Callers may override these before invoking check functions.

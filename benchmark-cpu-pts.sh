@@ -13,9 +13,14 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.9.0
+# Version: 2.10.0
 #
 # Changelog:
+#   - 2026-06-21: v2.10.0 - Validate value-taking CLI options via require_optarg()
+#                            (issue #16).  Remove the discarded warmup result via
+#                            resolve_pts_result_dir() so cleanup no longer assumes
+#                            $HOME and leaves no stray warmup dirs under /var/lib
+#                            on root runs (issue #20).
 #   - 2026-06-21: v2.9.0 - Detect failed test installs (issue #24).  PTS
 #                           batch-install exits 0 even when a build fails or a
 #                           dependency is unavailable (e.g. pts/compress-7zip on
@@ -247,10 +252,12 @@ IDENTIFIER_SOURCE="upload-name"
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -T|--tests)
+          require_optarg "$1" "${2:-}"
           IFS=',' read -ra REQUIRED_TESTS <<< "$2"
           shift
           ;;
         -r|--runs)
+          require_optarg "$1" "${2:-}"
           TIMES_TO_RUN="$2"
           shift
           ;;
@@ -258,14 +265,17 @@ while [[ "$#" -gt 0 ]]; do
           UPLOAD_RESULTS=1
           ;;
         -n|--result-name)
+	  require_optarg "$1" "${2:-}"
 	  UPLOAD_NAME="$2"
 	  shift
 	  ;;
         -i|--result-id)
+	  require_optarg "$1" "${2:-}"
 	  UPLOAD_ID="$2"
 	  shift
 	  ;;
         --identifier)
+	  require_optarg "$1" "${2:-}"
 	  IDENTIFIER_SOURCE="$2"
 	  shift
 	  ;;
@@ -382,6 +392,17 @@ capture_system_snapshot
 # results and can be safely removed after each per-test warmup run.
 WARMUP_RESULT_ID="warmup-${UPLOAD_ID}"
 
+# Remove the discarded warmup result wherever PTS stored it.  PTS may write to
+# the system-wide store (/var/lib, root runs) or the per-user store ($HOME);
+# resolve_pts_result_dir() (common-checks.sh) finds it in either, so the cleanup
+# no longer assumes $HOME and leaves no stray warmup dirs behind (issue #20).
+remove_warmup_result() {
+    local d
+    d=$(resolve_pts_result_dir "$WARMUP_RESULT_ID" 2>/dev/null) || return 0
+    [[ -n "$d" ]] && rm -rf "$d"
+    return 0
+}
+
 # FAILED_TESTS is initialised in the install section above so install/build
 # failures are carried through to the final summary.
 # All CPU tests share a single PTS result directory named after UPLOAD_ID.
@@ -400,10 +421,10 @@ for TEST_NAME in "${INSTALLED_TESTS[@]}"; do
             phoronix-test-suite batch-run "$TEST_NAME"; then
         echo "WARNING: Warmup run failed for $TEST_NAME; skipping timed run."
         FAILED_TESTS+=("$TEST_NAME")
-        rm -rf "${HOME}/.phoronix-test-suite/test-results/${WARMUP_RESULT_ID}"
+        remove_warmup_result
         continue
     fi
-    rm -rf "${HOME}/.phoronix-test-suite/test-results/${WARMUP_RESULT_ID}"
+    remove_warmup_result
 
     echo "--- Timed runs ($TIMES_TO_RUN) ---"
     if ! phoronix-test-suite batch-run "$TEST_NAME"; then

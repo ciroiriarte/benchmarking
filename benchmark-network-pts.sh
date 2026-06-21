@@ -22,9 +22,15 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.5.0
+# Version: 2.6.0
 #
 # Changelog:
+#   - 2026-06-21: v2.6.0 - Verify test installs with pts_test_installed() (issue
+#                           #24).  PTS batch-install exits 0 even when a build
+#                           fails or a dependency is unavailable, which could add
+#                           a never-installed test to the run list; gate
+#                           INSTALLED_TESTS on the pts-install.json marker so such
+#                           tests are reported as failed installs and skipped.
 #   - 2026-03-13: v2.5.0 - Add --identifier flag to control TEST_RESULTS_IDENTIFIER.
 #                          Accepts "upload-id" (uses --result-id value),
 #                          "upload-name" (uses --result-name, the default),
@@ -745,7 +751,9 @@ FAILED_INSTALLS=()
 
 echo "--- Installing standalone tests ---"
 for test_name in "${STANDALONE_TESTS[@]}"; do
-    if phoronix-test-suite batch-install "$test_name"; then
+    # batch-install exits 0 even on build/dependency failure, so confirm the test
+    # actually installed (pts-install.json marker) before adding it (issue #24).
+    if phoronix-test-suite batch-install "$test_name" && pts_test_installed "$test_name"; then
         INSTALLED_TESTS+=("$test_name")
     else
         echo "WARNING: Failed to install ${test_name}; dependent tests will be skipped."
@@ -761,7 +769,7 @@ if [[ -n "$SERVER_ADDRESS" ]]; then
         # script appends to $CFLAGS, so exporting -fcommon restores the legacy
         # behaviour without affecting other test builds.
         if CFLAGS="${CFLAGS:+$CFLAGS }-fcommon -Wno-error=implicit-function-declaration -std=gnu17" \
-            phoronix-test-suite batch-install "$test_name"; then
+            phoronix-test-suite batch-install "$test_name" && pts_test_installed "$test_name"; then
             INSTALLED_TESTS+=("$test_name")
         else
             echo "WARNING: Failed to install ${test_name}; dependent tests will be skipped."

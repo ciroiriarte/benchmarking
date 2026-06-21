@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script Name: common-checks.sh
-# Version: 1.1.0
+# Version: 1.2.0
 #
 # Shared library of pre-run check functions, result collection, upload
 # helpers, and invocation context setup.  Sourced (not executed) by the
@@ -10,6 +10,12 @@
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
 #
 # Changelog:
+#   - 2026-06-21: v1.2.0 - Add pts_test_installed(): detect when a PTS test was
+#                          not actually installed (build failed or dependency
+#                          unavailable) despite batch-install exiting 0, by
+#                          checking the pts-install.json completion marker.
+#                          Used by the CPU and network scripts to avoid silent
+#                          zero-result runs (issue #24).
 #   - 2026-03-14: v1.1.0 - Fix collect_results(): PTS lowercases, strips
 #                          underscores AND dots from result directory names.
 #                          Add all candidate variants to the search.
@@ -220,6 +226,31 @@ setup_invocation_context() {
     INVOKING_GROUP=$(id -gn "$INVOKING_USER" 2>/dev/null || echo "$INVOKING_USER")
     RUN_ID="${UPLOAD_ID:-${default_prefix}-$(date +%Y-%m-%d_%H%M%S)}"
     SNAPSHOT_FILE="${RUN_ID}-system-snapshot.txt"
+}
+
+# === PTS Install Verification ===
+
+# Return 0 if a PTS test profile is genuinely installed, 1 otherwise.
+# PTS batch-install exits 0 even when a build fails or an external dependency is
+# unavailable (e.g. pts/compress-7zip on RHEL/Rocky 9, where p7zip is absent
+# from EPEL 9): it downloads the source but never writes the pts-install.json
+# completion marker.  That marker is the reliable "installed" signal; an
+# install-failed.log, when present, is a definitive failure.  Checks both the
+# system-wide and per-user PTS install roots.
+#   $1 - test id (e.g. pts/compress-7zip)
+pts_test_installed() {
+    local short="${1##pts/}"
+    local base dir
+    for base in "/var/lib/phoronix-test-suite/installed-tests/pts" \
+                "${HOME}/.phoronix-test-suite/installed-tests/pts"; do
+        [[ -d "$base" ]] || continue
+        for dir in "${base}/${short}-"*; do
+            [[ -d "$dir" ]] || continue
+            [[ -f "${dir}/install-failed.log" ]] && return 1
+            [[ -f "${dir}/pts-install.json" ]] && return 0
+        done
+    done
+    return 1
 }
 
 # === Result Collection ===

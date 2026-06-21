@@ -13,9 +13,17 @@
 # 		of threads to use.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.8.0
+# Version: 2.9.0
 #
 # Changelog:
+#   - 2026-06-21: v2.9.0 - Detect failed test installs (issue #24).  PTS
+#                           batch-install exits 0 even when a build fails or a
+#                           dependency is unavailable (e.g. pts/compress-7zip on
+#                           Rocky/RHEL 9), which previously produced a silent
+#                           zero-result run.  Verify each install via
+#                           pts_test_installed() and only run tests that actually
+#                           installed; failed installs are reported and the
+#                           script exits non-zero.
 #   - 2026-03-13: v2.8.0 - Add --identifier flag to control TEST_RESULTS_IDENTIFIER.
 #                           Accepts "upload-id" (uses --result-id value),
 #                           "upload-name" (uses --result-name, the default),
@@ -307,9 +315,28 @@ echo "------------------------------"
 configure_pts_batch "Y"
 
 # === Install Required Phoronix Tests ===
+# PTS batch-install exits 0 even when a test's build fails or an external
+# dependency is unavailable (e.g. pts/compress-7zip cannot install on RHEL/Rocky
+# 9 because p7zip is absent from EPEL 9): the source is downloaded but the build
+# never completes and no pts-install.json marker is written.  Without detection
+# the run silently produces zero results (issue #24).  Verify each install with
+# pts_test_installed() (from common-checks.sh) and track failures so they are
+# reported clearly and excluded from the run.
+INSTALLED_TESTS=()
+FAILED_TESTS=()
 for test_name in "${REQUIRED_TESTS[@]}"; do
     echo "Installing test: $test_name"
-    phoronix-test-suite batch-install "$test_name"
+    if ! phoronix-test-suite batch-install "$test_name"; then
+        echo "WARNING: batch-install returned non-zero for $test_name; skipping."
+        FAILED_TESTS+=("$test_name (install)")
+        continue
+    fi
+    if ! pts_test_installed "$test_name"; then
+        echo "WARNING: $test_name did not install (build failed or dependency unavailable); skipping."
+        FAILED_TESTS+=("$test_name (install/build)")
+        continue
+    fi
+    INSTALLED_TESTS+=("$test_name")
 done
 
 # Autodetect CPU resources (for snapshot and informational output).
@@ -355,14 +382,13 @@ capture_system_snapshot
 # results and can be safely removed after each per-test warmup run.
 WARMUP_RESULT_ID="warmup-${UPLOAD_ID}"
 
-# Accumulates names of tests that failed so the run loop can continue and
-# completed results are not orphaned.
-FAILED_TESTS=()
+# FAILED_TESTS is initialised in the install section above so install/build
+# failures are carried through to the final summary.
 # All CPU tests share a single PTS result directory named after UPLOAD_ID.
 RESULT_NAMES=()
 
-# === Run Tests ===
-for TEST_NAME in "${REQUIRED_TESTS[@]}"; do
+# === Run Tests (only those that installed successfully) ===
+for TEST_NAME in "${INSTALLED_TESTS[@]}"; do
     echo -e "\n=== Starting CPU Benchmark ==="
     echo "Test profile: $TEST_NAME"
 

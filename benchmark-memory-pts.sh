@@ -13,9 +13,11 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.13.0
+# Version: 1.14.0
 #
 # Changelog:
+#   - 2026-06-21: v1.14.0 - Validate value-taking CLI options via require_optarg()
+#                            (issue #16).
 #   - 2026-06-21: v1.13.0 - Fix build-failure detection (issue #15).  The PTS
 #                            install base was resolved before any test installed,
 #                            so on a clean VM it picked $HOME while PTS (as root)
@@ -258,14 +260,17 @@ while [[ "$#" -gt 0 ]]; do
             UPLOAD_RESULTS=1
             ;;
         -n|--result-name)
+            require_optarg "$1" "${2:-}"
             UPLOAD_NAME="$2"
             shift
             ;;
         -i|--result-id)
+            require_optarg "$1" "${2:-}"
             UPLOAD_ID="$2"
             shift
             ;;
         --identifier)
+            require_optarg "$1" "${2:-}"
             IDENTIFIER_SOURCE="$2"
             shift
             ;;

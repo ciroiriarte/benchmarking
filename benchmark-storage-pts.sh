@@ -8,9 +8,15 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 3.12.0
+# Version: 3.13.0
 #
 # Changelog:
+#   - 2026-06-20: v3.13.0 - Resolve the PTS results store (per-user vs system-wide)
+#                            when detecting and renaming per-test results instead of
+#                            assuming $HOME, so results are found when PTS runs as
+#                            root with a system-wide install (issue #14). The
+#                            needrestart "Restarting services..." hang on first run
+#                            (issue #10) is fixed in install-pts.sh v1.6.0.
 #   - 2026-03-15: v3.12.0 - Remove non-direct I/O (buffered) fio permutations.
 #                            Direct I/O (O_DIRECT) bypasses the page cache and
 #                            measures actual storage device performance; buffered
@@ -935,6 +941,17 @@ run_tests_on_disk() {
     label=$(echo "$disk_entry" | cut -d';' -f2)
     local mount_point="/mnt/${label}"
 
+    # Resolve the PTS results store actually in use (issue #14).  Prefer the
+    # per-user store (the historical default these scripts rely on); fall back to
+    # the system-wide store when only it exists (root with a system install).
+    local pts_tr=""
+    local _base
+    for _base in "${HOME}/.phoronix-test-suite/test-results" \
+                 "/var/lib/phoronix-test-suite/test-results"; do
+        [[ -d "$_base" ]] && { pts_tr="$_base"; break; }
+    done
+    : "${pts_tr:=${HOME}/.phoronix-test-suite/test-results}"
+
     # Direct PTS to install and run tests on the target disk.
     # PTS_TEST_INSTALL_ROOT_PATH overrides the install root for all tests,
     # so both the test binaries and their scratch/data files land on the
@@ -1043,7 +1060,7 @@ run_tests_on_disk() {
         # '|| true' prevents set -e from firing when test-results is empty
         # (ls exits 1 when no glob matches).
         local results_before
-        results_before=$(ls -d ~/.phoronix-test-suite/test-results/*/ 2>/dev/null \
+        results_before=$(ls -d "${pts_tr}"/*/ 2>/dev/null \
             | sort || true)
 
         if ! phoronix-test-suite batch-run "$test_name"; then
@@ -1054,7 +1071,7 @@ run_tests_on_disk() {
 
         # Identify directories created during this run by diffing before/after.
         local results_after
-        results_after=$(ls -d ~/.phoronix-test-suite/test-results/*/ 2>/dev/null \
+        results_after=$(ls -d "${pts_tr}"/*/ 2>/dev/null \
             | sort || true)
 
         local new_dirs=()
@@ -1075,7 +1092,7 @@ run_tests_on_disk() {
 
         if [[ -d "$result_dir" ]]; then
             local result_name="${label}_${test_name}_result"
-            mv "$result_dir" "$HOME/.phoronix-test-suite/test-results/$result_name"
+            mv "$result_dir" "${pts_tr}/$result_name"
             RESULT_NAMES+=("$result_name")
             echo "Result for $test_name on $label saved as: $result_name"
         fi

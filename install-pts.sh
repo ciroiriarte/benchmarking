@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script Name: install-pts.sh
-# Version: 1.5.0
+# Version: 1.6.0
 #
 # Shared library for installing the Phoronix Test Suite and system-level
 # build dependencies.  Sourced (not executed) by the benchmark-*-pts.sh
@@ -12,6 +12,13 @@
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
 #
 # Changelog:
+#   - 2026-06-20: v1.6.0 - Make needrestart non-interactive on Debian/Ubuntu via
+#                          an /etc/needrestart/conf.d drop-in so PTS test-dependency
+#                          installs no longer hang at "Restarting services..."
+#                          under nohup/SSH (issues #3, #6, #10).  Add php-gd and a
+#                          DejaVu TTF font to PTS dependencies so create-report
+#                          PDF/HTML graphs render instead of showing a "PHP GD /
+#                          TTF support required" message (issue #7).
 #   - 2026-03-12: v1.5.0 - Fix batch-setup comment: answer #4
 #                          (PromptForTestIdentifier) uses TEST_RESULTS_IDENTIFIER
 #                          env var, not TEST_RESULTS_NAME.
@@ -121,6 +128,7 @@ _setup_opensuse_repo() {
         "${php_pkg_prefix}-zlib"
         "${php_pkg_prefix}-bz2"
         "${php_pkg_prefix}-pcntl"
+        "${php_pkg_prefix}-gd"
     )
 
     # Match on $ID (e.g. opensuse-tumbleweed, opensuse-slowroll, opensuse-leap)
@@ -154,7 +162,8 @@ _setup_opensuse_repo() {
     # These packages are always available from the base repos and must be
     # installed before PTS (which needs PHP to run).
     local rc=0
-    sudo zypper install -y gcc gcc-c++ ${gcc_extra} make unzip bzip2 \
+    # dejavu-fonts: TTF font required (with php-gd) for create-report graphs (#7).
+    sudo zypper install -y gcc gcc-c++ ${gcc_extra} make unzip bzip2 dejavu-fonts \
         "${python_pkg}" "${php_pkgs[@]}" "${EXTRA_PKGS_ZYPPER[@]}" || rc=$?
     if [[ "$rc" -ne 0 && "$rc" -ne 106 ]]; then
         echo "ERROR: zypper install (build tools) failed with exit code $rc"
@@ -201,8 +210,9 @@ install_pts_packages() {
             rocky|rhel|centos)
                 echo "Detected Rocky Linux or RHEL-based system"
                 sudo dnf install -y epel-release
+                # php-gd + dejavu fonts let create-report render PDF/HTML graphs (#7).
                 sudo dnf install -y phoronix-test-suite gcc gcc-c++ make unzip \
-                    bzip2 "${EXTRA_PKGS_DNF[@]}"
+                    bzip2 php-gd dejavu-sans-fonts "${EXTRA_PKGS_DNF[@]}"
                 ;;
             ubuntu|debian)
                 echo "Detected Ubuntu or Debian-based system"
@@ -213,8 +223,10 @@ install_pts_packages() {
                 # unzip is needed by PTS to extract test archives (.zip).
                 # autoconf is part of PTS's build-utilities FileCheck on Ubuntu;
                 # without it PTS install prompts interactively — fatal under nohup.
+                # php-gd + a TTF font let create-report render PDF/HTML graphs
+                # (issue #7); without them PTS embeds a "PHP GD/TTF required" note.
                 sudo apt-get install -y build-essential autoconf php-cli php-xml \
-                    unzip "${EXTRA_PKGS_APT[@]}"
+                    php-gd fonts-dejavu-core unzip "${EXTRA_PKGS_APT[@]}"
                 sudo apt-get install -y phoronix-test-suite || {
                     echo "Phoronix Test Suite not found in repo, attempting fallback install..."
                     wget -O /tmp/phoronix.deb https://phoronix-test-suite.com/releases/repo/pts.debian/files/phoronix-test-suite_10.8.4_all.deb
@@ -245,10 +257,34 @@ install_pts_packages() {
     echo "Phoronix Test Suite installed successfully."
 }
 
+# === Non-interactive needrestart ===
+# needrestart (default on Ubuntu 22.04+/Debian 12+) prompts to restart services
+# after package installs.  PTS installs each test's external dependencies by
+# invoking apt itself, which triggers needrestart and blocks at "Restarting
+# services..." when there is no controlling terminal (nohup/SSH).  The
+# DEBIAN_FRONTEND/NEEDRESTART_MODE env vars do not survive when PTS re-invokes
+# apt through sudo (env_reset), so configure needrestart system-wide instead.
+# Idempotent and applied every run (also covers hosts where PTS was installed by
+# an earlier run, before this fix existed).  See issues #3, #6, #10.
+_configure_needrestart_noninteractive() {
+    [[ -d /etc/needrestart ]] || return 0
+    sudo mkdir -p /etc/needrestart/conf.d 2>/dev/null || return 0
+    printf '%s\n' \
+        '# Installed by benchmark install-pts.sh: never prompt during package' \
+        '# installs so PTS test-dependency installs do not hang under nohup/SSH.' \
+        '$nrconf{restart} = "a";' \
+        '$nrconf{kernelhints} = -1;' \
+        | sudo tee /etc/needrestart/conf.d/00-phoronix-noninteractive.conf \
+            >/dev/null 2>&1 || true
+}
+
 # === Install Gate ===
 # Call this from each benchmark script after setting EXTRA_PKGS_* arrays.
 # Skips installation if PTS and PHP are both already present.
 ensure_pts_installed() {
+    # Make needrestart non-interactive before any apt activity (including PTS's
+    # own test-dependency installs) so non-interactive runs do not hang.
+    _configure_needrestart_noninteractive
     # Check both PTS and PHP: a prior failed install may leave the PTS binary
     # in place (dpkg iU state) while PHP is still absent, causing PTS to fail
     # immediately with "PHP must be installed".

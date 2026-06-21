@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script Name: common-checks.sh
-# Version: 1.2.0
+# Version: 1.3.0
 #
 # Shared library of pre-run check functions, result collection, upload
 # helpers, and invocation context setup.  Sourced (not executed) by the
@@ -10,6 +10,14 @@
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
 #
 # Changelog:
+#   - 2026-06-21: v1.3.0 - Fix upload of results whose id contains a dot
+#                          (issue #12).  Extract resolve_pts_result_dir() and use
+#                          it in both collect_results() and upload_pts_results()
+#                          so upload resolution applies the same PTS name
+#                          sanitization (lowercase, strip underscores AND dots)
+#                          as collection.  Previously upload stripped only
+#                          underscores, so a dotted result-id collected fine but
+#                          failed to upload.
 #   - 2026-06-21: v1.2.0 - Add pts_test_installed(): detect when a PTS test was
 #                          not actually installed (build failed or dependency
 #                          unavailable) despite batch-install exiting 0, by
@@ -253,6 +261,36 @@ pts_test_installed() {
     return 1
 }
 
+# === PTS Result Directory Resolution ===
+
+# Resolve a result name to the actual PTS result directory on disk.
+# PTS sanitizes result directory names: it lowercases, strips underscores, and
+# removes dots (e.g. "cpu-E5-2680v2-opensuse.16.0" becomes
+# "cpu-e5-2680v2-opensuse160").  Searches both the system-wide (/var/lib/, root
+# installs) and per-user ($HOME/) result stores, trying the original name and
+# each sanitized candidate.  Echoes the matching directory path, or nothing if
+# none is found.  Used by both collect_results() and upload_pts_results() so the
+# two agree on name resolution (issue #12).
+#   $1 - result name as recorded in RESULT_NAMES[]
+resolve_pts_result_dir() {
+    local result_name="$1"
+    local lower_name="${result_name,,}"
+    local no_underscore="${lower_name//_/}"
+    local no_dots="${no_underscore//./}"
+    local base candidate
+    for base in "/var/lib/phoronix-test-suite/test-results" \
+                "$HOME/.phoronix-test-suite/test-results"; do
+        [[ -d "$base" ]] || continue
+        for candidate in "$result_name" "$lower_name" "$no_underscore" "$no_dots"; do
+            if [[ -d "${base}/${candidate}" ]]; then
+                echo "${base}/${candidate}"
+                return 0
+            fi
+        done
+    done
+    return 1
+}
+
 # === Result Collection ===
 
 # Copy PTS result directories and the system snapshot into
@@ -273,29 +311,10 @@ collect_results() {
 
     local copied=0
     for result_name in "${RESULT_NAMES[@]}"; do
-        # PTS sanitizes result directory names: lowercases, strips
-        # underscores, and removes dots (e.g. "cpu-E5-2680v2-opensuse.16.0"
-        # becomes "cpu-e5-2680v2-opensuse160"). Build candidate names.
-        local lower_name="${result_name,,}"
-        local no_underscore="${lower_name//_/}"
-        local no_dots="${no_underscore//./}"
-        local pts_result_dir=""
-
-        # Search both possible PTS result locations.  System-wide installs
-        # (running as root) store results under /var/lib/; user installs
-        # use $HOME/.phoronix-test-suite/.  The storage script explicitly
-        # moves results to $HOME, so check both locations.
-        local base candidate
-        for base in "/var/lib/phoronix-test-suite/test-results" \
-                    "$HOME/.phoronix-test-suite/test-results"; do
-            [[ -d "$base" ]] || continue
-            for candidate in "$result_name" "$lower_name" "$no_underscore" "$no_dots"; do
-                if [[ -d "${base}/${candidate}" ]]; then
-                    pts_result_dir="${base}/${candidate}"
-                    break 2
-                fi
-            done
-        done
+        # Resolve to the actual PTS directory (handles lowercase/underscore/dot
+        # sanitization and both result stores) via the shared resolver.
+        local pts_result_dir
+        pts_result_dir=$(resolve_pts_result_dir "$result_name") || true
 
         if [[ -n "$pts_result_dir" ]]; then
             cp -r "$pts_result_dir" "$output_dir/"
@@ -317,8 +336,9 @@ collect_results() {
 # === Upload Results ===
 
 # Upload all results in RESULT_NAMES[] to OpenBenchmarking.org.
-# Handles PTS underscore-stripping for directory name resolution and pipes
-# 'n' to suppress the interactive "attach system logs?" prompt.
+# Resolves the PTS-sanitized directory name (via the shared resolver so it
+# matches collection, including dot-stripping) and pipes 'n' to suppress the
+# interactive "attach system logs?" prompt.
 # Requires: UPLOAD_RESULTS, RESULT_NAMES[].
 upload_pts_results() {
     if [[ "${UPLOAD_RESULTS:-0}" -ne 1 ]]; then
@@ -326,22 +346,16 @@ upload_pts_results() {
     fi
     echo "--- Uploading results to OpenBenchmarking.org ---"
     for result in "${RESULT_NAMES[@]}"; do
-        # Resolve to the actual PTS directory name for upload.
-        local upload_name="$result"
-        local base
-        for base in "/var/lib/phoronix-test-suite/test-results" \
-                    "$HOME/.phoronix-test-suite/test-results"; do
-            [[ -d "$base" ]] || continue
-            if [[ -d "${base}/${result}" ]]; then
-                upload_name="$result"
-                break
-            fi
-            local sanitized="${result//_/}"
-            if [[ -d "${base}/${sanitized}" ]]; then
-                upload_name="$sanitized"
-                break
-            fi
-        done
+        # upload-result takes the result directory name; resolve it the same way
+        # collection does so dotted/underscored/mixed-case ids upload correctly.
+        local resolved_dir upload_name
+        resolved_dir=$(resolve_pts_result_dir "$result") || true
+        if [[ -n "$resolved_dir" ]]; then
+            upload_name=$(basename "$resolved_dir")
+        else
+            echo "  WARNING: PTS result directory not found for $result; trying name as-is."
+            upload_name="$result"
+        fi
         echo "Uploading: $upload_name"
         # Pipe 'n' to decline the interactive "attach system logs?" prompt
         # that PTS asks during upload (not covered by batch-setup).

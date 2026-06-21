@@ -22,9 +22,14 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.7.0
+# Version: 2.8.0
 #
 # Changelog:
+#   - 2026-06-21: v2.8.0 - Validate value-taking CLI options via require_optarg()
+#                          (issue #16).  Start netserver with -D in the background
+#                          and stop it by PID instead of 'pkill -x netserver', so
+#                          server mode no longer kills unrelated netserver
+#                          processes on a shared host (issue #19).
 #   - 2026-06-21: v2.7.0 - Make the peer reachability preflight fatal (issue #13).
 #                          check_server_reachable's result was previously ignored,
 #                          so the script ran the full peer suite (multiple 360 s
@@ -591,9 +596,13 @@ run_server_mode() {
     "$iperf3_bin" "${iperf3_args[@]}" &
     local iperf3_pid=$!
 
-    # Start netserver — it daemonizes itself; clean up via pkill on exit.
+    # Start netserver with -D (do not daemonize) in the background so we own its
+    # PID and can stop exactly this instance on exit.  Previously netserver was
+    # left to self-daemonize and cleanup used 'pkill -x netserver', which would
+    # kill every netserver on the host — unsafe on shared machines (issue #19).
     echo "--- Starting netserver (port 12865) ---"
-    "$netserver_bin" "${netserver_args[@]}"
+    "$netserver_bin" -D "${netserver_args[@]}" &
+    local netserver_pid=$!
 
     echo ""
     echo "=== Server daemons running ==="
@@ -601,14 +610,15 @@ run_server_mode() {
         && echo "  Bind address : ${bind_addr}" \
         || echo "  Bind address : all interfaces (0.0.0.0)"
     echo "  iperf3       : port 5201   (PID ${iperf3_pid})"
-    echo "  netserver    : port 12865"
+    echo "  netserver    : port 12865  (PID ${netserver_pid})"
     echo ""
     echo "Press Ctrl+C to stop."
 
-    # Stop both daemons cleanly on exit.
+    # Stop only the daemons this script started (by PID) on exit — never other
+    # netserver/iperf3 processes that may belong to other users (issue #19).
     trap 'echo; echo "Stopping server daemons..."; \
           kill "${iperf3_pid}" 2>/dev/null; \
-          pkill -x netserver 2>/dev/null; \
+          kill "${netserver_pid}" 2>/dev/null; \
           echo "Done."; exit 0' SIGINT SIGTERM
 
     # Block until iperf3 exits (or the trap fires).
@@ -661,6 +671,7 @@ IDENTIFIER_SOURCE="upload-name"
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -s|--server)
+            require_optarg "$1" "${2:-}"
             SERVER_ADDRESS="$2"
             shift
             ;;
@@ -668,14 +679,17 @@ while [[ "$#" -gt 0 ]]; do
             SERVER_MODE=1
             ;;
         -I|--interface)
+            require_optarg "$1" "${2:-}"
             INTERFACE="$2"
             shift
             ;;
         --nic-speed)
+            require_optarg "$1" "${2:-}"
             NIC_SPEED_MBPS="$2"
             shift
             ;;
         --streams)
+            require_optarg "$1" "${2:-}"
             OVERRIDE_STREAMS="$2"
             shift
             ;;
@@ -683,14 +697,17 @@ while [[ "$#" -gt 0 ]]; do
             UPLOAD_RESULTS=1
             ;;
         -n|--result-name)
+            require_optarg "$1" "${2:-}"
             UPLOAD_NAME="$2"
             shift
             ;;
         -i|--result-id)
+            require_optarg "$1" "${2:-}"
             UPLOAD_ID="$2"
             shift
             ;;
         --identifier)
+            require_optarg "$1" "${2:-}"
             IDENTIFIER_SOURCE="$2"
             shift
             ;;

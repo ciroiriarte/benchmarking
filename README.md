@@ -1,9 +1,12 @@
 # Infrastructure Benchmarking
 
-Benchmark scripts for infrastructure using synthetic workloads via the
-[Phoronix Test Suite (PTS)](https://www.phoronix-test-suite.com/).
-Each script targets a single performance dimension and produces results that can
-be compared locally or uploaded to [OpenBenchmarking.org](https://openbenchmarking.org/).
+Benchmark scripts for infrastructure using synthetic workloads. CPU, memory and
+network use the [Phoronix Test Suite (PTS)](https://www.phoronix-test-suite.com/);
+storage defaults to a direct [fio](https://fio.readthedocs.io/) method that
+reports IOPS, throughput and latency percentiles (with a PTS path still available
+via `--method pts`). Each script targets a single performance dimension. PTS
+results can be compared locally or uploaded to
+[OpenBenchmarking.org](https://openbenchmarking.org/).
 
 **Supported distributions:** Ubuntu, Debian, Rocky Linux, openSUSE (Leap 15.6, Leap 16, Tumbleweed, Slowroll).
 Runs on physical machines and virtual machines (vSphere, OpenStack).

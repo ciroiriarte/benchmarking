@@ -13,9 +13,17 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.12.0
+# Version: 1.13.0
 #
 # Changelog:
+#   - 2026-06-21: v1.13.0 - Fix build-failure detection (issue #15).  The PTS
+#                            install base was resolved before any test installed,
+#                            so on a clean VM it picked $HOME while PTS (as root)
+#                            installed to /var/lib, and the install-failed.log
+#                            check looked in the wrong directory.  Use the shared
+#                            pts_test_installed() helper, which resolves both
+#                            stores at call time and checks the pts-install.json
+#                            completion marker.
 #   - 2026-03-13: v1.12.0 - Add --identifier flag to control TEST_RESULTS_IDENTIFIER.
 #                            Accepts "upload-id" (uses --result-id value),
 #                            "upload-name" (uses --result-name, the default),
@@ -302,12 +310,14 @@ configure_pts_batch "Y"
 # === Install Required Phoronix Tests ===
 FAILED_TESTS=()
 INSTALLED_TESTS=()
-# Determine PTS test install base to check install-failed.log.
-PTS_INSTALL_BASE="/var/lib/phoronix-test-suite/installed-tests"
-if [[ ! -d "$PTS_INSTALL_BASE" ]]; then
-    PTS_INSTALL_BASE="$HOME/.phoronix-test-suite/installed-tests"
-fi
 
+# PTS install exits 0 even when the build fails or an external dependency is
+# unavailable.  Verify each install with pts_test_installed() (from
+# common-checks.sh), which checks the pts-install.json completion marker (and
+# install-failed.log) in both the system-wide and per-user PTS stores, resolved
+# at call time.  The previous code resolved a single install base *before* any
+# install ran, so on a clean VM it picked $HOME while PTS (as root) installed to
+# /var/lib, looking in the wrong place and missing build failures (issue #15).
 for test_name in "${REQUIRED_TESTS[@]}"; do
     echo "Installing test: $test_name"
     if ! phoronix-test-suite batch-install "$test_name"; then
@@ -315,15 +325,9 @@ for test_name in "${REQUIRED_TESTS[@]}"; do
         FAILED_TESTS+=("$test_name (install)")
         continue
     fi
-    # PTS install exits 0 even when the build fails; the real indicator
-    # is the install-failed.log file left in the test directory.
-    local_test_dir="${PTS_INSTALL_BASE}/${test_name##pts/}"
-    # Match versioned directories like pts/stream-1.3.4
-    local_test_dir=$(find "$PTS_INSTALL_BASE" -maxdepth 1 -type d -name "${test_name##pts/}-*" 2>/dev/null | head -1)
-    if [[ -n "$local_test_dir" && -f "${local_test_dir}/install-failed.log" ]]; then
-        echo "WARNING: $test_name build failed (install-failed.log present); skipping."
-        cat "${local_test_dir}/install-failed.log"
-        FAILED_TESTS+=("$test_name (build)")
+    if ! pts_test_installed "$test_name"; then
+        echo "WARNING: $test_name did not install (build failed or dependency unavailable); skipping."
+        FAILED_TESTS+=("$test_name (install/build)")
         continue
     fi
     INSTALLED_TESTS+=("$test_name")

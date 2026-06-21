@@ -8,9 +8,13 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 3.13.0
+# Version: 3.14.0
 #
 # Changelog:
+#   - 2026-06-21: v3.14.0 - Validate value-taking CLI options via require_optarg()
+#                            (issue #16), so a missing --disk/--result-id/etc.
+#                            value fails with a clear error instead of silently
+#                            consuming the next flag.
 #   - 2026-06-20: v3.13.0 - Resolve the PTS results store (per-user vs system-wide)
 #                            when detecting and renaming per-test results instead of
 #                            assuming $HOME, so results are found when PTS runs as
@@ -296,12 +300,12 @@ load_disk_file() {
 UPLOAD_RESULTS=0
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --disk) DISKS+=("$2"); shift ;;
-        --disk-file) load_disk_file "$2"; shift ;;
+        --disk) require_optarg "$1" "${2:-}"; DISKS+=("$2"); shift ;;
+        --disk-file) require_optarg "$1" "${2:-}"; load_disk_file "$2"; shift ;;
         --upload) UPLOAD_RESULTS=1 ;;
-        --result-name) UPLOAD_NAME="$2"; shift ;;
-        --result-id) UPLOAD_ID="$2"; shift ;;
-        --identifier) IDENTIFIER_SOURCE="$2"; shift ;;
+        --result-name) require_optarg "$1" "${2:-}"; UPLOAD_NAME="$2"; shift ;;
+        --result-id) require_optarg "$1" "${2:-}"; UPLOAD_ID="$2"; shift ;;
+        --identifier) require_optarg "$1" "${2:-}"; IDENTIFIER_SOURCE="$2"; shift ;;
         --skip-preconditioning) PRECONDITIONING_ENABLED=0 ;;
         --help) usage; exit 0 ;;
         *) echo "Unknown parameter passed: $1"; usage; exit 1 ;;

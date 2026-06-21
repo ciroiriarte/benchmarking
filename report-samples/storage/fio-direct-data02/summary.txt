@@ -1,0 +1,10 @@
+=== fio direct results: data02 (/dev/sdc) ===
+engine=io_uring runtime=45s ramp=10s file=2.0G
+workload               bs   qd  jobs rw        |      rIOPS     rMB/s   r-p50us   r-p99us |      wIOPS     wMB/s   w-p50us   w-p99us
+randread_4k_qd1        4k   1   1    randread  |       3957      15.5       183       257 |                                         
+randread_4k_qd32       4k   32  4    randread  |      81795     319.5      1303      2736 |                                         
+randwrite_4k_qd1       4k   1   1    randwrite |                                          |       3509      13.7       120       224
+randwrite_4k_qd32      4k   32  4    randwrite |                                          |       8184      32.0      8978    122159
+randrw_4k_70_30_qd32   4k   32  4    randrw    |       8899      34.8      3555     91750 |       3823      14.9       428     31588
+seqread_1m_qd16        1m   16  1    read      |        765     765.6     19005    129499 |                                         
+seqwrite_1m_qd16       1m   16  1    write     |                                          |        308     308.1     37487    278921

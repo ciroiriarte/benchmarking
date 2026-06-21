@@ -1,6 +1,6 @@
-.TH BENCHMARK\-STORAGE\-PTS 1 "February 2026" "benchmarking" "User Commands"
+.TH BENCHMARK\-STORAGE\-PTS 1 "June 2026" "benchmarking" "User Commands"
 .SH NAME
-benchmark\-storage\-pts.sh \- benchmark storage I/O performance using the Phoronix Test Suite
+benchmark\-storage\-pts.sh \- benchmark storage I/O performance with fio (direct) or the Phoronix Test Suite
 .SH SYNOPSIS
 .B benchmark\-storage\-pts.sh
 \fB\-\-disk\fR \fI"<device>;<label>"\fR
@@ -15,12 +15,29 @@ benchmark\-storage\-pts.sh \- benchmark storage I/O performance using the Phoron
 It formats and completely wipes all data on every target disk before testing.
 .PP
 Benchmarks storage I/O across one or more disks sequentially.
-For each disk the script formats it with XFS, mounts it, runs the full PTS
-storage test suite, and saves results before moving on to the next disk.
+For each disk the script formats it with XFS, mounts it, runs the selected
+benchmark method, and saves results before moving on to the next disk.
 Tests are never run in parallel across disks to avoid I/O contention.
 .PP
-The test suite covers latency, IOPS, throughput, and workload characterisation
-across multiple access patterns, block sizes, I/O engines, and read/write ratios.
+Two methods are available, selected with \fB\-\-method\fR:
+.TP
+.B direct
+(default) Calls
+.BR fio (1)
+directly with a small, curated, time-boxed workload matrix and reports IOPS,
+throughput and p50/p99/p99.9 latency in a summary table, plus a CSV and one JSON
+file per workload. Fast (minutes per disk) and does not require the Phoronix Test
+Suite. Output goes to
+.B fio\-direct\-<label>/
+under the run directory.
+.TP
+.B pts
+Legacy Phoronix Test Suite path: runs
+.BR pts/fio ", " pts/dbench ", " pts/fs\-mark
+(and
+.B pts/compilebench
+where Python\ 2 exists). Slower and reports no latency, but is the only method
+that uploads to OpenBenchmarking.org (\fB\-\-upload\fR).
 .PP
 .B SSD steady-state preconditioning
 is performed by default before formatting each SSD or NVMe device.
@@ -30,18 +47,40 @@ measurements reflect steady-state performance rather than a rested state.
 Preconditioning is skipped automatically for HDDs and unknown device types,
 and can be disabled with \fB\-\-skip\-preconditioning\fR.
 .PP
-PTS is installed automatically on supported distributions (Ubuntu, Debian,
-Rocky Linux, openSUSE) if not already present.
+Dependencies are installed automatically on supported distributions (Ubuntu,
+Debian, Rocky Linux, openSUSE): only
+.BR fio (1)
+and filesystem tools for the direct method, or the full Phoronix Test Suite for
+.BR "\-\-method pts" .
 .PP
 Results are collected into
 .B ./benchmark\-results/<result\-id>/
 relative to the directory from which the script is invoked.
-.SH PTS TESTS
+.SH DIRECT METHOD WORKLOADS
+The default
+.B direct
+method runs these fio workloads (direct\ I/O, engine io_uring with libaio
+fallback, fixed numjobs/iodepth per workload so results are comparable across
+hosts):
+.TP
+.B randread_4k_qd1 ", " randread_4k_qd32
+4\ KiB random read at queue depth\ 1 (latency floor) and\ 32 (saturated IOPS).
+.TP
+.B randwrite_4k_qd1 ", " randwrite_4k_qd32
+4\ KiB random write at queue depth\ 1 and\ 32.
+.TP
+.B randrw_4k_70_30_qd32
+4\ KiB 70/30 read/write mixed workload at queue depth\ 32.
+.TP
+.B seqread_1m_qd16 ", " seqwrite_1m_qd16
+1\ MiB sequential read and write (throughput).
+.PP
+.B "\-\-mode quick"
+runs only the four QD32/sequential workloads with shorter runtimes.
+.SH PTS TESTS (\-\-method pts)
 .TP
 .B pts/fio
-Flexible I/O tester.
-Covers sequential and random read/write, multiple I/O engines (sync, psync,
-Linux AIO, io_uring), direct and buffered I/O, and block sizes from 512\ B to 8\ MB.
+Flexible I/O tester (full PTS option sweep).
 .TP
 .B pts/dbench
 Filesystem metadata throughput using CIFS-style workloads.
@@ -79,6 +118,34 @@ and blank lines are ignored.
 May be combined with \fB\-\-disk\fR.
 .SS General options
 .TP
+.B \-\-method " " \fIdirect|pts\fR
+Benchmark method (default
+.BR direct ).
+See
+.B BENCHMARK METHODS
+above.
+.TP
+.B \-\-mode " " \fIquick|full\fR
+Run profile for the direct method (default
+.BR full ).
+.B quick
+runs a four-workload subset with shorter runtimes and skips preconditioning;
+.B full
+runs all seven workloads.
+.TP
+.B \-\-fio\-size " " \fISIZE\fR
+Direct-method test-file size (default
+.BR 8G ),
+auto-capped to about 80% of free space. Larger sizes span more of the device so
+random results are not flattered by controller caching. Accepts IEC suffixes
+(e.g.\&
+.BR 4G ", " 16G ", " 100G ).
+.TP
+.B \-\-fio\-engine " " \fIENGINE\fR
+Direct-method fio I/O engine (default
+.BR auto ,
+which prefers io_uring and falls back to libaio).
+.TP
 .B \-\-skip\-preconditioning
 Skip SSD steady-state preconditioning passes.
 Use when re-running tests immediately after a previous run (the device is
@@ -87,7 +154,7 @@ reproducibility.
 .TP
 .B \-\-upload
 Upload results to OpenBenchmarking.org after the run completes.
-Requires \fB\-\-result\-id\fR and \fB\-\-result\-name\fR.
+Requires \fB\-\-method pts\fR, plus \fB\-\-result\-id\fR and \fB\-\-result\-name\fR.
 .TP
 .B \-\-result\-id " " \fIID\fR
 Short identifier for the run (e.g.\&
@@ -125,20 +192,29 @@ and blank lines are ignored.
 .B ./benchmark\-results/<result\-id>/<result\-id>\-system\-snapshot.txt
 System snapshot captured before the run.
 .TP
+.BI ./benchmark\-results/<result\-id>/fio\-direct\- label /
+(direct method) One directory per disk, containing
+.BR summary.txt " (IOPS/throughput/p50/p99 latency table),"
+.BR summary.csv " (same data incl. p99.9), and one " <workload>.json
+of raw fio output per workload.
+.TP
 .BI ./benchmark\-results/<result\-id>/<label>_ test _result/
-One PTS result directory per (disk\~\[mu]\~test) combination (e.g.\&
-.BR NVMe_Replica3_fio_result/ ,
-.BR NVMe_Replica3_dbench_result/ ,
-\&...).
-Each contains
+(\fB\-\-method pts\fR) One PTS result directory per (disk\~\[mu]\~test)
+combination (e.g.\&
+.BR NVMe_Replica3_fio_result/ ),
+each containing
 .B composite.xml
 and all result data for that test on that disk.
 .SH COMPARISON
-When multiple disks are tested in a single run, a local comparison report is
-generated at the end using
-.BR "phoronix\-test\-suite compare\-results" .
-.PP
-To generate full reports in all formats across disks or across separate runs, use
+The
+.B direct
+method writes a finished summary table per disk; it is not processed by
+.BR create\-report\-pts.sh (1).
+For
+.BR "\-\-method pts" ,
+a local comparison report is generated at the end using
+.BR "phoronix\-test\-suite compare\-results" ,
+and full reports across disks or runs can be produced with
 .BR create\-report\-pts.sh (1).
 .SH EXAMPLES
 .PP
@@ -152,11 +228,20 @@ Test two disks with different characteristics in a single run:
 .RE
 .fi
 .PP
-Test from a disk file and upload results:
+Quick direct-fio sanity check on one disk:
 .PP
 .nf
 .RS
-\&./benchmark\-storage\-pts.sh \-\-disk\-file disks.conf \-\-upload \\
+\&./benchmark\-storage\-pts.sh \-\-disk "/dev/vdb;nvme" \-\-mode quick \\
+    \-\-result\-id "nvme\-smoke"
+.RE
+.fi
+.PP
+Legacy PTS method with upload to OpenBenchmarking.org:
+.PP
+.nf
+.RS
+\&./benchmark\-storage\-pts.sh \-\-disk\-file disks.conf \-\-method pts \-\-upload \\
     \-\-result\-name "Ceph NVMe vs HDD \- Q1 2026" \\
     \-\-result\-id "ceph\-dc1\-q1\-2026"
 .RE

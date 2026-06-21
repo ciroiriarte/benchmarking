@@ -1,0 +1,72 @@
+=== Benchmark Configuration ===
+Date:        2026-06-21 19:37:55 UTC
+Result ID:   storage-sample
+Result Name: (not set)
+Tests:       fio dbench fs-mark compilebench
+Disks:
+  /dev/sdb;data01
+  /dev/sdc;data02
+
+=== Kernel ===
+Linux bench-ubuntu2204 5.15.0-171-generic #181-Ubuntu SMP Fri Feb 6 22:44:50 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+
+=== OS Release ===
+PRETTY_NAME="Ubuntu 22.04.5 LTS"
+NAME="Ubuntu"
+VERSION_ID="22.04"
+VERSION="22.04.5 LTS (Jammy Jellyfish)"
+VERSION_CODENAME=jammy
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=jammy
+
+=== Block Devices ===
+NAME     SIZE TYPE ROTA SCHED       RQ-SIZE  RA
+loop0   63.8M loop    0 none            128 128
+loop1   91.6M loop    0 none            128 128
+loop2   48.1M loop    0 none            128 128
+loop3   49.3M loop    0 none            128 128
+loop4   63.8M loop    0 none            128 128
+loop5   91.7M loop    0 none            128 128
+sda     22.2G disk    0 none            256 128
+|-sda1  22.1G part    0 none            256 128
+|-sda14    4M part    0 none            256 128
+`-sda15  106M part    0 none            256 128
+sdb       12G disk    1 none            256 128
+sdc       12G disk    1 none            256 128
+sr0        4M rom     1 mq-deadline      64 128
+
+=== Per-disk Detail ===
+--- data01 (/dev/sdb) ---
+  driver:      virtio_scsi
+  type:        virtual
+  scheduler:   none
+  nr_requests: 256
+  read_ahead:  128 kB
+  rotational:  1
+
+--- data02 (/dev/sdc) ---
+  driver:      virtio_scsi
+  type:        virtual
+  scheduler:   none
+  nr_requests: 256
+  read_ahead:  128 kB
+  rotational:  1
+
+=== Memory ===
+               total        used        free      shared  buff/cache   available
+Mem:           3.8Gi       214Mi       1.7Gi       2.0Mi       1.9Gi       3.3Gi
+Swap:             0B          0B          0B
+
+=== Load Average ===
+0.00 0.00 0.00 1/165 200568
+
+=== Storage Controllers (dmidecode) ===
+# dmidecode 3.3
+Getting SMBIOS data from sysfs.
+SMBIOS 2.8 present.
+

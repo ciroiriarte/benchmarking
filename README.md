@@ -28,12 +28,12 @@ Runs on physical machines and virtual machines (vSphere, OpenStack).
 
 ## Scripts
 
-| Script | Workload | PTS tests |
+| Script | Workload | Tests |
 |---|---|---|
 | `benchmark-cpu-pts.sh` | CPU | `pts/build-linux-kernel`, `pts/compress-7zip`, `pts/c-ray`, `pts/openssl`, `pts/stockfish` |
 | `benchmark-memory-pts.sh` | Memory | `pts/stream`, `pts/ramspeed`, `pts/tinymembench`, `pts/cachebench` |
 | `benchmark-network-pts.sh` | Network | `pts/network-loopback` †, `pts/sockperf`, `pts/iperf`, `pts/netperf` |
-| `benchmark-storage-pts.sh` | Disk I/O | `pts/fio`, `pts/dbench`, `pts/fs-mark`, `pts/compilebench` ‡ |
+| `benchmark-storage-pts.sh` | Disk I/O | **`fio` direct** (default) §; or `pts/fio`, `pts/dbench`, `pts/fs-mark`, `pts/compilebench` ‡ via `--method pts` |
 | `install-pts.sh` | *(shared library)* | Sourced by all benchmark scripts to install PTS and system-level build dependencies |
 
 > † **`pts/network-loopback`** requires OpenBSD `nc`. On RHEL/Rocky the default
@@ -42,13 +42,18 @@ Runs on physical machines and virtual machines (vSphere, OpenStack).
 > network tests run normally. Install OpenBSD netcat to enable it where
 > available.
 >
-> ‡ **`pts/compilebench`** requires Python 2, which is absent from current
-> releases (Ubuntu 24.04+, Debian 13, Rocky 9+, openSUSE Leap 16+). The storage
-> script **detects this and skips compilebench automatically** on those hosts,
-> so the effective modern storage suite is `pts/fio`, `pts/dbench`, and
-> `pts/fs-mark` (which already cover IOPS/throughput and metadata-heavy
-> filesystem workloads). It still runs on older distros that ship Python 2
-> (e.g. openSUSE Leap 15.6).
+> § **Storage defaults to a direct `fio` method** (no PTS): a curated,
+> time-boxed workload matrix reporting IOPS, throughput and p50/p99/p99.9
+> latency. The legacy PTS path (`--method pts`) is still available and is the
+> only one that uploads to OpenBenchmarking.org. See
+> [benchmark-storage-pts.sh](#benchmark-storage-ptssh).
+>
+> ‡ **`pts/compilebench`** (PTS method only) requires Python 2, which is absent
+> from current releases (Ubuntu 24.04+, Debian 13, Rocky 9+, openSUSE Leap 16+).
+> The storage script **detects this and skips compilebench automatically** on
+> those hosts, so the effective modern PTS storage suite is `pts/fio`,
+> `pts/dbench`, and `pts/fs-mark`. It still runs on older distros that ship
+> Python 2 (e.g. openSUSE Leap 15.6).
 
 `create-report-pts.sh` consumes the `benchmark-results/` directories produced by any of the
 above scripts and generates reports in all supported PTS formats (text, CSV, JSON, HTML, PDF),
@@ -69,9 +74,10 @@ sudo ./benchmark-cpu-pts.sh --result-id "my-server-baseline"
 sudo ./benchmark-memory-pts.sh --result-id "my-server-baseline"
 
 # Storage benchmark (destructive — wipes target disk)
+# Default direct-fio method writes its own IOPS/throughput/latency summary table.
 sudo ./benchmark-storage-pts.sh --disk "/dev/vdb;nvme-test" --result-id "my-server-baseline"
 
-# Generate reports from results
+# Generate reports from CPU/memory/network results (and storage with --method pts)
 ./create-report-pts.sh ./benchmark-results/my-server-baseline/
 ```
 
@@ -499,10 +505,36 @@ OPTIONS:
 
 > **WARNING: This script is destructive. It formats and completely wipes all data on every target disk.**
 
-Benchmarks disk I/O across one or more disks sequentially. For each disk it runs
-the full PTS storage suite covering latency, IOPS, throughput, and workload
-characterisation (read/write ratio, block size, I/O engine, access pattern).
-Disks are tested one at a time to avoid I/O contention.
+Benchmarks disk I/O across one or more disks sequentially (one at a time, to
+avoid contention). It offers two methods:
+
+| Method | Flag | What it does |
+|---|---|---|
+| **Direct fio** *(default)* | `--method direct` | Runs a small, curated, time-boxed `fio` matrix and reports **IOPS, throughput, and p50/p99/p99.9 latency** in a readable summary table (plus CSV and per-workload JSON). Fast (minutes/disk) and meaningful. No Phoronix Test Suite required. |
+| **Phoronix Test Suite** | `--method pts` | Legacy path: runs `pts/fio`, `pts/dbench`, `pts/fs-mark` (and `pts/compilebench` where Python 2 exists). Slower and reports no latency, but supports **`--upload` to OpenBenchmarking.org**. |
+
+The direct method exists because the PTS fio sweep ran 576 sub-tests per disk
+(~10 h), reported no latency, and tied concurrency to CPU count (results not
+comparable across hosts). The curated direct matrix fixes all three.
+
+### Direct-fio workload matrix
+
+Fixed `numjobs`/`iodepth` per workload (so results are comparable across hosts),
+`direct=1`, one I/O engine (`io_uring`, falling back to `libaio`), time-boxed:
+
+| Workload | Pattern | Block | Queue depth | numjobs | Measures |
+|---|---|---|---|---|---|
+| `randread_4k_qd1` | random read | 4 KiB | 1 | 1 | read latency floor |
+| `randread_4k_qd32` | random read | 4 KiB | 32 | 4 | saturated read IOPS |
+| `randwrite_4k_qd1` | random write | 4 KiB | 1 | 1 | write latency floor |
+| `randwrite_4k_qd32` | random write | 4 KiB | 32 | 4 | saturated write IOPS |
+| `randrw_4k_70_30_qd32` | 70/30 mixed | 4 KiB | 32 | 4 | real-world mixed |
+| `seqread_1m_qd16` | sequential read | 1 MiB | 16 | 1 | read throughput |
+| `seqwrite_1m_qd16` | sequential write | 1 MiB | 16 | 1 | write throughput |
+
+`--mode quick` runs a 4-workload subset (the two QD32 randoms + both sequential)
+with shorter runtimes and skips preconditioning — a fast sanity check. `--mode
+full` (default) runs all seven.
 
 ### Disk configuration
 
@@ -547,11 +579,13 @@ the full device twice before formatting it (two sequential passes, 128 KiB block
 queue depth 32), driving the device through its garbage-collection and
 wear-levelling cycle so that measurements reflect steady-state performance.
 
-Preconditioning is **enabled by default** and skipped automatically for HDDs.
-Disable it with `--skip-preconditioning` when re-running tests immediately after
-a previous run (the drive is already conditioned) or when turnaround time matters
-more than reproducibility. Note that preconditioning time scales with drive
-capacity — plan for two full sequential write passes per disk before testing begins.
+Preconditioning is **enabled by default** in `--mode full` and skipped
+automatically for HDDs, for unknown device types, and in `--mode quick`. Disable
+it explicitly with `--skip-preconditioning` when re-running tests immediately
+after a previous run (the drive is already conditioned) or when turnaround time
+matters more than reproducibility. Note that preconditioning time scales with
+drive capacity — plan for two full sequential write passes per disk before
+testing begins.
 
 ### Usage
 
@@ -564,10 +598,18 @@ Disk target options (at least one required):
   --disk-file <path>           Read disk entries from a file.
 
 OPTIONS:
-  --upload                     Upload results to OpenBenchmarking.org
-  --result-id <id>             Run identifier, e.g. "ceph-dc1-q1-2026"
-  --result-name <name>         Display name, e.g. "Ceph NVMe vs HDD - Q1 2026"
-  --identifier <value>         System identifier for PTS comparison columns.
+  --method <direct|pts>        Benchmark method (default: direct). See table above.
+  --mode <quick|full>          Direct-method run profile (default: full).
+                               quick = 4-workload subset, shorter runtimes, skips
+                               preconditioning; full = all 7 workloads.
+  --fio-size <SIZE>            Direct-method test-file size (default: 8G; auto-capped
+                               to ~80% of free space). e.g. 4G, 16G, 100G.
+  --fio-engine <engine>        Direct-method fio engine (default: auto = io_uring
+                               if available, else libaio).
+  --upload                     Upload results to OpenBenchmarking.org. Requires --method pts.
+  --result-id <id>             Run identifier; names the benchmark-results/<id>/ output dir.
+  --result-name <name>         Display name (pts method), e.g. "Ceph NVMe vs HDD - Q1 2026"
+  --identifier <value>         System identifier for PTS comparison columns (pts method).
                                "upload-id", "upload-name" (default), or custom string.
   --skip-preconditioning       Skip SSD steady-state preconditioning (see above)
   --help                       Show help
@@ -576,22 +618,61 @@ OPTIONS:
 ### Examples
 
 ```bash
-# Two disks — NVMe vs HDD comparison in a single run
+# Default: curated direct-fio matrix, two disks in one run.
+# Produces a summary table + CSV + JSON per disk (no PTS, no upload).
 ./benchmark-storage-pts.sh \
-  --disk "/dev/vdb;NVMe_Replica3" \
-  --disk "/dev/vdd;HDD_Replica3" \
+  --disk "/dev/vdb;nvme" \
+  --disk "/dev/vdd;hdd" \
   --result-id "ceph-dc1-q1-2026"
 
-# From a disk file with upload
-./benchmark-storage-pts.sh --disk-file disks.conf --upload \
+# Quick sanity check (4 workloads, shorter runtimes, no preconditioning)
+./benchmark-storage-pts.sh --disk "/dev/vdb;nvme" --mode quick \
+  --result-id "nvme-smoke"
+
+# Larger test file to span more of the device (better steady-state on big SSDs)
+./benchmark-storage-pts.sh --disk "/dev/vdb;nvme" --fio-size 64G \
+  --result-id "nvme-full"
+
+# Legacy PTS method WITH OpenBenchmarking.org upload
+./benchmark-storage-pts.sh --disk-file disks.conf --method pts --upload \
   --result-id "ceph-dc1-q1-2026" \
   --result-name "Ceph NVMe vs HDD - Q1 2026"
-
-# Skip preconditioning for a quick re-run immediately after a previous run
-./benchmark-storage-pts.sh --disk-file disks.conf \
-  --skip-preconditioning \
-  --result-id "ceph-dc1-q1-2026-rerun"
 ```
+
+### Direct-method output
+
+Each disk gets a `fio-direct-<label>/` directory under the run directory:
+
+```
+benchmark-results/<result-id>/
+├── <result-id>-system-snapshot.txt
+├── fio-direct-nvme/
+│   ├── summary.txt          # human-readable table (IOPS, MB/s, p50/p99 latency)
+│   ├── summary.csv          # same data incl. p99.9, for spreadsheets
+│   ├── randread_4k_qd1.json # raw fio JSON, one per workload
+│   └── ...
+└── fio-direct-hdd/
+    └── ...
+```
+
+Example `summary.txt`:
+
+```
+=== fio direct results: nvme (/dev/vdb) ===
+engine=io_uring runtime=45s ramp=10s file=8.0G
+workload               bs   qd  jobs rw        |      rIOPS     rMB/s   r-p50us   r-p99us |      wIOPS     wMB/s   w-p50us   w-p99us
+randread_4k_qd1        4k   1   1    randread  |       9123      35.6       105       210 |
+randread_4k_qd32       4k   32  4    randread  |     312480    1220.6        95       380 |
+randwrite_4k_qd32      4k   32  4    randwrite |                                          |     118734     463.8       210      1850
+randrw_4k_70_30_qd32   4k   32  4    randrw    |      84210     328.9       180       720 |      36090     140.9       240      2100
+seqread_1m_qd16        1m   16  1    read      |       3450    3450.0      4200      8900 |
+seqwrite_1m_qd16       1m   16  1    write     |                                          |       1980    1980.0      7100     21000
+```
+
+The direct method is self-contained — it does **not** feed `create-report-pts.sh`
+(which consumes PTS `composite.xml` files). Use `--method pts` if you need PTS
+reports or OpenBenchmarking.org comparison. See
+[report-samples/storage/](#report-samples) for real generated samples.
 
 ---
 
@@ -647,23 +728,27 @@ benchmark-results/<result-id>/
 What differs between scripts is **how many PTS result subdirectories are created
 and how they are named** — this follows how each PTS test family reports results:
 
-| Script | PTS result subdirectory(ies) | One subdir per… | Differentiator |
+| Script | Result subdirectory(ies) | One subdir per… | Differentiator |
 |---|---|---|---|
 | `benchmark-cpu-pts.sh` | `<result-id>` (single, shared by all CPU tests) | run | `--result-id` |
 | `benchmark-memory-pts.sh` | `<result-id>_<test>` | test | `--result-id` |
 | `benchmark-network-pts.sh` | `<result-id>_<test-variant>` | test variant | `--result-id` |
-| `benchmark-storage-pts.sh` | `<disk-label>_<test>_result` | disk × test | disk label in `--disk` |
+| `benchmark-storage-pts.sh` (direct) | `fio-direct-<disk-label>/` (summary.txt/csv + JSON) | disk | disk label in `--disk` |
+| `benchmark-storage-pts.sh` (`--method pts`) | `<disk-label>_<test>_result` | disk × test | disk label in `--disk` |
 
 Key points:
 
 - **CPU** groups all five tests into one PTS result directory (named `<result-id>`);
   the others create a separate directory per test.
-- **Storage** is the exception for the *differentiator*: because a single run can
-  test several disks, results are distinguished by the **disk label** from
-  `--disk "<dev;label>"`, not by `--result-id`. Use distinct labels to compare
-  disks within one run, or the same label across runs to compare a disk over time.
-- `create-report-pts.sh` consumes the outer run directory regardless of which
-  script produced it, and groups same-test results across runs automatically.
+- **Storage** distinguishes results by the **disk label** from
+  `--disk "<dev;label>"`, not by `--result-id`, because a single run can test
+  several disks. Use distinct labels to compare disks within one run, or the same
+  label across runs to compare a disk over time. The default direct method writes
+  a self-contained `fio-direct-<label>/` directory (summary table + CSV + JSON);
+  the PTS method writes one `<label>_<test>_result` per disk×test.
+- `create-report-pts.sh` consumes PTS result directories (CPU, memory, network,
+  and storage `--method pts`). The direct-fio storage output is already a
+  finished report and is not fed to `create-report-pts.sh`.
 
 ### System identifier
 
@@ -834,22 +919,25 @@ report-samples/
 │       └── ...
 ├── network-standalone/      # 4 tests: loopback, sockperf×3
 │   └── ...
-└── storage/                 # 3 tests × 2 disks: fio, dbench, fs-mark on vSSD + vHDD
-    ├── fio-vSSD/            # fio direct I/O on SSD (192 configs: 4 types × 4 engines × 12 block sizes)
-    │   ├── fio-vSSD.html
-    │   ├── fio-vSSD.pdf
-    │   └── fio-vSSD.text
-    ├── fio-vHDD/            # fio direct I/O on HDD-like disk (IOPS/throughput capped)
-    │   └── ...
-    ├── dbench-disk1/        # dbench on SSD (6 client counts)
-    │   └── ...
-    ├── dbench-disk2/        # dbench on HDD-like disk
-    │   └── ...
-    ├── fs-mark-disk1/       # fs-mark on SSD
-    │   └── ...
-    └── fs-mark-disk2/       # fs-mark on HDD-like disk
+└── storage/                 # direct-fio method (default): per-disk summary + raw JSON
+    ├── fio-direct-data01/
+    │   ├── summary.txt      # IOPS / throughput / p50/p99 latency table
+    │   ├── summary.csv      # same data incl. p99.9
+    │   ├── randread_4k_qd1.json    # raw fio JSON, one per workload
+    │   ├── randread_4k_qd32.json
+    │   ├── randwrite_4k_qd1.json
+    │   ├── randwrite_4k_qd32.json
+    │   ├── randrw_4k_70_30_qd32.json
+    │   ├── seqread_1m_qd16.json
+    │   └── seqwrite_1m_qd16.json
+    └── fio-direct-data02/
         └── ...
 ```
+
+> The storage samples are produced by the default direct-fio method, so they are
+> finished summary tables (not PTS charts). For PTS-style storage charts and
+> OpenBenchmarking.org comparison, run with `--method pts` and feed the result to
+> `create-report-pts.sh`.
 
 To regenerate all report-samples from the raw results:
 
@@ -886,11 +974,18 @@ To regenerate all report-samples from the raw results:
   results/standalone/net-standalone-rocky9 \
   results/standalone/net-standalone-ubuntu2404
 
-# Storage benchmarks (3 distros, vSSD + vHDD per VM)
-./create-report-pts.sh -o ./report-samples/storage \
-  results/sto-pve-opensuse16/sto-pve-opensuse16 \
-  results/sto-pve-ubuntu2404/sto-pve-ubuntu2404 \
-  results/sto-pve-rocky9/sto-pve-rocky9
+# Storage: the default direct-fio method produces its own summary tables, so
+# there is no create-report step. The samples under report-samples/storage/ are
+# copied straight from a run's benchmark-results/<id>/fio-direct-<label>/ dirs:
+#   sudo ./benchmark-storage-pts.sh --disk "/dev/sdb;data01" --disk "/dev/sdc;data02" \
+#     --result-id storage-sample --fio-size 2G
+#   cp -r benchmark-results/storage-sample/fio-direct-* report-samples/storage/
+#
+# Only the legacy --method pts path feeds create-report-pts.sh:
+# ./create-report-pts.sh -o ./report-samples/storage-pts \
+#   results/sto-pve-opensuse16/sto-pve-opensuse16 \
+#   results/sto-pve-ubuntu2404/sto-pve-ubuntu2404 \
+#   results/sto-pve-rocky9/sto-pve-rocky9
 ```
 
 **OpenBenchmarking.org results:**

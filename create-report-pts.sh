@@ -11,9 +11,19 @@
 #              that PTS comparison charts show distinguishable bars per system.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 1.3.0
+# Version: 1.4.0
 #
 # Changelog:
+#   - 2026-06-20: v1.4.0 - Fix "bad array subscript" crash when consolidating runs
+#                           whose PTS result dir equals the run dir (CPU multi-run
+#                           reports): an empty variant now routes through the
+#                           semantic-variant fallback (issue #9).  Fix stub report
+#                           files: detect PTS "Saved Output To:" and move the real
+#                           file instead of capturing the notice as content
+#                           (issue #8).  Resolve the PTS results store (system-wide
+#                           vs per-user) instead of hardcoding $HOME (issue #14).
+#                           Warn when PHP GD is missing before PDF/HTML export
+#                           (issue #7).
 #   - 2026-03-21: v1.3.0 - Fix SIGPIPE (exit 141) caused by grep|head pipelines
 #                           under set -eo pipefail; use grep -m1 and find -quit.
 #                           Fix variant grouping for timestamp-named result dirs:
@@ -35,7 +45,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-readonly SCRIPT_VERSION="1.3.0"
+readonly SCRIPT_VERSION="1.4.0"
 readonly SCRIPT_NAME=$(basename "$0")
 readonly TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
@@ -65,6 +75,7 @@ OUTPUT_DIR=""
 RUN_DIRS=()
 declare -A LABEL_MAP  # run_dir (stripped of trailing /) → friendly label
 CUSTOM_IDENTIFIER=""  # --identifier value; overrides OS auto-detection
+PTS_RESULTS_DIR=""    # resolved PTS test-results store (set in main; issue #14)
 
 # ---------------------------------------------------------------------------
 # Usage
@@ -121,6 +132,40 @@ EOF
 log()  { echo "[${SCRIPT_NAME}] $*"; }
 warn() { echo "[${SCRIPT_NAME}] WARNING: $*" >&2; }
 die()  { echo "[${SCRIPT_NAME}] ERROR: $*" >&2; exit 1; }
+
+# ---------------------------------------------------------------------------
+# resolve_pts_results_dir
+#
+# Echo the PTS test-results store the local phoronix-test-suite reads/writes.
+# PTS uses the system-wide store when running as root with a writable system
+# install, otherwise the per-user store. We import temp results into this store
+# and reference them by name, so it must match where PTS will look. (issue #14)
+# ---------------------------------------------------------------------------
+resolve_pts_results_dir() {
+    local system_dir="/var/lib/phoronix-test-suite/test-results"
+    local user_dir="${HOME}/.phoronix-test-suite/test-results"
+    if [[ "${EUID:-$(id -u)}" -eq 0 && -w "/var/lib/phoronix-test-suite" ]]; then
+        echo "$system_dir"
+    else
+        echo "$user_dir"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# check_graph_support
+#
+# Warn when PHP GD is missing: PTS embeds a "PHP GD support and TTF support are
+# required" message instead of charts in HTML/PDF reports without it. (issue #7)
+# ---------------------------------------------------------------------------
+check_graph_support() {
+    if command -v php &>/dev/null && ! php -m 2>/dev/null | grep -qi '^gd$'; then
+        warn "PHP GD extension not detected; HTML/PDF reports will show a"
+        warn "  'PHP GD support and TTF support are required' message instead of graphs."
+        warn "  Install: Debian/Ubuntu 'php-gd' + 'fonts-dejavu-core';"
+        warn "           RHEL/Rocky 'php-gd' + 'dejavu-sans-fonts';"
+        warn "           openSUSE 'php8-gd' + 'dejavu-fonts'."
+    fi
+}
 
 # ---------------------------------------------------------------------------
 # Argument parsing
@@ -370,7 +415,7 @@ import_result() {
     local temp_name="$2"
 
     local pts_results_dir
-    pts_results_dir="${HOME}/.phoronix-test-suite/test-results"
+    pts_results_dir="${PTS_RESULTS_DIR}"
 
     mkdir -p "${pts_results_dir}/${temp_name}"
     cp -r "${src_dir}/." "${pts_results_dir}/${temp_name}/"
@@ -386,7 +431,7 @@ import_result() {
 # Called via EXIT trap.
 # ---------------------------------------------------------------------------
 cleanup_temp_results() {
-    local pts_results_dir="${HOME}/.phoronix-test-suite/test-results"
+    local pts_results_dir="${PTS_RESULTS_DIR}"
     local name
 
     for name in "${TEMP_RESULT_NAMES[@]}" "${MERGED_RESULT_NAMES[@]}"; do
@@ -412,7 +457,7 @@ merge_results() {
 
     log "  Merging ${#names[@]} results → ${merged_name}"
 
-    local pts_results_dir="${HOME}/.phoronix-test-suite/test-results"
+    local pts_results_dir="${PTS_RESULTS_DIR}"
     local merge_output
     merge_output=$(echo "n" | phoronix-test-suite merge-results "${names[@]}" 2>&1) \
         || warn "merge-results returned non-zero for ${merged_name}"
@@ -455,65 +500,59 @@ export_formats() {
     local output_dir="$2"
     local label="$3"
 
-    local format
-
-    # Stdout-based formats
-    for format in "${FORMAT_STDOUT_FORMATS[@]}"; do
-        local out_file="${output_dir}/${label}.${format}"
-        log "  Exporting ${format} → ${out_file}"
-        phoronix-test-suite "result-file-to-${format}" "$result_name" \
-            > "$out_file" 2>/dev/null \
-            || warn "result-file-to-${format} returned non-zero for ${result_name}"
-    done
-
-    # File-based formats — PTS may write to a file at various locations OR
-    # print content to stdout, depending on the PTS version and format.
-    # Strategy: capture stdout to the target file; if it produces real
-    # content we're done, otherwise search common PTS output locations.
     local abs_output_dir
     abs_output_dir=$(cd "$output_dir" && pwd)
 
-    for format in "${FORMAT_FILE_FORMATS[@]}"; do
+    # Export every format the same way.  PTS is inconsistent across versions and
+    # formats: some converters stream the report to stdout, others write a file
+    # and print only "Saved Output To: <path>".  Relying on stdout (the previous
+    # behaviour) captured that notice line as the file body, producing stub
+    # reports.  Detect the notice and move the real file instead.  (issue #8)
+    local format
+    for format in "${FORMAT_STDOUT_FORMATS[@]}" "${FORMAT_FILE_FORMATS[@]}"; do
         local out_file="${output_dir}/${label}.${format}"
         local abs_out_file="${abs_output_dir}/${label}.${format}"
         log "  Exporting ${format} → ${out_file}"
 
-        # Capture stdout → output file (covers formats that print to stdout)
-        phoronix-test-suite "result-file-to-${format}" "$result_name" \
-            > "$abs_out_file" 2>/dev/null \
-            || true
+        local converter_output
+        converter_output=$(phoronix-test-suite "result-file-to-${format}" "$result_name" 2>/dev/null) \
+            || warn "result-file-to-${format} returned non-zero for ${result_name}"
 
-        # If stdout produced a non-trivial file (> 100 bytes), accept it
-        if [[ -f "$abs_out_file" ]] && [[ $(wc -c < "$abs_out_file") -gt 100 ]]; then
+        # Case 1: PTS wrote the report to a file and told us where.
+        local saved_path
+        saved_path=$(printf '%s\n' "$converter_output" \
+            | grep -oP 'Saved Output To:\s*\K\S+' | tail -n1) || true
+        if [[ -n "$saved_path" && -f "$saved_path" ]]; then
+            mv -f "$saved_path" "$out_file"
+            log "    Saved (moved from ${saved_path}): ${out_file}"
+            continue
+        fi
+
+        # Case 2: PTS streamed real content to stdout (no notice line).
+        if [[ -n "$converter_output" ]] \
+            && ! printf '%s' "$converter_output" | grep -q 'Saved Output To:'; then
+            printf '%s\n' "$converter_output" > "$abs_out_file"
             log "    Saved: ${out_file}"
             continue
         fi
 
-        # stdout was empty/trivial — remove placeholder and search elsewhere
-        rm -f "$abs_out_file"
-
-        local found=""
-        local candidate
-        local pts_results_base="${HOME}/.phoronix-test-suite/test-results"
+        # Case 3: fall back to known PTS output locations.
+        local found="" candidate
         for candidate in \
             "${HOME}/${result_name}.${format}" \
             "$(pwd)/${result_name}.${format}" \
-            "${pts_results_base}/${result_name}/${result_name}.${format}" \
-            ; do
+            "${PTS_RESULTS_DIR}/${result_name}/${result_name}.${format}"; do
             if [[ -f "$candidate" ]]; then
                 found="$candidate"
                 break
             fi
         done
-
-        # Last resort: any matching file inside the PTS result directory
         if [[ -z "$found" ]]; then
-            found=$(find "${pts_results_base}/${result_name}" -maxdepth 1 \
-                -name "*.${format}" -type f -print -quit 2>/dev/null)
+            found=$(find "${PTS_RESULTS_DIR}/${result_name}" -maxdepth 1 \
+                -name "*.${format}" -type f -print -quit 2>/dev/null) || true
         fi
-
         if [[ -n "$found" ]]; then
-            mv "$found" "$out_file"
+            mv -f "$found" "$out_file"
             log "    Moved: ${found} → ${out_file}"
         else
             warn "result-file-to-${format}: output not found for ${result_name}"
@@ -527,6 +566,12 @@ export_formats() {
 main() {
     parse_args "$@"
     check_prerequisites
+
+    # Resolve the PTS results store before importing temp results (#14) and warn
+    # early if graph rendering will be unavailable (#7).
+    PTS_RESULTS_DIR="$(resolve_pts_results_dir)"
+    mkdir -p "$PTS_RESULTS_DIR"
+    check_graph_support
 
     trap cleanup_temp_results EXIT
 
@@ -597,7 +642,7 @@ main() {
             # If prefix stripping had no effect (result dir is not prefixed
             # by run-dir name, e.g. timestamp-based directories), fall back
             # to a semantic variant based on the PTS test type + disk label.
-            if [[ "$variant" == "$result_basename" ]]; then
+            if [[ -z "$variant" || "$variant" == "$result_basename" ]]; then
                 local test_short
                 test_short=$(get_pts_test_type "$pts_id")
                 test_short="${test_short##*/}"  # "pts/fio" → "fio"
@@ -624,7 +669,7 @@ main() {
             import_result "$result_dir" "$temp_name"
 
             # Rewrite system identifiers to the friendly label (on the COPY)
-            local pts_results_dir="${HOME}/.phoronix-test-suite/test-results"
+            local pts_results_dir="${PTS_RESULTS_DIR}"
             rewrite_identifiers "${pts_results_dir}/${temp_name}" "$friendly_label"
 
             # Append to the associative array entry

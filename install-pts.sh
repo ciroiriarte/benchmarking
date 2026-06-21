@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script Name: install-pts.sh
-# Version: 1.7.0
+# Version: 1.8.0
 #
 # Shared library for installing the Phoronix Test Suite and system-level
 # build dependencies.  Sourced (not executed) by the benchmark-*-pts.sh
@@ -12,6 +12,9 @@
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
 #
 # Changelog:
+#   - 2026-06-21: v1.8.0 - Add ensure_fio_installed(): install only fio + fs tools
+#                          (no full PTS) for benchmark-storage-pts.sh --method
+#                          direct, which calls fio directly (issue #25).
 #   - 2026-06-21: v1.7.0 - Ensure wget and python3 are installed (issue #17):
 #                          wget backs the upstream .deb/tarball fallbacks and
 #                          python3 backs the fio/report XML patching, but neither
@@ -302,6 +305,43 @@ ensure_pts_installed() {
     # immediately with "PHP must be installed".
     if ! command -v phoronix-test-suite &>/dev/null || ! command -v php &>/dev/null; then
         install_pts_packages
+    fi
+}
+
+# === Lightweight fio Install (direct-fio storage method) ===
+# Install only fio + filesystem tools, without the full Phoronix Test Suite.
+# Used by benchmark-storage-pts.sh --method direct, which calls fio directly and
+# does not need PTS.  Makes needrestart non-interactive first so the apt run does
+# not hang under nohup/SSH (issue #6/#10).
+ensure_fio_installed() {
+    _configure_needrestart_noninteractive
+    if command -v fio &>/dev/null && command -v mkfs.xfs &>/dev/null; then
+        return 0
+    fi
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        case "$ID" in
+            rocky|rhel|centos)
+                sudo dnf install -y epel-release || true
+                sudo dnf install -y fio xfsprogs util-linux
+                ;;
+            ubuntu|debian)
+                sudo apt-get update
+                sudo apt-get install -y fio xfsprogs util-linux
+                ;;
+            opensuse*|suse)
+                sudo zypper install -y fio xfsprogs util-linux || true
+                ;;
+            *)
+                echo "Unsupported OS for fio install: $ID"; exit 1
+                ;;
+        esac
+    else
+        echo "Cannot detect OS. /etc/os-release not found."; exit 1
+    fi
+    if ! command -v fio &>/dev/null; then
+        echo "ERROR: fio installation failed; cannot run --method direct."
+        exit 1
     fi
 }
 

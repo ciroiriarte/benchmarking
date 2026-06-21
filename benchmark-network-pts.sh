@@ -22,9 +22,15 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.6.0
+# Version: 2.7.0
 #
 # Changelog:
+#   - 2026-06-21: v2.7.0 - Make the peer reachability preflight fatal (issue #13).
+#                          check_server_reachable's result was previously ignored,
+#                          so the script ran the full peer suite (multiple 360 s
+#                          benchmarks) against an unreachable server.  Now skip the
+#                          peer tests and exit non-zero when either daemon port is
+#                          closed, with guidance to start --server-mode remotely.
 #   - 2026-06-21: v2.6.0 - Verify test installs with pts_test_installed() (issue
 #                           #24).  PTS batch-install exits 0 even when a build
 #                           fails or a dependency is unavailable, which could add
@@ -824,10 +830,22 @@ if [[ -n "$SERVER_ADDRESS" ]]; then
     echo "    Ensure iperf3 -s -D and netserver are running on the remote host."
 
     # Verify server daemons are reachable before committing to peer tests.
+    # check_server_reachable returns non-zero when a port is closed; honour it so
+    # we do not waste many minutes running 360 s benchmarks against a dead server
+    # (issue #13).  Both ports are probed so the operator sees which is missing.
     echo "--- Checking server reachability ---"
-    check_server_reachable "$SERVER_ADDRESS" 5201  "iperf3 server"
-    check_server_reachable "$SERVER_ADDRESS" 12865 "netperf server (netserver)"
+    peer_reachable=1
+    check_server_reachable "$SERVER_ADDRESS" 5201  "iperf3 server"              || peer_reachable=0
+    check_server_reachable "$SERVER_ADDRESS" 12865 "netperf server (netserver)" || peer_reachable=0
     echo "------------------------------"
+
+    if [[ "$peer_reachable" -ne 1 ]]; then
+        echo "ERROR: peer server ${SERVER_ADDRESS} is not reachable on the required ports"
+        echo "       (iperf3 5201, netserver 12865); skipping peer tests."
+        echo "       Start the daemons on the remote host first:"
+        echo "         ./benchmark-network-pts.sh --server-mode"
+        FAILED_INSTALLS+=("peer server unreachable: ${SERVER_ADDRESS}")
+    else
 
     # Auto-detect egress interface and NIC speed for the path to the server.
     if [[ -z "$INTERFACE" ]]; then
@@ -899,6 +917,7 @@ if [[ -n "$SERVER_ADDRESS" ]]; then
             "pts/netperf.server-address=${SERVER_ADDRESS};pts/netperf.run-test=UDP_RR;pts/netperf.duration=${NETPERF_DURATION}" \
             "netperf_udp_rr"
     fi
+    fi   # end peer_reachable guard (issue #13)
 else
     echo "--- No --server provided; skipping peer-to-peer tests ---"
 fi

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script Name: install-pts.sh
-# Version: 1.6.0
+# Version: 1.7.0
 #
 # Shared library for installing the Phoronix Test Suite and system-level
 # build dependencies.  Sourced (not executed) by the benchmark-*-pts.sh
@@ -12,6 +12,12 @@
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
 #
 # Changelog:
+#   - 2026-06-21: v1.7.0 - Ensure wget and python3 are installed (issue #17):
+#                          wget backs the upstream .deb/tarball fallbacks and
+#                          python3 backs the fio/report XML patching, but neither
+#                          was guaranteed on minimal images.  Added to the apt and
+#                          dnf package sets and wget to zypper (python3 is provided
+#                          by the detected python_pkg on openSUSE).
 #   - 2026-06-20: v1.6.0 - Make needrestart non-interactive on Debian/Ubuntu via
 #                          an /etc/needrestart/conf.d drop-in so PTS test-dependency
 #                          installs no longer hang at "Restarting services..."
@@ -163,7 +169,9 @@ _setup_opensuse_repo() {
     # installed before PTS (which needs PHP to run).
     local rc=0
     # dejavu-fonts: TTF font required (with php-gd) for create-report graphs (#7).
-    sudo zypper install -y gcc gcc-c++ ${gcc_extra} make unzip bzip2 dejavu-fonts \
+    # wget: used by the upstream tarball fallback below (issue #17).  python3 is
+    # provided by ${python_pkg} (the detected python3 provider).
+    sudo zypper install -y gcc gcc-c++ ${gcc_extra} make unzip bzip2 wget dejavu-fonts \
         "${python_pkg}" "${php_pkgs[@]}" "${EXTRA_PKGS_ZYPPER[@]}" || rc=$?
     if [[ "$rc" -ne 0 && "$rc" -ne 106 ]]; then
         echo "ERROR: zypper install (build tools) failed with exit code $rc"
@@ -211,8 +219,10 @@ install_pts_packages() {
                 echo "Detected Rocky Linux or RHEL-based system"
                 sudo dnf install -y epel-release
                 # php-gd + dejavu fonts let create-report render PDF/HTML graphs (#7).
+                # wget is used by the upstream tarball/.deb fallbacks; python3 by
+                # the fio/report XML patching — install both explicitly (#17).
                 sudo dnf install -y phoronix-test-suite gcc gcc-c++ make unzip \
-                    bzip2 php-gd dejavu-sans-fonts "${EXTRA_PKGS_DNF[@]}"
+                    bzip2 wget python3 php-gd dejavu-sans-fonts "${EXTRA_PKGS_DNF[@]}"
                 ;;
             ubuntu|debian)
                 echo "Detected Ubuntu or Debian-based system"
@@ -225,8 +235,10 @@ install_pts_packages() {
                 # without it PTS install prompts interactively — fatal under nohup.
                 # php-gd + a TTF font let create-report render PDF/HTML graphs
                 # (issue #7); without them PTS embeds a "PHP GD/TTF required" note.
+                # wget is used by the .deb/tarball fallbacks; python3 by the
+                # fio/report XML patching — install both explicitly (issue #17).
                 sudo apt-get install -y build-essential autoconf php-cli php-xml \
-                    php-gd fonts-dejavu-core unzip "${EXTRA_PKGS_APT[@]}"
+                    php-gd fonts-dejavu-core unzip wget python3 "${EXTRA_PKGS_APT[@]}"
                 sudo apt-get install -y phoronix-test-suite || {
                     echo "Phoronix Test Suite not found in repo, attempting fallback install..."
                     wget -O /tmp/phoronix.deb https://phoronix-test-suite.com/releases/repo/pts.debian/files/phoronix-test-suite_10.8.4_all.deb

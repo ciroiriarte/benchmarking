@@ -32,9 +32,23 @@ Runs on physical machines and virtual machines (vSphere, OpenStack).
 |---|---|---|
 | `benchmark-cpu-pts.sh` | CPU | `pts/build-linux-kernel`, `pts/compress-7zip`, `pts/c-ray`, `pts/openssl`, `pts/stockfish` |
 | `benchmark-memory-pts.sh` | Memory | `pts/stream`, `pts/ramspeed`, `pts/tinymembench`, `pts/cachebench` |
-| `benchmark-network-pts.sh` | Network | `pts/network-loopback`, `pts/sockperf`, `pts/iperf`, `pts/netperf` |
-| `benchmark-storage-pts.sh` | Disk I/O | `pts/fio`, `pts/dbench`, `pts/fs-mark`, `pts/compilebench` |
+| `benchmark-network-pts.sh` | Network | `pts/network-loopback` †, `pts/sockperf`, `pts/iperf`, `pts/netperf` |
+| `benchmark-storage-pts.sh` | Disk I/O | `pts/fio`, `pts/dbench`, `pts/fs-mark`, `pts/compilebench` ‡ |
 | `install-pts.sh` | *(shared library)* | Sourced by all benchmark scripts to install PTS and system-level build dependencies |
+
+> † **`pts/network-loopback`** requires OpenBSD `nc`. On RHEL/Rocky the default
+> `nc` is nmap's `ncat`, which is not CLI-compatible, so the script **detects
+> this and skips the loopback test automatically** (with a warning); the other
+> network tests run normally. Install OpenBSD netcat to enable it where
+> available.
+>
+> ‡ **`pts/compilebench`** requires Python 2, which is absent from current
+> releases (Ubuntu 24.04+, Debian 13, Rocky 9+, openSUSE Leap 16+). The storage
+> script **detects this and skips compilebench automatically** on those hosts,
+> so the effective modern storage suite is `pts/fio`, `pts/dbench`, and
+> `pts/fs-mark` (which already cover IOPS/throughput and metadata-heavy
+> filesystem workloads). It still runs on older distros that ship Python 2
+> (e.g. openSUSE Leap 15.6).
 
 `create-report-pts.sh` consumes the `benchmark-results/` directories produced by any of the
 above scripts and generates reports in all supported PTS formats (text, CSV, JSON, HTML, PDF),
@@ -618,18 +632,38 @@ comparison charts. Labels are auto-detected from the OS field in
 `--label` for clarity. Results with empty values (failed tests) are
 automatically skipped.
 
-### Result naming
+### Result directory model
 
-`--result-id` controls the output directory name and the prefix of each PTS result
-subdirectory. For `benchmark-storage-pts.sh`, the disk label (from `--disk`) is the
-differentiator within a run — not `--result-id`.
+Every script writes to the **same outer layout** — a single run directory named
+after `--result-id`, containing the system snapshot plus one or more PTS result
+subdirectories:
 
-| Script | PTS result directory name | Differentiator |
-|---|---|---|
-| `benchmark-cpu-pts.sh` | `<result-id>` | `--result-id` |
-| `benchmark-memory-pts.sh` | `<result-id>_<test>` | `--result-id` |
-| `benchmark-network-pts.sh` | `<result-id>_<test-variant>` | `--result-id` |
-| `benchmark-storage-pts.sh` | `<disk-label>_<test>_result` | disk label in `--disk` |
+```
+benchmark-results/<result-id>/
+├── <result-id>-system-snapshot.txt
+└── <one or more PTS result subdirectories>   # naming varies per script, see below
+```
+
+What differs between scripts is **how many PTS result subdirectories are created
+and how they are named** — this follows how each PTS test family reports results:
+
+| Script | PTS result subdirectory(ies) | One subdir per… | Differentiator |
+|---|---|---|---|
+| `benchmark-cpu-pts.sh` | `<result-id>` (single, shared by all CPU tests) | run | `--result-id` |
+| `benchmark-memory-pts.sh` | `<result-id>_<test>` | test | `--result-id` |
+| `benchmark-network-pts.sh` | `<result-id>_<test-variant>` | test variant | `--result-id` |
+| `benchmark-storage-pts.sh` | `<disk-label>_<test>_result` | disk × test | disk label in `--disk` |
+
+Key points:
+
+- **CPU** groups all five tests into one PTS result directory (named `<result-id>`);
+  the others create a separate directory per test.
+- **Storage** is the exception for the *differentiator*: because a single run can
+  test several disks, results are distinguished by the **disk label** from
+  `--disk "<dev;label>"`, not by `--result-id`. Use distinct labels to compare
+  disks within one run, or the same label across runs to compare a disk over time.
+- `create-report-pts.sh` consumes the outer run directory regardless of which
+  script produced it, and groups same-test results across runs automatically.
 
 ### System identifier
 

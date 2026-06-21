@@ -8,9 +8,19 @@
 # This version is validated to work on Rocky Linux, openSUSE, and Debian/Ubuntu.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 3.14.0
+# Version: 4.0.0
 #
 # Changelog:
+#   - 2026-06-21: v4.0.0 - Add a direct-fio benchmark method and make it the
+#                          default (issue #25).  BREAKING: storage now runs a
+#                          curated, time-boxed fio matrix by default (--method
+#                          direct) and reports IOPS, throughput and p50/p99/p99.9
+#                          latency in a readable summary table (+ CSV/JSON),
+#                          instead of the 576-run PTS sweep that took ~10 h/disk
+#                          and reported no latency.  The legacy PTS path (with
+#                          OpenBenchmarking.org upload) is still available via
+#                          --method pts; --upload now requires --method pts.
+#                          Adds --mode quick|full, --fio-size, --fio-engine.
 #   - 2026-06-21: v3.14.0 - Validate value-taking CLI options via require_optarg()
 #                            (issue #16), so a missing --disk/--result-id/etc.
 #                            value fails with a clear error instead of silently
@@ -235,7 +245,53 @@ TESTUSER=$(whoami)
 # to steady state so that results are reproducible across repeated runs.
 # Set to 0 or pass --skip-preconditioning to disable.
 PRECONDITIONING_ENABLED=1
+PRECONDITIONING_SET_BY_USER=0   # track explicit --skip-preconditioning vs mode default
 IDENTIFIER_SOURCE="upload-name"
+
+# === Benchmark method (issue #25) ===
+# direct: call fio directly with a curated, time-boxed workload matrix and report
+#         IOPS/throughput/latency-percentiles (default — fast and meaningful).
+# pts:    legacy Phoronix Test Suite fio/dbench/fs-mark path (supports upload to
+#         OpenBenchmarking.org but is slow and reports no latency).
+METHOD="direct"
+
+# Run profile for --method direct.  quick = short sanity check (auto-skips
+# preconditioning); full = longer, steady-state-oriented run.
+MODE="full"
+
+# Per-workload fio timing (seconds), selected by MODE in apply_mode_defaults().
+FIO_RUNTIME=45
+FIO_RAMP=10
+
+# Size of the fio test file created on each mounted disk.  A larger file spans
+# more of the device so random results are not flattered by controller caching.
+# Auto-capped to fit the filesystem at run time.
+FIO_SIZE="8G"
+
+# fio I/O engine for --method direct.  "auto" prefers io_uring (modern kernels)
+# and falls back to libaio.  Override with --fio-engine.
+FIO_ENGINE="auto"
+
+# Curated fio workloads: name|rw|bs|iodepth|numjobs|rwmixread
+# Chosen to characterise the dimensions that matter: small-block random IOPS at
+# low (latency) and high (saturation) queue depth, a realistic mixed workload,
+# and large-block sequential throughput.  numjobs/iodepth are fixed per workload
+# so results are comparable across hosts (not tied to CPU count).
+FIO_WORKLOADS_FULL=(
+    "randread_4k_qd1|randread|4k|1|1|"
+    "randread_4k_qd32|randread|4k|32|4|"
+    "randwrite_4k_qd1|randwrite|4k|1|1|"
+    "randwrite_4k_qd32|randwrite|4k|32|4|"
+    "randrw_4k_70_30_qd32|randrw|4k|32|4|70"
+    "seqread_1m_qd16|read|1m|16|1|"
+    "seqwrite_1m_qd16|write|1m|16|1|"
+)
+FIO_WORKLOADS_QUICK=(
+    "randread_4k_qd32|randread|4k|32|4|"
+    "randwrite_4k_qd32|randwrite|4k|32|4|"
+    "seqread_1m_qd16|read|1m|16|1|"
+    "seqwrite_1m_qd16|write|1m|16|1|"
+)
 
 # === Function to Display Usage ===
 usage() {
@@ -255,10 +311,24 @@ usage() {
     echo "                             ignored. May be combined with --disk."
     echo
     echo "Options:"
-    echo "  --upload                   Upload results to OpenBenchmarking.org."
+    echo "  --method <direct|pts>      Benchmark method (default: direct)."
+    echo "                             direct = call fio directly with a curated, time-boxed"
+    echo "                                      workload matrix; reports IOPS, throughput and"
+    echo "                                      p50/p99/p99.9 latency in a summary table + CSV."
+    echo "                             pts    = legacy Phoronix Test Suite path (fio/dbench/"
+    echo "                                      fs-mark); slower, no latency, but supports"
+    echo "                                      --upload to OpenBenchmarking.org."
+    echo "  --mode <quick|full>        direct method run profile (default: full)."
+    echo "                             quick = short runtimes, skips preconditioning (sanity check)."
+    echo "                             full  = longer runtimes for steady-state measurement."
+    echo "  --fio-size <SIZE>          direct method test-file size (default: 8G; auto-capped"
+    echo "                             to ~80% of free space). e.g. 4G, 16G, 100G."
+    echo "  --fio-engine <engine>      direct method fio I/O engine (default: auto =>"
+    echo "                             io_uring if available, else libaio)."
+    echo "  --upload                   Upload results to OpenBenchmarking.org (requires --method pts)."
     echo "  --result-name <name>       Set the 'Saved Test Name' for the upload (e.g., 'My Server NVMe vs HDD')."
-    echo "  --result-id <identifier>   Set the 'Test Identifier' for the upload (e.g., 'Q3-2025-Storage-Test')."
-    echo "  --identifier <value>       Set the system identifier for PTS comparison columns."
+    echo "  --result-id <identifier>   Run identifier; names the benchmark-results/<id>/ output dir."
+    echo "  --identifier <value>       Set the system identifier for PTS comparison columns (pts method)."
     echo "                             \"upload-id\" = use --result-id value,"
     echo "                             \"upload-name\" = use --result-name value (default),"
     echo "                             or any custom string."
@@ -306,7 +376,11 @@ while [[ "$#" -gt 0 ]]; do
         --result-name) require_optarg "$1" "${2:-}"; UPLOAD_NAME="$2"; shift ;;
         --result-id) require_optarg "$1" "${2:-}"; UPLOAD_ID="$2"; shift ;;
         --identifier) require_optarg "$1" "${2:-}"; IDENTIFIER_SOURCE="$2"; shift ;;
-        --skip-preconditioning) PRECONDITIONING_ENABLED=0 ;;
+        --method) require_optarg "$1" "${2:-}"; METHOD="$2"; shift ;;
+        --mode) require_optarg "$1" "${2:-}"; MODE="$2"; shift ;;
+        --fio-size) require_optarg "$1" "${2:-}"; FIO_SIZE="$2"; shift ;;
+        --fio-engine) require_optarg "$1" "${2:-}"; FIO_ENGINE="$2"; shift ;;
+        --skip-preconditioning) PRECONDITIONING_ENABLED=0; PRECONDITIONING_SET_BY_USER=1 ;;
         --help) usage; exit 0 ;;
         *) echo "Unknown parameter passed: $1"; usage; exit 1 ;;
     esac
@@ -317,6 +391,34 @@ done
 if [[ ${#DISKS[@]} -eq 0 ]]; then
     echo "Error: no target disks specified. Use --disk or --disk-file."
     echo
+    usage
+    exit 1
+fi
+
+# Validate --method.
+case "$METHOD" in
+    direct|pts) ;;
+    *) echo "Error: --method must be 'direct' or 'pts' (got: $METHOD)"; usage; exit 1 ;;
+esac
+
+# Validate --mode and apply its timing/preconditioning defaults (direct method).
+# quick: short runtimes and skip preconditioning unless the user forced it.
+# full:  longer runtimes for steady-state-oriented measurement.
+case "$MODE" in
+    quick)
+        FIO_RUNTIME=20; FIO_RAMP=5
+        [[ "$PRECONDITIONING_SET_BY_USER" -eq 0 ]] && PRECONDITIONING_ENABLED=0
+        ;;
+    full)
+        FIO_RUNTIME=45; FIO_RAMP=10
+        ;;
+    *) echo "Error: --mode must be 'quick' or 'full' (got: $MODE)"; usage; exit 1 ;;
+esac
+
+# Upload targets OpenBenchmarking.org, which only the PTS path produces.
+if [[ "$UPLOAD_RESULTS" -eq 1 && "$METHOD" != "pts" ]]; then
+    echo "Error: --upload requires --method pts (OpenBenchmarking.org upload is a PTS feature)."
+    echo "       Re-run with --method pts, or drop --upload to use the direct-fio method."
     usage
     exit 1
 fi
@@ -705,19 +807,152 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# === Direct fio Benchmark (issue #25) ===
+
+# Choose the fio I/O engine: honour --fio-engine, otherwise prefer io_uring when
+# fio supports it (modern kernels), falling back to libaio.
+pick_fio_engine() {
+    if [[ "$FIO_ENGINE" != "auto" ]]; then
+        echo "$FIO_ENGINE"
+        return
+    fi
+    if fio --enghelp 2>/dev/null | grep -qiw io_uring; then
+        echo "io_uring"
+    else
+        echo "libaio"
+    fi
+}
+
+# Run the curated fio workload matrix on one mounted disk and write a summary.
+# Produces per-workload fio JSON plus a readable table (summary.txt) and CSV
+# (summary.csv) with IOPS, throughput and p50/p99/p99.9 latency, under
+# benchmark-results/<run-id>/fio-direct-<label>/.
+run_fio_direct_on_disk() {
+    local disk_entry=$1
+    local device label mount_point
+    device=$(echo "$disk_entry" | cut -d';' -f1)
+    label=$(echo "$disk_entry" | cut -d';' -f2)
+    mount_point="/mnt/${label}"
+
+    local engine
+    engine=$(pick_fio_engine)
+    local outdir="${SCRIPT_INVOCATION_DIR}/benchmark-results/${RUN_ID}/fio-direct-${label}"
+    mkdir -p "$outdir"
+    local testfile="${mount_point}/fio-testfile"
+    local csv="${outdir}/summary.csv"
+    local table="${outdir}/summary.txt"
+
+    # Cap the test file to ~80% of free space so it always fits the filesystem.
+    local avail_bytes size_bytes cap
+    avail_bytes=$(df -B1 --output=avail "$mount_point" 2>/dev/null | tail -1 | tr -d ' ')
+    size_bytes=$(numfmt --from=iec "$FIO_SIZE" 2>/dev/null || echo 0)
+    if [[ -n "$avail_bytes" && "$avail_bytes" -gt 0 ]]; then
+        cap=$(( avail_bytes * 80 / 100 ))
+        if [[ "$size_bytes" -eq 0 || "$size_bytes" -gt "$cap" ]]; then
+            size_bytes="$cap"
+        fi
+    fi
+    local fsize_h
+    fsize_h=$(numfmt --to=iec "$size_bytes" 2>/dev/null || echo "$size_bytes")
+
+    # Select the workload set for the current mode (nameref; bash 4.3+).
+    local -n _wl
+    if [[ "$MODE" == "quick" ]]; then _wl=FIO_WORKLOADS_QUICK; else _wl=FIO_WORKLOADS_FULL; fi
+
+    echo "=== Direct fio on $label ($device) ==="
+    echo "  engine=$engine runtime=${FIO_RUNTIME}s ramp=${FIO_RAMP}s file=${fsize_h} workloads=${#_wl[@]}"
+
+    echo "workload,rw,bs,iodepth,numjobs,read_iops,read_MBps,read_p50_us,read_p99_us,read_p99_9_us,write_iops,write_MBps,write_p50_us,write_p99_us,write_p99_9_us" > "$csv"
+    {
+        echo "=== fio direct results: ${label} (${device}) ==="
+        echo "engine=${engine} runtime=${FIO_RUNTIME}s ramp=${FIO_RAMP}s file=${fsize_h}"
+        printf "%-22s %-4s %-3s %-4s %-9s | %10s %9s %9s %9s | %10s %9s %9s %9s\n" \
+            workload bs qd jobs rw rIOPS rMB/s r-p50us r-p99us wIOPS wMB/s w-p50us w-p99us
+    } > "$table"
+
+    local row name rw bs iodepth numjobs rwmix
+    for row in "${_wl[@]}"; do
+        IFS='|' read -r name rw bs iodepth numjobs rwmix <<< "$row"
+        echo "  -> ${name} (${rw} bs=${bs} iodepth=${iodepth} numjobs=${numjobs}${rwmix:+ rwmixread=${rwmix}})"
+        local json="${outdir}/${name}.json"
+        local mix_arg=()
+        [[ -n "$rwmix" ]] && mix_arg=(--rwmixread="$rwmix")
+        if ${SUDO_CMD} fio --name="$name" --filename="$testfile" --ioengine="$engine" \
+            --direct=1 --rw="$rw" --bs="$bs" --iodepth="$iodepth" --numjobs="$numjobs" \
+            "${mix_arg[@]}" --size="$size_bytes" --runtime="$FIO_RUNTIME" \
+            --ramp_time="$FIO_RAMP" --time_based --group_reporting \
+            --output-format=json > "$json" 2>/dev/null; then
+            python3 - "$json" "$name" "$rw" "$bs" "$iodepth" "$numjobs" "$csv" "$table" <<'PYEOF'
+import json, sys
+path, name, rw, bs, iodepth, numjobs, csv, table = sys.argv[1:9]
+def us(ns):
+    return "" if ns in (None, "") else "%.0f" % (float(ns) / 1000.0)
+try:
+    with open(path) as f:
+        d = json.load(f)
+    j = d["jobs"][0]
+    def side(s):
+        x = j.get(s, {})
+        iops = x.get("iops", 0.0) or 0.0
+        bw = (x.get("bw", 0.0) or 0.0) / 1024.0          # KiB/s -> MiB/s
+        clat = x.get("clat_ns") or x.get("lat_ns") or {}
+        pct = clat.get("percentile") or {}
+        return (iops, bw, pct.get("50.000000"), pct.get("99.000000"),
+                pct.get("99.900000"), (iops > 0 or bw > 0))
+    ri, rmb, rp50, rp99, rp999, ra = side("read")
+    wi, wmb, wp50, wp99, wp999, wa = side("write")
+    def c(v, a, fmt="%.0f"):
+        return (fmt % v) if a else ""
+    row = "%-22s %-4s %-3s %-4s %-9s | %10s %9s %9s %9s | %10s %9s %9s %9s" % (
+        name, bs, iodepth, numjobs, rw,
+        c(ri, ra), c(rmb, ra, "%.1f"), us(rp50) if ra else "", us(rp99) if ra else "",
+        c(wi, wa), c(wmb, wa, "%.1f"), us(wp50) if wa else "", us(wp99) if wa else "")
+    with open(table, "a") as t:
+        t.write(row + "\n")
+    with open(csv, "a") as cf:
+        cf.write(",".join([name, rw, bs, str(iodepth), str(numjobs),
+            c(ri, ra), c(rmb, ra, "%.2f"), us(rp50) if ra else "", us(rp99) if ra else "", us(rp999) if ra else "",
+            c(wi, wa), c(wmb, wa, "%.2f"), us(wp50) if wa else "", us(wp99) if wa else "", us(wp999) if wa else ""]) + "\n")
+    print("     " + row)
+except Exception as e:
+    print("     WARNING: could not parse fio JSON for %s: %s" % (name, e), file=sys.stderr)
+PYEOF
+        else
+            echo "     WARNING: fio failed for ${name} on ${label}"
+            FAILED_RUNS+=("${label}/${name} (fio)")
+        fi
+    done
+
+    rm -f "$testfile" 2>/dev/null || true
+    if [[ "$INVOKING_USER" != "root" ]]; then
+        chown -R "${INVOKING_USER}:${INVOKING_GROUP}" "$outdir" 2>/dev/null || true
+    fi
+
+    echo ""
+    cat "$table"
+    echo ""
+    echo "  Saved summary: ${table}"
+    echo "         CSV:    ${csv}"
+    echo "         per-workload JSON: ${outdir}/"
+}
+
 # --- SCRIPT EXECUTION STARTS HERE ---
 
 echo "Starting storage benchmark script..."
+echo "Method: ${METHOD}$( [[ "$METHOD" == "direct" ]] && echo " (mode=${MODE})" )"
 
-# === Install PTS and dependencies ===
-EXTRA_PKGS_APT=(xfsprogs util-linux fio)
-EXTRA_PKGS_DNF=(xfsprogs util-linux fio)
-EXTRA_PKGS_ZYPPER=(xfsprogs util-linux fio autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel libaio-devel)
-ensure_pts_installed
-
-# === Configure Phoronix Test Suite for Batch Mode ===
-# RunAllTestCombinations=Y: exercise every sub-option permutation.
-configure_pts_batch "Y"
+# === Install dependencies ===
+if [[ "$METHOD" == "pts" ]]; then
+    EXTRA_PKGS_APT=(xfsprogs util-linux fio)
+    EXTRA_PKGS_DNF=(xfsprogs util-linux fio)
+    EXTRA_PKGS_ZYPPER=(xfsprogs util-linux fio autoconf bison flex libopenssl-devel Mesa-demo-x libelf-devel libaio-devel)
+    ensure_pts_installed
+    # Configure PTS batch mode (RunAllTestCombinations=Y) for the legacy path.
+    configure_pts_batch "Y"
+else
+    # direct method: only fio + filesystem tools are needed (no PTS).
+    ensure_fio_installed
+fi
 
 # === Pre-run Device Configuration ===
 echo "--- Detecting device types and configuring I/O schedulers ---"
@@ -827,8 +1062,9 @@ for disk in "${DISKS[@]}"; do
 done
 
 # === Run Tests on Each Disk ===
-RESULT_NAMES=()
-FAILED_RUNS=()
+RESULT_NAMES=()       # PTS path: per-disk-per-test result names
+FAILED_RUNS=()        # both paths: failed test/workload identifiers
+DIRECT_DISKS_DONE=()  # direct path: disks that completed the fio matrix
 
 # Patch the fio-2.2.0 test-definition.xml to:
 #   1. Replace the auto-disk-mount-points option with a fixed single-value disk
@@ -1105,49 +1341,64 @@ run_tests_on_disk() {
     unset PTS_TEST_INSTALL_ROOT_PATH
 }
 
-# Set PTS result metadata so the identifier column in comparisons shows the
-# --result-name value rather than auto-generated hardware/date labels.
-[[ -n "$UPLOAD_NAME" ]] && export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
-# Resolve TEST_RESULTS_IDENTIFIER based on --identifier flag.
-case "$IDENTIFIER_SOURCE" in
-    upload-id)   [[ -n "$UPLOAD_ID" ]]   && export TEST_RESULTS_IDENTIFIER="$UPLOAD_ID" ;;
-    upload-name) [[ -n "$UPLOAD_NAME" ]] && export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME" ;;
-    *)           export TEST_RESULTS_IDENTIFIER="$IDENTIFIER_SOURCE" ;;
-esac
+if [[ "$METHOD" == "pts" ]]; then
+    # === Legacy PTS path ===
+    # Set PTS result metadata so the identifier column in comparisons shows the
+    # --result-name value rather than auto-generated hardware/date labels.
+    [[ -n "$UPLOAD_NAME" ]] && export TEST_RESULTS_DESCRIPTION="$UPLOAD_NAME"
+    # Resolve TEST_RESULTS_IDENTIFIER based on --identifier flag.
+    case "$IDENTIFIER_SOURCE" in
+        upload-id)   [[ -n "$UPLOAD_ID" ]]   && export TEST_RESULTS_IDENTIFIER="$UPLOAD_ID" ;;
+        upload-name) [[ -n "$UPLOAD_NAME" ]] && export TEST_RESULTS_IDENTIFIER="$UPLOAD_NAME" ;;
+        *)           export TEST_RESULTS_IDENTIFIER="$IDENTIFIER_SOURCE" ;;
+    esac
 
-for disk in "${DISKS[@]}"; do
-    run_tests_on_disk "$disk"
-done
-
-unset TEST_RESULTS_DESCRIPTION TEST_RESULTS_IDENTIFIER
-
-# === Upload Results if Requested ===
-upload_pts_results
-
-# === Collect Results to ./benchmark-results/ ===
-collect_results
-
-# === Compare Results Locally ===
-echo "--- Generating local result comparisons ---"
-for test_name in "${REQUIRED_TESTS[@]}"; do
-    echo "========================================"
-    echo "    Comparison for $test_name"
-    echo "========================================"
-    
-    # Build a list of results for the current test
-    results_to_compare=()
-    for r_name in "${RESULT_NAMES[@]}"; do
-        if [[ "$r_name" == *_${test_name}_result ]]; then
-            results_to_compare+=("$r_name")
-        fi
+    for disk in "${DISKS[@]}"; do
+        run_tests_on_disk "$disk"
     done
 
-    if [ ${#results_to_compare[@]} -gt 0 ]; then
-        phoronix-test-suite compare-results "${results_to_compare[@]}"
-    else
-        echo "No results found to compare for $test_name."
+    unset TEST_RESULTS_DESCRIPTION TEST_RESULTS_IDENTIFIER
+
+    # === Upload Results if Requested ===
+    upload_pts_results
+
+    # === Collect Results to ./benchmark-results/ ===
+    collect_results
+
+    # === Compare Results Locally ===
+    echo "--- Generating local result comparisons ---"
+    for test_name in "${REQUIRED_TESTS[@]}"; do
+        echo "========================================"
+        echo "    Comparison for $test_name"
+        echo "========================================"
+
+        # Build a list of results for the current test
+        results_to_compare=()
+        for r_name in "${RESULT_NAMES[@]}"; do
+            if [[ "$r_name" == *_${test_name}_result ]]; then
+                results_to_compare+=("$r_name")
+            fi
+        done
+
+        if [ ${#results_to_compare[@]} -gt 0 ]; then
+            phoronix-test-suite compare-results "${results_to_compare[@]}"
+        else
+            echo "No results found to compare for $test_name."
+        fi
+    done
+else
+    # === Direct fio path (default) ===
+    output_dir="${SCRIPT_INVOCATION_DIR}/benchmark-results/${RUN_ID}"
+    mkdir -p "$output_dir"
+    [[ -f "$SNAPSHOT_FILE" ]] && cp "$SNAPSHOT_FILE" "$output_dir/"
+    for disk in "${DISKS[@]}"; do
+        run_fio_direct_on_disk "$disk"
+        DIRECT_DISKS_DONE+=("$(echo "$disk" | cut -d';' -f2)")
+    done
+    if [[ "$INVOKING_USER" != "root" ]]; then
+        chown -R "${INVOKING_USER}:${INVOKING_GROUP}" "$output_dir" 2>/dev/null || true
     fi
-done
+fi
 
 # === Result Files ===
 list_result_files
@@ -1157,10 +1408,17 @@ echo ""
 echo "========================================"
 echo "    Benchmark Summary"
 echo "========================================"
-echo "Completed results: ${#RESULT_NAMES[@]}"
-for r in "${RESULT_NAMES[@]}"; do
-    echo "  [OK] $r"
-done
+if [[ "$METHOD" == "pts" ]]; then
+    echo "Method: pts | Completed results: ${#RESULT_NAMES[@]}"
+    for r in "${RESULT_NAMES[@]}"; do
+        echo "  [OK] $r"
+    done
+else
+    echo "Method: direct (mode=${MODE}) | Disks benchmarked: ${#DIRECT_DISKS_DONE[@]}"
+    for d in "${DIRECT_DISKS_DONE[@]}"; do
+        echo "  [OK] $d  -> benchmark-results/${RUN_ID}/fio-direct-${d}/summary.txt"
+    done
+fi
 
 if [[ ${#FAILED_RUNS[@]} -gt 0 ]]; then
     echo ""

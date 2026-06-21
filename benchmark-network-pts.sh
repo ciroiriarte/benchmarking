@@ -22,9 +22,13 @@
 #              PTS is installed automatically on supported systems if not present.
 #
 # Author: Ciro Iriarte <ciro.iriarte@gmail.com>
-# Version: 2.8.0
+# Version: 2.9.0
 #
 # Changelog:
+#   - 2026-06-21: v2.9.0 - Detect nmap's ncat (the default 'nc' on RHEL/Rocky) and
+#                          skip pts/network-loopback cleanly with guidance instead
+#                          of failing mid-run, since ncat is not CLI-compatible
+#                          with the OpenBSD netcat the test requires (issue #23).
 #   - 2026-06-21: v2.8.0 - Validate value-taking CLI options via require_optarg()
 #                          (issue #16).  Start netserver with -D in the background
 #                          and stop it by PID instead of 'pkill -x netserver', so
@@ -192,8 +196,9 @@
 #
 #   pts/network-loopback uses nc (netcat). On RHEL/Rocky Linux the default nc
 #   is ncat (from nmap), whose -d flag semantics differ from OpenBSD netcat.
-#   If this test fails on those systems, install OpenBSD netcat manually or
-#   disregard the loopback result; the remaining tests are unaffected.
+#   The script detects this and skips pts/network-loopback automatically on
+#   those systems (with a warning); the remaining tests are unaffected. Install
+#   OpenBSD netcat to enable the loopback test where it is available.
 #
 # EXAMPLES:
 #   # On the remote host: start server daemons bound to a specific interface.
@@ -515,6 +520,23 @@ check_tcp_buffers() {
     echo ""
 }
 
+# Return 0 if the system 'nc' is OpenBSD-compatible, 1 otherwise.
+# pts/network-loopback drives nc with OpenBSD-style flags (e.g. -d).  On
+# RHEL/Rocky the default 'nc' is nmap's ncat, whose flag semantics differ and
+# make the loopback test fail in a confusing way.  Detect the nmap flavour (it
+# reports "Ncat" to --version) so the caller can skip the test cleanly with a
+# clear message instead of letting it error mid-run (issue #23).
+nc_is_openbsd_compatible() {
+    command -v nc >/dev/null 2>&1 || return 1
+    # nmap ncat: `nc --version` prints "Ncat: Version ...".
+    # OpenBSD nc: does not support --version (prints a usage error), so the
+    # grep fails and we treat it as compatible.
+    if nc --version 2>&1 | grep -qi 'ncat'; then
+        return 1
+    fi
+    return 0
+}
+
 # Locate a binary by name: prefer the system PATH, then fall back to any binary
 # compiled by PTS under ~/.phoronix-test-suite/ or /var/lib/phoronix-test-suite/.
 find_binary() {
@@ -821,7 +843,18 @@ esac
 # TCP stack throughput through the loopback interface (10 GB transfer via nc+dd).
 # Characterises kernel network buffer performance independent of NIC or fabric.
 if is_installed "pts/network-loopback"; then
-    run_network_test "pts/network-loopback" "" "loopback"
+    # pts/network-loopback needs OpenBSD-compatible nc; nmap's ncat (default on
+    # RHEL/Rocky) is not CLI-compatible and would fail mid-run.  Skip cleanly
+    # with guidance rather than producing a confusing failure (issue #23).
+    if nc_is_openbsd_compatible; then
+        run_network_test "pts/network-loopback" "" "loopback"
+    else
+        echo "--- Skipping pts/network-loopback ---"
+        echo "WARNING: the system 'nc' is nmap's ncat, which is not CLI-compatible"
+        echo "         with the OpenBSD netcat that pts/network-loopback requires."
+        echo "         Install OpenBSD netcat to enable this test (e.g. 'netcat-openbsd'"
+        echo "         where available). The remaining network tests are unaffected."
+    fi
 fi
 
 if is_installed "pts/sockperf"; then
